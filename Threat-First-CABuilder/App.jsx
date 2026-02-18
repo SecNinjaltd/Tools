@@ -479,7 +479,7 @@ const RiskMeter = ({ score, size = 80 }) => {
   );
 };
 
-export default function ThreatFirstCABuilder() {
+function ThreatFirstCABuilder() {
   const [identity, setIdentity] = useState(null);
   const [target, setTarget] = useState(null);
   const [selectedThreats, setSelectedThreats] = useState([]);
