@@ -381,6 +381,8 @@ function ConditionalAccessBuilder() {
             <div style={{ fontSize: 12, color: COLORS.textMuted }}>
               Zero Trust-aligned policy design with MITRE ATT&CK threat mapping
             </div>
+             <div style={{ fontSize: 12, color: COLORS.textMuted }}>
+              Created by James Agombar - Security Ninja Ltd - www.security-ninja.com
           </div>
           <Btn label="↺ RESET" onClick={handleReset} danger />
         </div>
