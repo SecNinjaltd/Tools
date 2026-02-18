@@ -1,6 +1,5 @@
 const { useState, useEffect } = React;
 
-import { useState, useEffect } from "react";
 
 const COLORS = {
   bg: "#090e1a",
