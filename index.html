@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Security Ninja | Tools & Apps</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #090e1a;
+    --surface: #0d1526;
+    --surface-alt: #111d35;
+    --border: #1e3a5f;
+    --accent: #3b82f6;
+    --accent-bright: #60a5fa;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --text: #e2e8f0;
+    --text-muted: #64748b;
+    --text-dim: #94a3b8;
+    --purple: #a855f7;
+    --gradient-1: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    --gradient-2: linear-gradient(135deg, #ef4444, #f97316);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Outfit', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated background grid */
+  .bg-grid {
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Glowing orbs */
+  .orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(120px);
+    pointer-events: none;
+    z-index: 0;
+    animation: orbFloat 20s ease-in-out infinite;
+  }
+  .orb-1 {
+    width: 500px; height: 500px;
+    background: rgba(59,130,246,0.08);
+    top: -10%; left: -5%;
+  }
+  .orb-2 {
+    width: 400px; height: 400px;
+    background: rgba(139,92,246,0.06);
+    bottom: -10%; right: -5%;
+    animation-delay: -10s;
+  }
+  .orb-3 {
+    width: 300px; height: 300px;
+    background: rgba(239,68,68,0.04);
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    animation-delay: -5s;
+  }
+
+  @keyframes orbFloat {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(30px, -20px) scale(1.05); }
+    66% { transform: translate(-20px, 15px) scale(0.95); }
+  }
+
+  .page-wrapper {
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Header */
+  header {
+    padding: 20px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(30,58,95,0.5);
+    backdrop-filter: blur(20px);
+    background: rgba(9,14,26,0.7);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo-area {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .logo-area img {
+    height: 40px;
+    width: auto;
+  }
+
+  .logo-divider {
+    width: 1px;
+    height: 28px;
+    background: var(--border);
+  }
+
+  .logo-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    color: var(--accent-bright);
+    text-transform: uppercase;
+  }
+
+  .header-nav a {
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    transition: color 0.2s;
+  }
+  .header-nav a:hover {
+    color: var(--accent-bright);
+  }
+
+  /* Main content */
+  main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 80px 40px 60px;
+  }
+
+  /* Hero */
+  .hero {
+    text-align: center;
+    max-width: 720px;
+    margin-bottom: 72px;
+  }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    border-radius: 100px;
+    border: 1px solid rgba(59,130,246,0.25);
+    background: rgba(59,130,246,0.08);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent-bright);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 28px;
+    animation: fadeInDown 0.6s ease-out;
+  }
+
+  .hero-badge .pulse {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--success);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(16,185,129,0.4); }
+    50% { opacity: 0.7; box-shadow: 0 0 0 6px rgba(16,185,129,0); }
+  }
+
+  .hero h1 {
+    font-size: 48px;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 20px;
+    letter-spacing: -0.02em;
+    animation: fadeInDown 0.6s ease-out 0.1s both;
+  }
+
+  .hero h1 .gradient-text {
+    background: var(--gradient-1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero p {
+    font-size: 17px;
+    line-height: 1.7;
+    color: var(--text-dim);
+    max-width: 560px;
+    margin: 0 auto;
+    animation: fadeInDown 0.6s ease-out 0.2s both;
+  }
+
+  @keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* App cards grid */
+  .apps-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+    gap: 28px;
+    width: 100%;
+    max-width: 900px;
+    animation: fadeIn 0.6s ease-out 0.3s both;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .app-card {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 36px 32px 32px;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+  }
+
+  .app-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    border-radius: 16px 16px 0 0;
+    opacity: 0;
+    transition: opacity 0.35s;
+  }
+
+  .app-card:hover::before {
+    opacity: 1;
+  }
+
+  .app-card.blue::before { background: var(--gradient-1); }
+  .app-card.red::before { background: var(--gradient-2); }
+
+  .app-card:hover {
+    border-color: rgba(59,130,246,0.3);
+    transform: translateY(-4px);
+    box-shadow: 0 20px 60px -20px rgba(59,130,246,0.15);
+  }
+
+  .app-card.red:hover {
+    border-color: rgba(239,68,68,0.3);
+    box-shadow: 0 20px 60px -20px rgba(239,68,68,0.15);
+  }
+
+  /* Card glow effect */
+  .app-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 16px;
+    opacity: 0;
+    transition: opacity 0.35s;
+    pointer-events: none;
+  }
+
+  .app-card.blue::after {
+    background: radial-gradient(circle at 50% 0%, rgba(59,130,246,0.06), transparent 70%);
+  }
+  .app-card.red::after {
+    background: radial-gradient(circle at 50% 0%, rgba(239,68,68,0.06), transparent 70%);
+  }
+  .app-card:hover::after { opacity: 1; }
+
+  .card-icon {
+    width: 56px; height: 56px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    margin-bottom: 24px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .app-card.blue .card-icon {
+    background: rgba(59,130,246,0.12);
+    border: 1px solid rgba(59,130,246,0.2);
+  }
+
+  .app-card.red .card-icon {
+    background: rgba(239,68,68,0.12);
+    border: 1px solid rgba(239,68,68,0.2);
+  }
+
+  .card-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .app-card.blue .card-label { color: var(--accent-bright); }
+  .app-card.red .card-label { color: #f87171; }
+
+  .card-title {
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 14px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .card-desc {
+    font-size: 14px;
+    line-height: 1.65;
+    color: var(--text-dim);
+    flex: 1;
+    margin-bottom: 28px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 24px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+  }
+
+  .card-cta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    position: relative;
+    z-index: 1;
+    transition: gap 0.3s;
+  }
+
+  .app-card.blue .card-cta { color: var(--accent-bright); }
+  .app-card.red .card-cta { color: #f87171; }
+
+  .app-card:hover .card-cta { gap: 12px; }
+
+  .cta-arrow {
+    transition: transform 0.3s;
+    font-size: 16px;
+  }
+
+  .app-card:hover .cta-arrow { transform: translateX(4px); }
+
+  /* Coming soon section */
+  .coming-soon {
+    margin-top: 64px;
+    text-align: center;
+    max-width: 900px;
+    width: 100%;
+    animation: fadeIn 0.6s ease-out 0.4s both;
+  }
+
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .divider-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border), transparent);
+  }
+
+  .divider-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+  }
+
+  .coming-soon-desc {
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.6;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  /* Footer */
+  footer {
+    padding: 28px 40px;
+    border-top: 1px solid rgba(30,58,95,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-muted);
+    backdrop-filter: blur(12px);
+    background: rgba(9,14,26,0.5);
+  }
+
+  footer a {
+    color: var(--accent-bright);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  footer a:hover { color: var(--accent); }
+
+  .footer-links {
+    display: flex;
+    gap: 24px;
+  }
+
+  /* Responsive */
+  @media (max-width: 860px) {
+    .apps-grid {
+      grid-template-columns: 1fr;
+      max-width: 480px;
+    }
+    .hero h1 { font-size: 36px; }
+    header { padding: 16px 24px; }
+    main { padding: 48px 20px 40px; }
+    footer { padding: 20px 24px; flex-direction: column; gap: 12px; }
+  }
+
+  @media (max-width: 480px) {
+    .hero h1 { font-size: 28px; }
+    .hero p { font-size: 15px; }
+    .app-card { padding: 28px 24px 24px; }
+    .card-title { font-size: 19px; }
+    .apps-grid { min-width: 0; grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<div class="page-wrapper">
+
+  <!-- Header -->
+  <header>
+    <div class="logo-area">
+      <img src="https://static.wixstatic.com/media/941965_fcb3d02bade94905a56a21281a494c64~mv2.png/v1/fill/w_266,h_63,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/941965_fcb3d02bade94905a56a21281a494c64~mv2.png" alt="Security Ninja">
+      <div class="logo-divider"></div>
+      <span class="logo-sub">Tools &amp; Apps</span>
+    </div>
+    <nav class="header-nav">
+      <a href="https://www.security-ninja.com">← Back to Main Site</a>
+    </nav>
+  </header>
+
+  <!-- Main -->
+  <main>
+
+    <!-- Hero -->
+    <section class="hero">
+      <div class="hero-badge">
+        <span class="pulse"></span>
+        Security Tools
+      </div>
+      <h1>Making Cloud Security <span class="gradient-text">Simpler</span></h1>
+      <p>Interactive tools designed to demystify Microsoft cloud security. Build, visualise and understand Conditional Access policies — no deep expertise required.</p>
+    </section>
+
+    <!-- App cards -->
+    <div class="apps-grid">
+
+      <!-- CARD 1: Conditional Access Policy Builder -->
+      <a href="https://secninjaltd.github.io/Tools/CA-Builder/" class="app-card blue">
+        <div class="card-icon">🛡️</div>
+        <div class="card-label">Interactive Builder</div>
+        <h2 class="card-title">Conditional Access Policy Builder</h2>
+        <p class="card-desc">Design and visualise Entra ID Conditional Access policies step by step. Select identity types, target applications, and layer security controls — then see the real-time impact on your risk posture with a live threat analytics dashboard.</p>
+        <div class="card-tags">
+          <span class="tag">Entra ID</span>
+          <span class="tag">Zero Trust</span>
+          <span class="tag">Risk Scoring</span>
+          <span class="tag">MITRE ATT&CK</span>
+        </div>
+        <div class="card-cta">
+          Launch App <span class="cta-arrow">→</span>
+        </div>
+      </a>
+
+      <!-- CARD 2: Threat-First CA Builder -->
+      <a href="https://secninjaltd.github.io/Tools/Threat-First-CABuilder/" class="app-card red">
+        <div class="card-icon">🎯</div>
+        <div class="card-label">Threat-Driven Approach</div>
+        <h2 class="card-title">Threat-First CA Builder</h2>
+        <p class="card-desc">Start from the threats you're defending against, not the controls. Map real-world attack techniques to the Conditional Access policies that neutralise them — a threat-intelligence-led approach to building your Zero Trust strategy.</p>
+        <div class="card-tags">
+          <span class="tag">MITRE ATT&CK</span>
+          <span class="tag">Threat Modelling</span>
+          <span class="tag">Conditional Access</span>
+          <span class="tag">Defence Mapping</span>
+        </div>
+        <div class="card-cta">
+          Launch App <span class="cta-arrow">→</span>
+        </div>
+      </a>
+
+    </div>
+
+    <!-- Coming soon -->
+    <section class="coming-soon">
+      <div class="divider">
+        <div class="divider-line"></div>
+        <span class="divider-text">More Tools Coming Soon</span>
+        <div class="divider-line"></div>
+      </div>
+      <p class="coming-soon-desc">This hub will continue to grow with new interactive tools focused on simplifying Microsoft cloud security. Watch this space.</p>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <span>&copy; 2026 <a href="https://www.security-ninja.com">Security Ninja Ltd</a>. All rights reserved.</span>
+    <div class="footer-links">
+      <a href="https://www.security-ninja.com/blog">Blog</a>
+      <a href="https://www.security-ninja.com">Services</a>
+      <a href="https://www.security-ninja.com">Contact</a>
+    </div>
+  </footer>
+
+</div>
+
+</body>
+</html>
