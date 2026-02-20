@@ -3494,7 +3494,7 @@ function showConnectInfo() {
         <span style="color:var(--accent-ninja);font-weight:600;">3.</span> Under <strong style="color:var(--text-primary);">API permissions → Add permission → APIs my organization uses</strong>, search "WindowsDefenderATP" and add only required Defender permissions for enabled endpoints<br>
         <span style="color:var(--accent-ninja);font-weight:600;">4.</span> Click <strong style="color:var(--text-primary);">Grant admin consent</strong> for your tenant<br>
         <span style="color:var(--accent-ninja);font-weight:600;">5.</span> Note the <strong style="color:var(--text-primary);">Application (client) ID</strong> and <strong style="color:var(--text-primary);">Directory (tenant) ID</strong><br>
-        <span style="color:var(--accent-ninja);font-weight:600;">6.</span> Configure the Redirect URI to match your dashboard hosting URL<br>
+        <span style="color:var(--accent-ninja);font-weight:600;">6.</span> Under <strong style="color:var(--text-primary);">Authentication</strong>, add a <strong style="color:var(--text-primary);">Single-page application</strong> platform and configure the Redirect URI to match your dashboard hosting URL exactly<br>
         <span style="color:var(--accent-ninja);font-weight:600;">7.</span> Enter your Client ID and Tenant ID below to connect
       </div>
       <div style="margin-top:10px;font-size:11px;color:var(--text-muted);">
@@ -3565,10 +3565,23 @@ async function attemptConnect() {
     status.innerHTML = `<span style="color:var(--status-compliant);">Connected as ${account?.username || 'authenticated user'}. Graph token acquired (expires ${expiresOn}).</span>`;
   } catch (err) {
     const message = err && err.message ? err.message : 'Authentication failed.';
+    const isSpaClientTypeError =
+      message.includes('AADSTS9002326') ||
+      message.includes('9002326') ||
+      message.toLowerCase().includes('cross-origin token redemption');
     const hint = message.includes('MSAL library not loaded')
       ? ' Check internet access, browser/content-blockers, CSP policy, and that this page is served over http/https (not restricted local mode).'
       : '';
-    status.innerHTML = `<span style="color:var(--severity-high);">Connection failed: ${message}.${hint}</span>`;
+    const spaHint = isSpaClientTypeError
+      ? `
+      <br><br><strong>Fix in Entra App Registration:</strong>
+      <br>1) Authentication -> add platform <strong>Single-page application</strong> (not only Web).
+      <br>2) Add redirect URI exactly: <code>${resolveRedirectUri()}</code>
+      <br>3) If this app is browser-only, remove any client secret usage and keep MSAL SPA flow.
+      <br>4) In API permissions, grant admin consent, then retry.
+      `
+      : '';
+    status.innerHTML = `<span style="color:var(--severity-high);">Connection failed: ${message}.${hint}${spaHint}</span>`;
   }
 }
 
