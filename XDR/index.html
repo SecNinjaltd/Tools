@@ -1191,7 +1191,7 @@ body[data-active-view="policies"] .ca-policy-card .ca-policy-list {
   <div class="topnav-right">
     <div class="topnav-status">
       <span class="status-dot"></span>
-      <span>MOCK DATA</span>
+      <span id="dataModeLabel">MOCK DATA</span>
     </div>
     <button class="btn-connect" onclick="showConnectInfo()">Connect Tenant</button>
   </div>
@@ -1818,6 +1818,12 @@ const GRAPH_CONNECT_SCOPES = [
   'DeviceManagementManagedDevices.Read.All'
 ];
 
+const DEFENDER_CONNECT_SCOPE_CANDIDATES = [
+  ['https://api.securitycenter.microsoft.com/.default'],
+  ['https://api.securitycenter.microsoft.com/Machine.Read.All', 'https://api.securitycenter.microsoft.com/Vulnerability.Read.All', 'https://api.securitycenter.microsoft.com/Software.Read.All', 'https://api.securitycenter.microsoft.com/Score.Read.All'],
+  ['https://api.securitycenter.microsoft.com/Machine.Read', 'https://api.securitycenter.microsoft.com/Vulnerability.Read', 'https://api.securitycenter.microsoft.com/Software.Read', 'https://api.securitycenter.microsoft.com/Score.Read']
+];
+
 // Optional hard override if you want to force an exact redirect URI.
 // Example: 'https://tools.security-ninja.com/XDR/'
 const REDIRECT_URI_OVERRIDE = '';
@@ -1922,6 +1928,518 @@ async function getOrCreateMsalInstance(tenantId, clientId) {
   }
 
   return msalInstance;
+}
+
+function setDataModeLabel(text) {
+  const el = document.getElementById('dataModeLabel');
+  if (el) el.textContent = text;
+}
+
+async function acquireTokenWithFallback(app, account, scopes) {
+  try {
+    return await app.acquireTokenSilent({ scopes, account });
+  } catch (_silentErr) {
+    return app.acquireTokenPopup({ scopes, account, prompt: 'consent' });
+  }
+}
+
+async function acquireDefenderToken(app, account) {
+  let lastErr = null;
+  for (const scopes of DEFENDER_CONNECT_SCOPE_CANDIDATES) {
+    try {
+      const token = await acquireTokenWithFallback(app, account, scopes);
+      return { token, scopes };
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  throw lastErr || new Error('Unable to acquire Defender API token for configured scopes.');
+}
+
+async function graphGetAll(url, accessToken, maxPages = 10) {
+  let nextUrl = url;
+  let pages = 0;
+  const items = [];
+
+  while (nextUrl && pages < maxPages) {
+    const res = await fetch(nextUrl, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        Accept: 'application/json'
+      }
+    });
+
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error(`Graph request failed (${res.status}): ${body || res.statusText}`);
+    }
+
+    const payload = await res.json();
+    if (Array.isArray(payload.value)) items.push(...payload.value);
+    nextUrl = payload['@odata.nextLink'] || null;
+    pages += 1;
+  }
+
+  return items;
+}
+
+async function defenderGetAll(url, accessToken, maxPages = 10) {
+  let nextUrl = url;
+  let pages = 0;
+  const items = [];
+
+  while (nextUrl && pages < maxPages) {
+    const res = await fetch(nextUrl, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        Accept: 'application/json'
+      }
+    });
+
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error(`Defender API request failed (${res.status}): ${body || res.statusText}`);
+    }
+
+    const payload = await res.json();
+    if (Array.isArray(payload.value)) items.push(...payload.value);
+    else if (Array.isArray(payload.results)) items.push(...payload.results);
+    else if (Array.isArray(payload)) items.push(...payload);
+
+    nextUrl = payload['@odata.nextLink'] || payload.nextLink || null;
+    pages += 1;
+  }
+
+  return items;
+}
+
+async function defenderGetJson(url, accessToken) {
+  const res = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      Accept: 'application/json'
+    }
+  });
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Defender API request failed (${res.status}): ${body || res.statusText}`);
+  }
+
+  return res.json();
+}
+
+function classifyDeviceType(osText = '') {
+  const os = osText.toLowerCase();
+  if (os.includes('ios') || os.includes('android')) return 'Mobile';
+  if (os.includes('server')) return 'Server';
+  return 'Workstation';
+}
+
+function complianceToHealth(state = '') {
+  const s = String(state).toLowerCase();
+  if (s === 'compliant') return 'Healthy';
+  if (s === 'noncompliant' || s === 'error') return 'Critical';
+  return 'Warning';
+}
+
+function healthToRisk(health, isJailBroken) {
+  if (isJailBroken) return 90;
+  if (health === 'Critical') return 80;
+  if (health === 'Warning') return 52;
+  return 20;
+}
+
+function applyLiveDevices(managedDevices) {
+  if (!Array.isArray(managedDevices) || !managedDevices.length) return false;
+
+  const mapped = managedDevices.map((d, idx) => {
+    const osBase = d.operatingSystem || 'Unknown OS';
+    const osVersion = d.osVersion ? ` ${d.osVersion}` : '';
+    const os = `${osBase}${osVersion}`.trim();
+    const type = classifyDeviceType(osBase);
+    const health = complianceToHealth(d.complianceState);
+    const riskScore = healthToRisk(health, d.jailBroken);
+    const staleDays = d.lastSyncDateTime
+      ? Math.max(0, Math.floor((Date.now() - new Date(d.lastSyncDateTime).getTime()) / (24 * 60 * 60 * 1000)))
+      : 0;
+    const vulns = health === 'Critical' ? 10 + Math.min(12, staleDays) : health === 'Warning' ? 3 + Math.min(6, staleDays) : Math.min(2, staleDays);
+    const location = d.userPrincipalName && d.userPrincipalName.includes('@')
+      ? d.userPrincipalName.split('@')[1]
+      : 'Tenant';
+
+    return {
+      name: d.deviceName || d.managedDeviceName || `DEVICE-${idx + 1}`,
+      type,
+      os,
+      location,
+      health,
+      defenderVer: d.osVersion || d.partnerReportedThreatState || 'n/a',
+      vulns,
+      caPolicies: 1,
+      riskScore,
+      lastSeen: d.lastSyncDateTime || new Date().toISOString()
+    };
+  });
+
+  devices.splice(0, devices.length, ...mapped);
+  return true;
+}
+
+function summarizeDeviceDistributions() {
+  if (!devices.length) return;
+
+  const typeCounts = { Workstation: 0, Server: 0, Mobile: 0, Other: 0 };
+  const osCounts = {};
+  const healthCounts = { healthy: 0, warning: 0, critical: 0 };
+
+  devices.forEach(d => {
+    if (d.type === 'Workstation') typeCounts.Workstation += 1;
+    else if (d.type === 'Server') typeCounts.Server += 1;
+    else if (d.type === 'Mobile') typeCounts.Mobile += 1;
+    else typeCounts.Other += 1;
+
+    osCounts[d.os] = (osCounts[d.os] || 0) + 1;
+    const hk = String(d.health || '').toLowerCase();
+    if (healthCounts[hk] !== undefined) healthCounts[hk] += 1;
+  });
+
+  DEVICE_TYPE_DATA.splice(0, DEVICE_TYPE_DATA.length,
+    { label: 'Workstations', count: typeCounts.Workstation, color: '#1E3A5A' },
+    { label: 'Servers', count: typeCounts.Server, color: '#2F6FA8' },
+    { label: 'Mobile', count: typeCounts.Mobile, color: '#6A93B9' },
+    { label: 'IoT / Other', count: typeCounts.Other, color: '#9CB7D1' }
+  );
+
+  const topOs = Object.entries(osCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const osColors = ['#0EA5E9', '#22C55E', '#A855F7', '#F59E0B', '#EF4444'];
+  DEVICE_OS_DATA.splice(0, DEVICE_OS_DATA.length, ...topOs.map(([label, value], idx) => ({ label, value, color: osColors[idx] || '#6B7280' })));
+
+  const total = devices.length;
+  locations.splice(0, locations.length, {
+    name: 'Tenant',
+    flag: '🏢',
+    devices: total,
+    healthy: healthCounts.healthy,
+    warning: healthCounts.warning,
+    critical: healthCounts.critical
+  });
+
+  softwareInventory.splice(0, softwareInventory.length, ...topOs.map(([label, count], idx) => ({
+    name: label,
+    vendor: 'Microsoft Intune',
+    devices: count,
+    vulns: Math.max(0, Math.round(count * (idx < 2 ? 0.06 : 0.03))),
+    version: label.split(' ').slice(-1)[0] || 'n/a'
+  })));
+}
+
+function mapPolicyState(rawState) {
+  const s = String(rawState || '').toLowerCase();
+  if (s === 'enabledforreportingbutnotenforced') return 'report-only';
+  if (s === 'disabled') return 'disabled';
+  return 'enabled';
+}
+
+function normalizePolicyApplications(apps) {
+  if (!apps || !Array.isArray(apps.includeApplications) || !apps.includeApplications.length) return 'All cloud apps';
+  if (apps.includeApplications.includes('All')) return 'All cloud apps';
+  return apps.includeApplications.slice(0, 3).join(', ');
+}
+
+function normalizePolicyConditions(conditions) {
+  if (!conditions) return 'All platforms';
+  const p = conditions.platforms;
+  if (!p || !Array.isArray(p.includePlatforms) || !p.includePlatforms.length) return 'All platforms';
+  if (p.includePlatforms.includes('all')) return 'All platforms';
+  return p.includePlatforms.join(', ');
+}
+
+function normalizeGrantControls(grantControls) {
+  if (!grantControls) return 'None';
+  const controls = Array.isArray(grantControls.builtInControls) ? grantControls.builtInControls : [];
+  if (!controls.length) return 'None';
+  return controls.join(', ');
+}
+
+function normalizeSessionControls(sessionControls) {
+  if (!sessionControls || typeof sessionControls !== 'object') return 'None';
+  const enabled = Object.keys(sessionControls).filter(k => sessionControls[k] && sessionControls[k].isEnabled);
+  return enabled.length ? enabled.join(', ') : 'None';
+}
+
+function applyLivePolicies(policies) {
+  if (!Array.isArray(policies) || !policies.length) return false;
+  const totalUsers = Math.max(devices.length, 1);
+
+  const mapped = policies.map(p => {
+    const state = mapPolicyState(p.state);
+    const coverage = state === 'enabled' ? 95 : state === 'report-only' ? 65 : 5;
+    return {
+      name: p.displayName || p.id || 'Unnamed policy',
+      state,
+      coverage,
+      users: totalUsers,
+      apps: normalizePolicyApplications(p.conditions?.applications),
+      conditions: normalizePolicyConditions(p.conditions),
+      grantControls: normalizeGrantControls(p.grantControls),
+      sessionControls: normalizeSessionControls(p.sessionControls)
+    };
+  });
+
+  caPolicies.splice(0, caPolicies.length, ...mapped);
+  return true;
+}
+
+function alertSeverityToVulnSeverity(severity) {
+  const s = String(severity || '').toLowerCase();
+  if (s === 'high') return 'Critical';
+  if (s === 'medium') return 'High';
+  if (s === 'low') return 'Medium';
+  return 'Low';
+}
+
+function defenderSeverityToVulnSeverity(severity) {
+  const s = String(severity || '').toLowerCase();
+  if (s.includes('critical') || s.includes('high')) return 'Critical';
+  if (s.includes('medium')) return 'High';
+  if (s.includes('low')) return 'Medium';
+  return 'Low';
+}
+
+function defenderMachineHealth(machine = {}) {
+  const healthSignal = `${machine.healthStatus || ''} ${machine.machineHealthStatus || ''} ${machine.exposureLevel || ''}`.toLowerCase();
+  if (healthSignal.includes('critical') || healthSignal.includes('high') || healthSignal.includes('inactive')) return 'Critical';
+  if (healthSignal.includes('medium') || healthSignal.includes('warning') || healthSignal.includes('low')) return 'Warning';
+  return 'Healthy';
+}
+
+function defenderMachineRisk(machine = {}, health = 'Healthy') {
+  const numeric = Number(machine.riskScore);
+  if (Number.isFinite(numeric) && numeric > 0) return Math.max(1, Math.min(100, Math.round(numeric)));
+
+  const exposure = String(machine.exposureLevel || '').toLowerCase();
+  if (exposure.includes('high')) return 82;
+  if (exposure.includes('medium')) return 58;
+  if (exposure.includes('low')) return 34;
+
+  if (health === 'Critical') return 80;
+  if (health === 'Warning') return 52;
+  return 20;
+}
+
+function applyLiveDefenderMachines(machines) {
+  if (!Array.isArray(machines) || !machines.length) return false;
+
+  const mapped = machines.map((m, idx) => {
+    const os = [m.osPlatform || m.osDistribution || 'Unknown OS', m.version || m.osVersion || ''].filter(Boolean).join(' ').trim();
+    const type = classifyDeviceType(`${m.osPlatform || ''} ${m.osDistribution || ''}`);
+    const health = defenderMachineHealth(m);
+    const riskScore = defenderMachineRisk(m, health);
+
+    const location = m.lastIpCountry || m.lastExternalIpAddress || m.rbacGroupName || 'Tenant';
+    const lastSeen = m.lastSeen || m.lastSeenDateTime || new Date().toISOString();
+    const staleDays = lastSeen
+      ? Math.max(0, Math.floor((Date.now() - new Date(lastSeen).getTime()) / (24 * 60 * 60 * 1000)))
+      : 0;
+    const vulns = health === 'Critical' ? 10 + Math.min(12, staleDays) : health === 'Warning' ? 3 + Math.min(6, staleDays) : Math.min(2, staleDays);
+
+    return {
+      name: m.computerDnsName || m.deviceName || m.id || `MACHINE-${idx + 1}`,
+      type,
+      os,
+      location,
+      health,
+      defenderVer: m.version || m.agentVersion || m.osVersion || 'n/a',
+      vulns,
+      caPolicies: 1,
+      riskScore,
+      lastSeen
+    };
+  });
+
+  devices.splice(0, devices.length, ...mapped);
+  return true;
+}
+
+function applyLiveDefenderVulnerabilities(vulns) {
+  if (!Array.isArray(vulns) || !vulns.length) return false;
+
+  const byId = new Map();
+  vulns.forEach((v, idx) => {
+    const id = (v.cveId || v.id || `DEFENDER-VULN-${idx + 1}`).toString().toUpperCase();
+    const severity = defenderSeverityToVulnSeverity(v.severity || v.vulnerabilitySeverityLevel || v.severityLevel);
+    const existing = byId.get(id) || {
+      id,
+      title: v.name || v.title || 'Defender vulnerability',
+      severity,
+      cvss: Number(v.cvssScore) || severityToCvss(severity),
+      affectedDevices: 0,
+      software: v.productName || v.softwareName || 'Microsoft Defender',
+      published: (v.publishedOn || v.firstSeen || v.createdOn || new Date().toISOString()).slice(0, 10),
+      exploited: Boolean(v.exploitVerified || v.publicExploit || v.isExploited)
+    };
+
+    const affected = Number(v.exposedMachines || v.devicesCount || v.affectedMachines || v.machinesCount || 1);
+    existing.affectedDevices += Number.isFinite(affected) && affected > 0 ? affected : 1;
+
+    byId.set(id, existing);
+  });
+
+  const mapped = Array.from(byId.values())
+    .sort((a, b) => b.cvss - a.cvss || b.affectedDevices - a.affectedDevices)
+    .slice(0, 30);
+
+  vulnerabilities.splice(0, vulnerabilities.length, ...mapped);
+  return true;
+}
+
+function applyLiveDefenderSoftware(softwareRows) {
+  if (!Array.isArray(softwareRows) || !softwareRows.length) return false;
+
+  const mapped = softwareRows
+    .map((s, idx) => ({
+      name: s.name || s.softwareName || `Software ${idx + 1}`,
+      vendor: s.vendor || s.publisher || 'Unknown vendor',
+      devices: Number(s.deviceCount || s.exposedMachines || s.machinesCount || 0),
+      vulns: Number(s.vulnerabilitiesCount || s.cveCount || s.weaknesses || 0),
+      version: s.version || s.softwareVersion || 'n/a'
+    }))
+    .sort((a, b) => b.vulns - a.vulns || b.devices - a.devices)
+    .slice(0, 24);
+
+  softwareInventory.splice(0, softwareInventory.length, ...mapped);
+  return true;
+}
+
+function applyLiveExposureScore(payload) {
+  if (!payload) return false;
+
+  let score = null;
+  if (typeof payload.score === 'number') score = payload.score;
+  if (typeof payload.currentScore === 'number') score = payload.currentScore;
+  if (score === null && Array.isArray(payload.value) && payload.value.length) {
+    const row = payload.value[0] || {};
+    if (typeof row.score === 'number') score = row.score;
+    if (typeof row.currentScore === 'number') score = row.currentScore;
+  }
+
+  if (!Number.isFinite(score)) return false;
+
+  const valueEl = document.querySelector('.exec-card.critical .exec-value');
+  if (valueEl) valueEl.textContent = Number(score).toFixed(1);
+  return true;
+}
+
+function severityToCvss(sev) {
+  if (sev === 'Critical') return 9.0;
+  if (sev === 'High') return 7.5;
+  if (sev === 'Medium') return 5.5;
+  return 3.5;
+}
+
+function applyLiveAlerts(alerts) {
+  if (!Array.isArray(alerts) || !alerts.length) return false;
+
+  const byId = new Map();
+  alerts.forEach((a, idx) => {
+    const text = `${a.title || ''} ${a.description || ''}`;
+    const cveMatch = text.match(/CVE-\d{4}-\d{4,7}/i);
+    const id = cveMatch ? cveMatch[0].toUpperCase() : `ALERT-${String(a.id || idx + 1).slice(0, 8).toUpperCase()}`;
+    const severity = alertSeverityToVulnSeverity(a.severity);
+    const record = byId.get(id) || {
+      id,
+      title: a.title || 'Security alert',
+      severity,
+      cvss: severityToCvss(severity),
+      affectedDevices: 0,
+      software: a.productName || a.serviceSource || 'Microsoft 365',
+      published: (a.createdDateTime || new Date().toISOString()).slice(0, 10),
+      exploited: /exploited|zero-day|0day/i.test(text)
+    };
+
+    record.affectedDevices += Math.max(1, Array.isArray(a.evidence) ? a.evidence.length : 1);
+    byId.set(id, record);
+  });
+
+  const mapped = Array.from(byId.values())
+    .sort((a, b) => b.cvss - a.cvss || b.affectedDevices - a.affectedDevices)
+    .slice(0, 20);
+
+  vulnerabilities.splice(0, vulnerabilities.length, ...mapped);
+  return true;
+}
+
+async function loadLiveTenantData(graphAccessToken, defenderAccessToken) {
+  const tasks = [];
+
+  if (graphAccessToken) {
+    tasks.push(
+      { key: 'graphDevices', run: () => graphGetAll('https://graph.microsoft.com/v1.0/deviceManagement/managedDevices?$top=300', graphAccessToken, 10) },
+      { key: 'graphPolicies', run: () => graphGetAll('https://graph.microsoft.com/v1.0/identity/conditionalAccess/policies?$top=100', graphAccessToken, 5) },
+      { key: 'graphAlerts', run: () => graphGetAll('https://graph.microsoft.com/v1.0/security/alerts_v2?$top=100', graphAccessToken, 5) }
+    );
+  }
+
+  if (defenderAccessToken) {
+    tasks.push(
+      { key: 'defenderMachines', run: () => defenderGetAll('https://api.securitycenter.microsoft.com/api/machines?$top=300', defenderAccessToken, 10) },
+      { key: 'defenderVulns', run: () => defenderGetAll('https://api.securitycenter.microsoft.com/api/vulnerabilities?$top=300', defenderAccessToken, 10) },
+      { key: 'defenderSoftware', run: () => defenderGetAll('https://api.securitycenter.microsoft.com/api/Software?$top=300', defenderAccessToken, 10) },
+      { key: 'defenderExposure', run: () => defenderGetJson('https://api.securitycenter.microsoft.com/api/exposureScore', defenderAccessToken) }
+    );
+  }
+
+  if (!tasks.length) {
+    throw new Error('No API tokens available for Graph or Defender resources.');
+  }
+
+  const settled = await Promise.allSettled(tasks.map(t => t.run()));
+  const resultsByKey = {};
+  const errors = [];
+
+  settled.forEach((result, idx) => {
+    const key = tasks[idx].key;
+    if (result.status === 'fulfilled') resultsByKey[key] = result.value;
+    else errors.push(result.reason?.message || `${key} failed`);
+  });
+
+  const updated = {
+    graphDevices: resultsByKey.graphDevices ? applyLiveDevices(resultsByKey.graphDevices) : false,
+    defenderMachines: resultsByKey.defenderMachines ? applyLiveDefenderMachines(resultsByKey.defenderMachines) : false,
+    graphPolicies: resultsByKey.graphPolicies ? applyLivePolicies(resultsByKey.graphPolicies) : false,
+    graphAlerts: resultsByKey.graphAlerts ? applyLiveAlerts(resultsByKey.graphAlerts) : false,
+    defenderVulns: resultsByKey.defenderVulns ? applyLiveDefenderVulnerabilities(resultsByKey.defenderVulns) : false,
+    defenderSoftware: resultsByKey.defenderSoftware ? applyLiveDefenderSoftware(resultsByKey.defenderSoftware) : false,
+    defenderExposure: resultsByKey.defenderExposure ? applyLiveExposureScore(resultsByKey.defenderExposure) : false
+  };
+
+  if (updated.graphDevices || updated.defenderMachines) summarizeDeviceDistributions();
+  if (updated.defenderSoftware && resultsByKey.defenderSoftware) {
+    applyLiveDefenderSoftware(resultsByKey.defenderSoftware);
+  }
+  rerenderDashboard();
+
+  const sourceLabels = {
+    graphDevices: 'Graph managed devices',
+    graphPolicies: 'Graph conditional access',
+    graphAlerts: 'Graph alerts',
+    defenderMachines: 'Defender machines',
+    defenderVulns: 'Defender vulnerabilities',
+    defenderSoftware: 'Defender software inventory',
+    defenderExposure: 'Defender exposure score'
+  };
+
+  const sources = Object.entries(updated)
+    .filter(([, ok]) => ok)
+    .map(([key]) => sourceLabels[key] || key);
+
+  if (!sources.length) {
+    throw new Error(`Authenticated, but no supported live datasets were returned. ${errors.slice(0, 3).join(' | ')}`);
+  }
+
+  setDataModeLabel(errors.length ? 'PARTIAL LIVE' : 'LIVE DATA');
+  return { sources, errors };
 }
 let activePolicyFilter = 'all';
 
@@ -3554,15 +4072,38 @@ async function attemptConnect() {
     const account = loginResponse.account || app.getActiveAccount() || app.getAllAccounts()[0];
     if (account) app.setActiveAccount(account);
 
-    const tokenResponse = await app.acquireTokenSilent({
-      scopes: GRAPH_CONNECT_SCOPES,
-      account
-    });
+    const graphTokenResponse = await acquireTokenWithFallback(app, account, GRAPH_CONNECT_SCOPES);
 
-    const expiresOn = tokenResponse.expiresOn
-      ? new Date(tokenResponse.expiresOn).toLocaleString()
+    let defenderTokenResponse = null;
+    let defenderScopeUsed = null;
+    let defenderWarning = '';
+    try {
+      const defenderToken = await acquireDefenderToken(app, account);
+      defenderTokenResponse = defenderToken.token;
+      defenderScopeUsed = defenderToken.scopes.join(', ');
+    } catch (defenderErr) {
+      defenderWarning = defenderErr && defenderErr.message
+        ? ` Defender token unavailable: ${defenderErr.message}`
+        : ' Defender token unavailable: missing Defender API consent or scopes.';
+    }
+
+    status.innerHTML = '<span style="color:var(--text-secondary);">Authenticated. Pulling live Graph and Defender datasets...</span>';
+    const loaded = await loadLiveTenantData(
+      graphTokenResponse.accessToken,
+      defenderTokenResponse ? defenderTokenResponse.accessToken : null
+    );
+
+    const graphExpiresOn = graphTokenResponse.expiresOn
+      ? new Date(graphTokenResponse.expiresOn).toLocaleString()
       : 'n/a';
-    status.innerHTML = `<span style="color:var(--status-compliant);">Connected as ${account?.username || 'authenticated user'}. Graph token acquired (expires ${expiresOn}).</span>`;
+    const defenderExpiresOn = defenderTokenResponse && defenderTokenResponse.expiresOn
+      ? new Date(defenderTokenResponse.expiresOn).toLocaleString()
+      : 'n/a';
+    const loadWarnings = loaded.errors.length ? `<br>Some endpoints failed: ${loaded.errors.slice(0, 2).join(' | ')}` : '';
+    const defenderScopeHint = defenderScopeUsed ? `<br>Defender scopes used: <code>${defenderScopeUsed}</code>` : '';
+    const defenderTokenInfo = defenderTokenResponse ? ` Defender token expires ${defenderExpiresOn}.` : '';
+
+    status.innerHTML = `<span style="color:var(--status-compliant);">Connected as ${account?.username || 'authenticated user'}. Live data loaded from: ${loaded.sources.join(', ')}. Graph token expires ${graphExpiresOn}.${defenderTokenInfo}${defenderWarning}${defenderScopeHint}${loadWarnings}</span>`;
   } catch (err) {
     const message = err && err.message ? err.message : 'Authentication failed.';
     const isSpaClientTypeError =
@@ -3591,7 +4132,7 @@ document.addEventListener('keydown', (e) => {
 });
 
 // ===== INIT =====
-function init() {
+function rerenderDashboard() {
   renderVulnList();
   renderDeviceTypeSummary();
   renderDeviceOsSummary();
@@ -3611,6 +4152,10 @@ function init() {
   renderMitreCoverage();
   setupMitreInteractions();
   renderTrendChart();
+}
+
+function init() {
+  rerenderDashboard();
   applyView('overview');
 }
 
