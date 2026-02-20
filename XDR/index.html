@@ -1818,11 +1818,31 @@ const GRAPH_CONNECT_SCOPES = [
   'DeviceManagementManagedDevices.Read.All'
 ];
 
+// Optional hard override if you want to force an exact redirect URI.
+// Example: 'https://tools.security-ninja.com/XDR/'
+const REDIRECT_URI_OVERRIDE = '';
+
 function resolveRedirectUri() {
-  if (window.location.hostname === 'tools.security-ninja.com') {
-    return 'https://tools.security-ninja.com/XDR/';
+  if (REDIRECT_URI_OVERRIDE) {
+    return REDIRECT_URI_OVERRIDE;
   }
-  return window.location.origin;
+
+  const current = new URL(window.location.href);
+  current.search = '';
+  current.hash = '';
+
+  if (current.hostname === 'tools.security-ninja.com') {
+    // Keep the hosted dashboard redirect stable for app registration matching.
+    if (
+      current.pathname === '/' ||
+      current.pathname.toLowerCase() === '/xdr' ||
+      current.pathname.toLowerCase().startsWith('/xdr/')
+    ) {
+      return 'https://tools.security-ninja.com/XDR/';
+    }
+  }
+
+  return `${current.origin}${current.pathname}`;
 }
 
 function loadScriptOnce(src) {
