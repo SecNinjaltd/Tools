@@ -1193,6 +1193,7 @@ body[data-active-view="policies"] .ca-policy-card .ca-policy-list {
       <span class="status-dot"></span>
       <span id="dataModeLabel">MOCK DATA</span>
     </div>
+    <button class="btn-connect" onclick="refreshTenantData()">Refresh Data</button>
     <button class="btn-connect" onclick="showConnectInfo()">Connect Tenant</button>
   </div>
 </nav>
@@ -1220,33 +1221,33 @@ body[data-active-view="policies"] .ca-policy-card .ca-policy-list {
   <div class="exec-strip">
     <div class="exec-card critical" onclick="openDetail('exposure')">
       <div class="exec-label">Exposure Score</div>
-      <div class="exec-value critical">72.4</div>
-      <div class="exec-sub"><span class="trend-up">▲ 3.2</span> vs last week</div>
+      <div class="exec-value critical" id="execExposureValue">72.4</div>
+      <div class="exec-sub" id="execExposureSub"><span class="trend-up">▲ 3.2</span> vs last week</div>
     </div>
     <div class="exec-card warning" onclick="openDetail('criticalVulns')">
       <div class="exec-label">Critical Vulns</div>
-      <div class="exec-value warning">23</div>
-      <div class="exec-sub"><span class="trend-up">▲ 5</span> new this week</div>
+      <div class="exec-value warning" id="execCriticalVulnsValue">23</div>
+      <div class="exec-sub" id="execCriticalVulnsSub"><span class="trend-up">▲ 5</span> new this week</div>
     </div>
     <div class="exec-card good" onclick="openDetail('deviceCompliance')">
       <div class="exec-label">Device Compliance</div>
-      <div class="exec-value good">87%</div>
-      <div class="exec-sub"><span class="trend-down">▼ 2%</span> improvement</div>
+      <div class="exec-value good" id="execDeviceComplianceValue">87%</div>
+      <div class="exec-sub" id="execDeviceComplianceSub"><span class="trend-down">▼ 2%</span> improvement</div>
     </div>
     <div class="exec-card info" onclick="openDetail('totalDevices')">
       <div class="exec-label">Managed Devices</div>
-      <div class="exec-value info">1,247</div>
-      <div class="exec-sub">across 6 locations</div>
+      <div class="exec-value info" id="execManagedDevicesValue">1,247</div>
+      <div class="exec-sub" id="execManagedDevicesSub">across 6 locations</div>
     </div>
     <div class="exec-card neutral" onclick="openDetail('caPolicies')">
       <div class="exec-label">CA Policies Active</div>
-      <div class="exec-value neutral">18</div>
-      <div class="exec-sub">3 in report-only</div>
+      <div class="exec-value neutral" id="execPoliciesValue">18</div>
+      <div class="exec-sub" id="execPoliciesSub">3 in report-only</div>
     </div>
     <div class="exec-card mixed" onclick="openDetail('defenderCoverage')">
       <div class="exec-label">Defender Coverage</div>
-      <div class="exec-value mixed">94%</div>
-      <div class="exec-sub">78 devices outdated</div>
+      <div class="exec-value mixed" id="execDefenderCoverageValue">94%</div>
+      <div class="exec-sub" id="execDefenderCoverageSub">78 devices outdated</div>
     </div>
   </div>
 
@@ -1270,19 +1271,19 @@ body[data-active-view="policies"] .ca-policy-card .ca-policy-list {
       <div class="card-body">
         <div class="vuln-severity-grid">
           <div class="severity-cell crit" onclick="openDetail('vulnCritical')">
-            <div class="sev-count">23</div>
+            <div class="sev-count" id="sevCountCritical">23</div>
             <div class="sev-label">Critical</div>
           </div>
           <div class="severity-cell high" onclick="openDetail('vulnHigh')">
-            <div class="sev-count">67</div>
+            <div class="sev-count" id="sevCountHigh">67</div>
             <div class="sev-label">High</div>
           </div>
           <div class="severity-cell med" onclick="openDetail('vulnMedium')">
-            <div class="sev-count">142</div>
+            <div class="sev-count" id="sevCountMedium">142</div>
             <div class="sev-label">Medium</div>
           </div>
           <div class="severity-cell low" onclick="openDetail('vulnLow')">
-            <div class="sev-count">89</div>
+            <div class="sev-count" id="sevCountLow">89</div>
             <div class="sev-label">Low</div>
           </div>
         </div>
@@ -1810,18 +1811,38 @@ let riskCellCache = {};
 let riskMatrixMode = 'full';
 let msalInstance = null;
 let msalLoadPromise = null;
+let msalInstanceTenantId = '';
+let msalInstanceClientId = '';
+let lastConnectedContext = null;
+let liveExposureScore = null;
 
-const GRAPH_CONNECT_SCOPES = [
-  'SecurityAlert.Read.All',
-  'ThreatHunting.Read.All',
-  'Policy.Read.All',
-  'DeviceManagementManagedDevices.Read.All'
+const GRAPH_CONNECT_SCOPE_CANDIDATES = [
+  [
+    'https://graph.microsoft.com/SecurityAlert.Read.All',
+    'https://graph.microsoft.com/ThreatHunting.Read.All',
+    'https://graph.microsoft.com/Policy.Read.All',
+    'https://graph.microsoft.com/DeviceManagementManagedDevices.Read.All',
+    'openid',
+    'profile',
+    'offline_access'
+  ],
+  [
+    'SecurityAlert.Read.All',
+    'ThreatHunting.Read.All',
+    'Policy.Read.All',
+    'DeviceManagementManagedDevices.Read.All',
+    'openid',
+    'profile',
+    'offline_access'
+  ]
 ];
 
+const GRAPH_CONNECT_SCOPES = GRAPH_CONNECT_SCOPE_CANDIDATES[0];
+
 const DEFENDER_CONNECT_SCOPE_CANDIDATES = [
-  ['https://api.securitycenter.microsoft.com/.default'],
   ['https://api.securitycenter.microsoft.com/Machine.Read.All', 'https://api.securitycenter.microsoft.com/Vulnerability.Read.All', 'https://api.securitycenter.microsoft.com/Software.Read.All', 'https://api.securitycenter.microsoft.com/Score.Read.All'],
-  ['https://api.securitycenter.microsoft.com/Machine.Read', 'https://api.securitycenter.microsoft.com/Vulnerability.Read', 'https://api.securitycenter.microsoft.com/Software.Read', 'https://api.securitycenter.microsoft.com/Score.Read']
+  ['https://api.securitycenter.microsoft.com/Machine.Read', 'https://api.securitycenter.microsoft.com/Vulnerability.Read', 'https://api.securitycenter.microsoft.com/Software.Read', 'https://api.securitycenter.microsoft.com/Score.Read'],
+  ['https://api.securitycenter.microsoft.com/.default']
 ];
 
 // Optional hard override if you want to force an exact redirect URI.
@@ -1907,7 +1928,13 @@ async function ensureMsalLoaded() {
 }
 
 async function getOrCreateMsalInstance(tenantId, clientId) {
-  if (msalInstance) return msalInstance;
+  if (
+    msalInstance &&
+    msalInstanceTenantId.toLowerCase() === String(tenantId || '').toLowerCase() &&
+    msalInstanceClientId.toLowerCase() === String(clientId || '').toLowerCase()
+  ) {
+    return msalInstance;
+  }
 
   await ensureMsalLoaded();
   if (!window.msal || !window.msal.PublicClientApplication) throw new Error('MSAL library not loaded');
@@ -1926,6 +1953,8 @@ async function getOrCreateMsalInstance(tenantId, clientId) {
   if (typeof msalInstance.initialize === 'function') {
     await msalInstance.initialize();
   }
+  msalInstanceTenantId = tenantId;
+  msalInstanceClientId = clientId;
 
   return msalInstance;
 }
@@ -1954,6 +1983,19 @@ async function acquireDefenderToken(app, account) {
     }
   }
   throw lastErr || new Error('Unable to acquire Defender API token for configured scopes.');
+}
+
+async function acquireGraphToken(app, account) {
+  let lastErr = null;
+  for (const scopes of GRAPH_CONNECT_SCOPE_CANDIDATES) {
+    try {
+      const token = await acquireTokenWithFallback(app, account, scopes);
+      return { token, scopes };
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  throw lastErr || new Error('Unable to acquire Graph token for configured scopes.');
 }
 
 async function graphGetAll(url, accessToken, maxPages = 10) {
@@ -2325,6 +2367,7 @@ function applyLiveExposureScore(payload) {
   }
 
   if (!Number.isFinite(score)) return false;
+  liveExposureScore = Number(score);
 
   const valueEl = document.querySelector('.exec-card.critical .exec-value');
   if (valueEl) valueEl.textContent = Number(score).toFixed(1);
@@ -2397,10 +2440,14 @@ async function loadLiveTenantData(graphAccessToken, defenderAccessToken) {
   const settled = await Promise.allSettled(tasks.map(t => t.run()));
   const resultsByKey = {};
   const errors = [];
+  const succeeded = [];
 
   settled.forEach((result, idx) => {
     const key = tasks[idx].key;
-    if (result.status === 'fulfilled') resultsByKey[key] = result.value;
+    if (result.status === 'fulfilled') {
+      resultsByKey[key] = result.value;
+      succeeded.push(key);
+    }
     else errors.push(result.reason?.message || `${key} failed`);
   });
 
@@ -2435,13 +2482,76 @@ async function loadLiveTenantData(graphAccessToken, defenderAccessToken) {
     .map(([key]) => sourceLabels[key] || key);
 
   if (!sources.length) {
-    throw new Error(`Authenticated, but no supported live datasets were returned. ${errors.slice(0, 3).join(' | ')}`);
+    if (!succeeded.length) {
+      throw new Error(`Authenticated, but no supported live datasets were returned. ${errors.slice(0, 3).join(' | ')}`);
+    }
+    const fallbackSources = succeeded.map(key => sourceLabels[key] || key);
+    setDataModeLabel(errors.length ? 'PARTIAL LIVE' : 'LIVE DATA');
+    return { sources: fallbackSources, errors, noRows: true };
   }
 
   setDataModeLabel(errors.length ? 'PARTIAL LIVE' : 'LIVE DATA');
-  return { sources, errors };
+  return { sources, errors, noRows: false };
 }
 let activePolicyFilter = 'all';
+
+function renderVulnSeveritySummary() {
+  const counts = { critical: 0, high: 0, medium: 0, low: 0 };
+  vulnerabilities.forEach(v => {
+    const key = String(v.severity || '').toLowerCase();
+    if (counts[key] !== undefined) counts[key] += 1;
+  });
+
+  const criticalEl = document.getElementById('sevCountCritical');
+  const highEl = document.getElementById('sevCountHigh');
+  const mediumEl = document.getElementById('sevCountMedium');
+  const lowEl = document.getElementById('sevCountLow');
+
+  if (criticalEl) criticalEl.textContent = counts.critical.toLocaleString();
+  if (highEl) highEl.textContent = counts.high.toLocaleString();
+  if (mediumEl) mediumEl.textContent = counts.medium.toLocaleString();
+  if (lowEl) lowEl.textContent = counts.low.toLocaleString();
+}
+
+function renderExecutiveSummary() {
+  const criticalVulns = vulnerabilities.filter(v => String(v.severity).toLowerCase() === 'critical').length;
+  const totalDevices = devices.length;
+  const healthyDevices = devices.filter(d => String(d.health).toLowerCase() === 'healthy').length;
+  const compliancePct = totalDevices ? Math.round((healthyDevices / totalDevices) * 100) : 0;
+  const enabledPolicies = caPolicies.filter(p => p.state === 'enabled').length;
+  const reportOnlyPolicies = caPolicies.filter(p => p.state === 'report-only').length;
+  const likelyCurrentDefender = devices.filter(d => String(d.defenderVer).includes('24110') || String(d.defenderVer).includes('24112')).length;
+  const defenderCoverage = totalDevices ? Math.round((likelyCurrentDefender / totalDevices) * 100) : 0;
+  const outdatedDefender = Math.max(0, totalDevices - likelyCurrentDefender);
+  const avgRisk = totalDevices ? (devices.reduce((sum, d) => sum + Number(d.riskScore || 0), 0) / totalDevices) : 0;
+  const displayExposure = Number.isFinite(liveExposureScore) ? liveExposureScore : avgRisk;
+
+  const exposureValue = document.getElementById('execExposureValue');
+  const exposureSub = document.getElementById('execExposureSub');
+  const criticalValue = document.getElementById('execCriticalVulnsValue');
+  const criticalSub = document.getElementById('execCriticalVulnsSub');
+  const complianceValue = document.getElementById('execDeviceComplianceValue');
+  const complianceSub = document.getElementById('execDeviceComplianceSub');
+  const devicesValue = document.getElementById('execManagedDevicesValue');
+  const devicesSub = document.getElementById('execManagedDevicesSub');
+  const policiesValue = document.getElementById('execPoliciesValue');
+  const policiesSub = document.getElementById('execPoliciesSub');
+  const defenderValue = document.getElementById('execDefenderCoverageValue');
+  const defenderSub = document.getElementById('execDefenderCoverageSub');
+
+  if (exposureValue) exposureValue.textContent = displayExposure.toFixed(1);
+  if (exposureSub) exposureSub.innerHTML = `<span class="${displayExposure >= 60 ? 'trend-up' : 'trend-down'}">${displayExposure >= 60 ? '▲' : '▼'} ${Math.abs(displayExposure - 50).toFixed(1)}</span> risk index`;
+  if (criticalValue) criticalValue.textContent = criticalVulns.toLocaleString();
+  if (criticalSub) criticalSub.innerHTML = `${vulnerabilities.length.toLocaleString()} total tracked vulnerabilities`;
+  if (complianceValue) complianceValue.textContent = `${compliancePct}%`;
+  if (complianceSub) complianceSub.innerHTML = `${healthyDevices.toLocaleString()} healthy of ${totalDevices.toLocaleString()} devices`;
+  if (devicesValue) devicesValue.textContent = totalDevices.toLocaleString();
+  if (devicesSub) devicesSub.textContent = `across ${locations.length.toLocaleString()} locations`;
+  if (policiesValue) policiesValue.textContent = enabledPolicies.toLocaleString();
+  if (policiesSub) policiesSub.textContent = `${reportOnlyPolicies.toLocaleString()} in report-only`;
+  if (defenderValue) defenderValue.textContent = `${defenderCoverage}%`;
+  if (defenderSub) defenderSub.textContent = `${outdatedDefender.toLocaleString()} devices outdated`;
+}
 
 function renderVulnList() {
   const container = document.getElementById('vulnList');
@@ -4072,7 +4182,8 @@ async function attemptConnect() {
     const account = loginResponse.account || app.getActiveAccount() || app.getAllAccounts()[0];
     if (account) app.setActiveAccount(account);
 
-    const graphTokenResponse = await acquireTokenWithFallback(app, account, GRAPH_CONNECT_SCOPES);
+    const graphToken = await acquireGraphToken(app, account);
+    const graphTokenResponse = graphToken.token;
 
     let defenderTokenResponse = null;
     let defenderScopeUsed = null;
@@ -4100,10 +4211,13 @@ async function attemptConnect() {
       ? new Date(defenderTokenResponse.expiresOn).toLocaleString()
       : 'n/a';
     const loadWarnings = loaded.errors.length ? `<br>Some endpoints failed: ${loaded.errors.slice(0, 2).join(' | ')}` : '';
+    const noRowsHint = loaded.noRows ? '<br>Authenticated successfully, but endpoints returned 0 rows for mapped datasets.' : '';
     const defenderScopeHint = defenderScopeUsed ? `<br>Defender scopes used: <code>${defenderScopeUsed}</code>` : '';
+    const graphScopeHint = `<br>Graph scopes used: <code>${graphToken.scopes.join(', ')}</code>`;
     const defenderTokenInfo = defenderTokenResponse ? ` Defender token expires ${defenderExpiresOn}.` : '';
 
-    status.innerHTML = `<span style="color:var(--status-compliant);">Connected as ${account?.username || 'authenticated user'}. Live data loaded from: ${loaded.sources.join(', ')}. Graph token expires ${graphExpiresOn}.${defenderTokenInfo}${defenderWarning}${defenderScopeHint}${loadWarnings}</span>`;
+    lastConnectedContext = { tenantId, clientId };
+    status.innerHTML = `<span style="color:var(--status-compliant);">Connected as ${account?.username || 'authenticated user'}. Live data loaded from: ${loaded.sources.join(', ')}. Graph token expires ${graphExpiresOn}.${defenderTokenInfo}${defenderWarning}${graphScopeHint}${defenderScopeHint}${noRowsHint}${loadWarnings}</span>`;
   } catch (err) {
     const message = err && err.message ? err.message : 'Authentication failed.';
     const isSpaClientTypeError =
@@ -4126,6 +4240,64 @@ async function attemptConnect() {
   }
 }
 
+async function refreshTenantData() {
+  const overlayStatus = document.getElementById('connectStatus');
+
+  if (!lastConnectedContext || !lastConnectedContext.tenantId || !lastConnectedContext.clientId) {
+    if (overlayStatus) {
+      overlayStatus.innerHTML = '<span style="color:var(--severity-high);">Connect a tenant first, then use Refresh Data.</span>';
+    } else {
+      alert('Connect a tenant first, then use Refresh Data.');
+    }
+    return;
+  }
+
+  const { tenantId, clientId } = lastConnectedContext;
+  const app = await getOrCreateMsalInstance(tenantId, clientId);
+  const account = app.getActiveAccount() || app.getAllAccounts()[0];
+  if (!account) {
+    if (overlayStatus) {
+      overlayStatus.innerHTML = '<span style="color:var(--severity-high);">No active signed-in account found. Reconnect tenant.</span>';
+    } else {
+      alert('No active signed-in account found. Reconnect tenant.');
+    }
+    return;
+  }
+
+  setDataModeLabel('REFRESHING...');
+  if (overlayStatus) {
+    overlayStatus.innerHTML = '<span style="color:var(--text-secondary);">Refreshing live datasets...</span>';
+  }
+
+  try {
+    const graphToken = await acquireGraphToken(app, account);
+    let defenderTokenResponse = null;
+    try {
+      const defenderToken = await acquireDefenderToken(app, account);
+      defenderTokenResponse = defenderToken.token;
+    } catch (_defenderErr) {
+      // Graph refresh can still succeed without Defender token.
+    }
+
+    const loaded = await loadLiveTenantData(
+      graphToken.token.accessToken,
+      defenderTokenResponse ? defenderTokenResponse.accessToken : null
+    );
+
+    if (overlayStatus) {
+      overlayStatus.innerHTML = `<span style="color:var(--status-compliant);">Refresh complete. Updated from: ${loaded.sources.join(', ')}${loaded.noRows ? ' (0 rows returned)' : ''}.</span>`;
+    }
+  } catch (err) {
+    setDataModeLabel('PARTIAL LIVE');
+    const message = err && err.message ? err.message : 'Refresh failed.';
+    if (overlayStatus) {
+      overlayStatus.innerHTML = `<span style="color:var(--severity-high);">Refresh failed: ${message}</span>`;
+    } else {
+      alert(`Refresh failed: ${message}`);
+    }
+  }
+}
+
 // ===== KEYBOARD SHORTCUTS =====
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') closeDetail();
@@ -4133,6 +4305,8 @@ document.addEventListener('keydown', (e) => {
 
 // ===== INIT =====
 function rerenderDashboard() {
+  renderExecutiveSummary();
+  renderVulnSeveritySummary();
   renderVulnList();
   renderDeviceTypeSummary();
   renderDeviceOsSummary();
