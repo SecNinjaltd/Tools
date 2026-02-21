@@ -1,582 +1,2740 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Security Ninja | Tools & Apps</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg: #090e1a;
-    --surface: #0d1526;
-    --surface-alt: #111d35;
-    --border: #1e3a5f;
-    --accent: #3b82f6;
-    --accent-bright: #60a5fa;
-    --success: #10b981;
-    --warning: #f59e0b;
-    --danger: #ef4444;
-    --text: #e2e8f0;
-    --text-muted: #64748b;
-    --text-dim: #94a3b8;
-    --purple: #a855f7;
-    --gradient-1: linear-gradient(135deg, #3b82f6, #8b5cf6);
-    --gradient-2: linear-gradient(135deg, #ef4444, #f97316);
-  }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Threat-First CA Policy Builder</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f7fafd;
+            --bg-card: #ffffff;
+            --bg-card-hover: #f3f8fd;
+            --bg-elevated: #eaf3fb;
+            --border: #c8d9ea;
+            --border-subtle: #dce8f3;
+            --text-primary: #13263c;
+            --text-secondary: #42617f;
+            --text-muted: #6683a1;
+            --accent-ninja: #1e3a5a;
+            --accent-ninja-dim: rgba(30,58,90,0.12);
+            --accent-ninja-glow: rgba(30,58,90,0.25);
+            --cell-grad-main: linear-gradient(135deg, #0B1726 0%, #12263C 60%, #1E3A5A 100%);
+            --cell-grad-sub: linear-gradient(135deg, #edf5fc 0%, #e1edf8 100%);
+            --cell-grad-sub-hover: linear-gradient(135deg, #e5f0fb 0%, #d7e7f6 100%);
+            --severity-critical: #ef4444;
+            --severity-high: #ff7b42;
+            --severity-medium: #ffb830;
+            --severity-low: #4dc9f6;
+            --severity-info: #7c8db0;
+            --status-compliant: #00e5a0;
+            --status-warning: #ffb830;
+            --status-noncompliant: #ef4444;
+            --radius: 10px;
+            --radius-sm: 6px;
+            --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            --nav-title: #f0f7ff;
+            --nav-subtitle: #c6daee;
+            --nav-border: #21486d;
+            --btn-secondary-bg: rgba(255, 255, 255, 0.12);
+            --btn-secondary-border: rgba(189, 213, 234, 0.5);
+            --btn-secondary-text: #e4f0fb;
+            --btn-danger-bg: #ef4444;
+            --btn-danger-border: #ef4444;
+            --btn-danger-text: #ffffff;
+            --surface-soft: #edf5fc;
+            --surface-soft-border: #c8d9ea;
+            --card-shadow: 0 4px 24px rgba(16, 36, 60, 0.06);
+            --elev-step1: 0 2px 12px rgba(16, 36, 60, 0.05);
+            --elev-analysis: 0 6px 24px rgba(16, 36, 60, 0.08);
+            --elev-builder: 0 8px 28px rgba(16, 36, 60, 0.1);
+            --hover-lift: translateY(-1px);
+            --hover-border: #3b82f6;
+            --hover-surface: var(--bg-card-hover);
+            --theme-control-bg: rgba(255,255,255,0.12);
+            --theme-control-border: rgba(189,213,234,0.5);
+            --theme-control-text: #e4f0fb;
+            --outline-gradient: linear-gradient(135deg, #15314d 0%, #21486d 55%, #2d5a84 100%);
+        }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Outfit', sans-serif;
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
 
-  /* Animated background grid */
-  .bg-grid {
-    position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px);
-    background-size: 60px 60px;
-    pointer-events: none;
-    z-index: 0;
-  }
+        .topnav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            height: 71px;
+            min-height: 71px;
+            background: var(--cell-grad-main);
+            border-bottom: 1px solid var(--nav-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 18px;
+            padding: 4px 28px;
+            overflow: hidden;
+        }
 
-  /* Glowing orbs */
-  .orb {
-    position: fixed;
-    border-radius: 50%;
-    filter: blur(120px);
-    pointer-events: none;
-    z-index: 0;
-    animation: orbFloat 20s ease-in-out infinite;
-  }
-  .orb-1 {
-    width: 500px; height: 500px;
-    background: rgba(59,130,246,0.08);
-    top: -10%; left: -5%;
-  }
-  .orb-2 {
-    width: 400px; height: 400px;
-    background: rgba(139,92,246,0.06);
-    bottom: -10%; right: -5%;
-    animation-delay: -10s;
-  }
-  .orb-3 {
-    width: 300px; height: 300px;
-    background: rgba(239,68,68,0.04);
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    animation-delay: -5s;
-  }
+        .topnav-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+            font-size: 15px;
+            letter-spacing: -0.3px;
+        }
 
-  @keyframes orbFloat {
-    0%, 100% { transform: translate(0, 0) scale(1); }
-    33% { transform: translate(30px, -20px) scale(1.05); }
-    66% { transform: translate(-20px, 15px) scale(0.95); }
-  }
+        .topnav-logo {
+            width: 240px;
+            height: 240px;
+            object-fit: contain;
+            display: block;
+        }
 
-  .page-wrapper {
-    position: relative;
-    z-index: 1;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-  }
+        .topnav-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--nav-subtitle);
+            font-size: 12px;
+            font-family: 'JetBrains Mono', monospace;
+        }
 
-  /* Header */
-  header {
-    padding: 20px 40px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-bottom: 1px solid rgba(30,58,95,0.5);
-    backdrop-filter: blur(20px);
-    background: rgba(9,14,26,0.7);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
+        .theme-select {
+            border: 1px solid var(--theme-control-border);
+            background: var(--theme-control-bg);
+            color: var(--theme-control-text);
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            font-family: inherit;
+            padding: 4px 8px;
+            outline: none;
+            cursor: pointer;
+            transition: var(--transition);
+        }
 
-  .logo-area {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
+        .theme-select:hover {
+            border-color: var(--hover-border);
+            transform: var(--hover-lift);
+        }
 
-  .logo-area img {
-    height: 40px;
-    width: auto;
-  }
+        .topnav-main {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
 
-  .logo-divider {
-    width: 1px;
-    height: 28px;
-    background: var(--border);
-  }
+        .topnav-copy {
+            min-width: 0;
+        }
 
-  .logo-sub {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.15em;
-    color: var(--accent-bright);
-    text-transform: uppercase;
-  }
+        .topnav-title {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--nav-title);
+            line-height: 1.1;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
 
-  .header-nav a {
-    color: var(--text-dim);
-    text-decoration: none;
-    font-size: 13px;
-    font-weight: 500;
-    letter-spacing: 0.02em;
-    transition: color 0.2s;
-  }
-  .header-nav a:hover {
-    color: var(--accent-bright);
-  }
+        .topnav-subtitle {
+            font-size: 12px;
+            color: var(--nav-subtitle);
+        }
 
-  /* Main content */
-  main {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 80px 40px 60px;
-  }
+        .topnav-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
 
-  /* Hero */
-  .hero {
-    text-align: center;
-    max-width: 720px;
-    margin-bottom: 72px;
-  }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-ninja);
+            box-shadow: 0 0 8px var(--accent-ninja-glow);
+            animation: pulse-dot 2s infinite;
+        }
 
-  .hero-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 16px;
-    border-radius: 100px;
-    border: 1px solid rgba(59,130,246,0.25);
-    background: rgba(59,130,246,0.08);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--accent-bright);
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    margin-bottom: 28px;
-    animation: fadeInDown 0.6s ease-out;
-  }
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.45; }
+        }
 
-  .hero-badge .pulse {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--success);
-    animation: pulse 2s ease-in-out infinite;
-  }
+        .main-content {
+            margin-top: 84px;
+            padding: 20px 24px 40px;
+        }
 
-  @keyframes pulse {
-    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(16,185,129,0.4); }
-    50% { opacity: 0.7; box-shadow: 0 0 0 6px rgba(16,185,129,0); }
-  }
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+        }
 
-  .hero h1 {
-    font-size: 48px;
-    font-weight: 800;
-    line-height: 1.1;
-    margin-bottom: 20px;
-    letter-spacing: -0.02em;
-    animation: fadeInDown 0.6s ease-out 0.1s both;
-  }
+        .header {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 18px 20px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
 
-  .hero h1 .gradient-text {
-    background: var(--gradient-1);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
+        .header-title {
+            font-size: 26px;
+            font-weight: 800;
+            margin-bottom: 6px;
+            color: #f0f7ff;
+        }
 
-  .hero p {
-    font-size: 17px;
-    line-height: 1.7;
-    color: var(--text-dim);
-    max-width: 560px;
-    margin: 0 auto;
-    animation: fadeInDown 0.6s ease-out 0.2s both;
-  }
+        .header-subtitle {
+            font-size: 12px;
+            color: #c6daee;
+        }
 
-  @keyframes fadeInDown {
-    from { opacity: 0; transform: translateY(-16px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
+        .header-buttons {
+            display: flex;
+            gap: 8px;
+        }
 
-  /* App cards grid */
-  .apps-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
-    gap: 28px;
-    width: 100%;
-    max-width: 900px;
-    animation: fadeIn 0.6s ease-out 0.3s both;
-  }
+        .btn {
+            padding: 7px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 10px;
+            font-weight: 600;
+            font-family: inherit;
+            transition: var(--transition);
+            border: 1px solid;
+        }
 
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
+        .btn:hover {
+            transform: var(--hover-lift);
+            filter: brightness(1.05);
+        }
 
-  .app-card {
-    position: relative;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 36px 32px 32px;
-    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    text-decoration: none;
-    color: inherit;
-    cursor: pointer;
-  }
+        .btn-secondary {
+            background: var(--btn-secondary-bg);
+            border-color: var(--btn-secondary-border);
+            color: var(--btn-secondary-text);
+        }
 
-  .app-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 3px;
-    border-radius: 16px 16px 0 0;
-    opacity: 0;
-    transition: opacity 0.35s;
-  }
+        .btn-danger {
+            background: var(--btn-danger-bg);
+            border-color: var(--btn-danger-border);
+            color: var(--btn-danger-text);
+        }
 
-  .app-card:hover::before {
-    opacity: 1;
-  }
+        .section {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 24px;
+            border: 1px solid var(--border);
+            margin-bottom: 24px;
+            box-shadow: var(--card-shadow);
+            position: relative;
+            overflow: hidden;
+        }
 
-  .app-card.blue::before { background: var(--gradient-1); }
-  .app-card.red::before { background: var(--gradient-2); }
+        .section-accented {
+            background: var(--bg-card);
+        }
 
-  .app-card:hover {
-    border-color: rgba(59,130,246,0.3);
-    transform: translateY(-4px);
-    box-shadow: 0 20px 60px -20px rgba(59,130,246,0.15);
-  }
+        .xdr-header-band {
+            padding: 14px 18px;
+            border-bottom: 1px solid #21486d;
+            background: var(--cell-grad-main);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: -24px -24px 16px -24px;
+            border-radius: 10px 10px 0 0;
+        }
 
-  .app-card.red:hover {
-    border-color: rgba(239,68,68,0.3);
-    box-shadow: 0 20px 60px -20px rgba(239,68,68,0.15);
-  }
+        .xdr-header-title {
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: -0.2px;
+            color: #e9f3fc;
+        }
 
-  /* Card glow effect */
-  .app-card::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: 16px;
-    opacity: 0;
-    transition: opacity 0.35s;
-    pointer-events: none;
-  }
+        #step1-section .xdr-header-band {
+            margin: -16px -18px 12px -18px;
+        }
 
-  .app-card.blue::after {
-    background: radial-gradient(circle at 50% 0%, rgba(59,130,246,0.06), transparent 70%);
-  }
-  .app-card.red::after {
-    background: radial-gradient(circle at 50% 0%, rgba(239,68,68,0.06), transparent 70%);
-  }
-  .app-card:hover::after { opacity: 1; }
+        .drop-zone .xdr-header-band {
+            margin: -32px -32px 16px -32px;
+            border-radius: 14px 14px 0 0;
+        }
 
-  .card-icon {
-    width: 56px; height: 56px;
-    border-radius: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-    margin-bottom: 24px;
-    position: relative;
-    z-index: 1;
-  }
+        .section-title {
+            font-size: 11px;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+            font-weight: 700;
+        }
 
-  .app-card.blue .card-icon {
-    background: rgba(59,130,246,0.12);
-    border: 1px solid rgba(59,130,246,0.2);
-  }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
 
-  .app-card.red .card-icon {
-    background: rgba(239,68,68,0.12);
-    border: 1px solid rgba(239,68,68,0.2);
-  }
+        #step1-section {
+            padding: 16px 18px;
+            box-shadow: var(--elev-step1);
+        }
 
-  .card-label {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    margin-bottom: 10px;
-    position: relative;
-    z-index: 1;
-  }
+        #analysis-section {
+            box-shadow: var(--elev-analysis);
+            background: var(--bg-card-hover);
+        }
 
-  .app-card.blue .card-label { color: var(--accent-bright); }
-  .app-card.red .card-label { color: #f87171; }
+        #builder-section .threat-palette,
+        #builder-section #drop-zone,
+        #builder-section #controls-section,
+        #builder-section .sidebar-card {
+            box-shadow: var(--elev-builder);
+        }
 
-  .card-title {
-    font-size: 22px;
-    font-weight: 700;
-    line-height: 1.3;
-    margin-bottom: 14px;
-    position: relative;
-    z-index: 1;
-  }
+        .step1-header {
+            display: block;
+            margin-bottom: 12px;
+        }
 
-  .card-desc {
-    font-size: 14px;
-    line-height: 1.65;
-    color: var(--text-dim);
-    flex: 1;
-    margin-bottom: 28px;
-    position: relative;
-    z-index: 1;
-  }
+        .step1-hint {
+            font-size: 10px;
+            color: var(--text-secondary);
+            background: var(--surface-soft);
+            border: 1px solid var(--surface-soft-border);
+            border-radius: 999px;
+            padding: 4px 10px;
+            white-space: nowrap;
+            box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.15);
+            display: inline-flex;
+            margin-top: 2px;
+        }
 
-  .card-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-bottom: 24px;
-    position: relative;
-    z-index: 1;
-  }
+        .step1-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
 
-  .tag {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 9px;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    padding: 4px 10px;
-    border-radius: 6px;
-    background: var(--surface-alt);
-    border: 1px solid var(--border);
-    color: var(--text-muted);
-  }
+        .step1-col-title {
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
 
-  .card-cta {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    font-weight: 600;
-    position: relative;
-    z-index: 1;
-    transition: gap 0.3s;
-  }
+        .scope-options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
 
-  .app-card.blue .card-cta { color: var(--accent-bright); }
-  .app-card.red .card-cta { color: #f87171; }
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 400px 1fr 320px;
+            gap: 24px;
+        }
 
-  .app-card:hover .card-cta { gap: 12px; }
+        .identity-option, .target-option {
+            padding: 16px;
+            background: var(--surface-soft);
+            border: 2px solid var(--surface-soft-border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            cursor: pointer;
+            text-align: left;
+            font-family: inherit;
+            transition: all 0.2s;
+            width: 100%;
+        }
 
-  .cta-arrow {
-    transition: transform 0.3s;
-    font-size: 16px;
-  }
+        .scope-option {
+            padding: 10px 11px;
+            border-radius: 10px;
+        }
 
-  .app-card:hover .cta-arrow { transform: translateX(4px); }
+        .scope-option .option-header {
+            gap: 8px;
+            margin-bottom: 6px;
+        }
 
-  /* Coming soon section */
-  .coming-soon {
-    margin-top: 64px;
-    text-align: center;
-    max-width: 900px;
-    width: 100%;
-    animation: fadeIn 0.6s ease-out 0.4s both;
-  }
+        .scope-option .option-icon {
+            font-size: 18px;
+            line-height: 1;
+        }
 
-  .divider {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    margin-bottom: 32px;
-  }
+        .scope-option .option-label {
+            font-size: 12px;
+            line-height: 1.2;
+        }
 
-  .divider-line {
-    flex: 1;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, var(--border), transparent);
-  }
+        .scope-option .option-desc {
+            font-size: 9px;
+            line-height: 1.25;
+        }
 
-  .divider-text {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.2em;
-    color: var(--text-muted);
-    text-transform: uppercase;
-  }
+        .scope-option .risk-badge {
+            font-size: 9px;
+            padding: 2px 6px;
+        }
 
-  .coming-soon-desc {
-    font-size: 14px;
-    color: var(--text-muted);
-    line-height: 1.6;
-    max-width: 480px;
-    margin: 0 auto;
-  }
+        .identity-option:hover, .target-option:hover {
+            border-color: var(--hover-border);
+            transform: var(--hover-lift);
+            background: var(--hover-surface);
+        }
 
-  /* Footer */
-  footer {
-    padding: 28px 40px;
-    border-top: 1px solid rgba(30,58,95,0.4);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    font-size: 12px;
-    color: var(--text-muted);
-    backdrop-filter: blur(12px);
-    background: rgba(9,14,26,0.5);
-  }
+        .identity-option.selected, .target-option.selected {
+            background: rgba(59, 130, 246, 0.2);
+            border-color: #3b82f6;
+        }
 
-  footer a {
-    color: var(--accent-bright);
-    text-decoration: none;
-    transition: color 0.2s;
-  }
-  footer a:hover { color: var(--accent); }
+        .option-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
 
-  .footer-links {
-    display: flex;
-    gap: 24px;
-  }
+        .option-icon {
+            font-size: 24px;
+        }
 
-  /* Responsive */
-  @media (max-width: 860px) {
-    .apps-grid {
-      grid-template-columns: 1fr;
-      max-width: 480px;
-    }
-    .hero h1 { font-size: 36px; }
-    header { padding: 16px 24px; }
-    main { padding: 48px 20px 40px; }
-    footer { padding: 20px 24px; flex-direction: column; gap: 12px; }
-  }
+        .option-label {
+            font-size: 14px;
+            font-weight: 700;
+            flex: 1;
+        }
 
-  @media (max-width: 480px) {
-    .hero h1 { font-size: 28px; }
-    .hero p { font-size: 15px; }
-    .app-card { padding: 28px 24px 24px; }
-    .card-title { font-size: 19px; }
-    .apps-grid { min-width: 0; grid-template-columns: 1fr; }
-  }
-</style>
+        .option-desc {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .risk-badge {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            border: 1px solid;
+        }
+
+        .risk-high {
+            background: #ef4444;
+            border-color: #ef4444;
+            color: #ffffff;
+        }
+
+        .risk-medium {
+            background: rgba(245, 158, 11, 0.2);
+            border-color: #f59e0b;
+            color: #f59e0b;
+        }
+
+        .risk-low {
+            background: #10b981;
+            border-color: #10b981;
+            color: #ffffff;
+        }
+
+        .threat-palette {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 20px;
+            border: 1px solid var(--border);
+            max-height: calc(100vh - 300px);
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .threat-item {
+            padding: 12px;
+            margin-bottom: 10px;
+            background: linear-gradient(145deg, #7f1d1d 0%, #b91c1c 58%, #dc2626 100%);
+            border: 2px solid #ef4444;
+            border-radius: 8px;
+            cursor: grab;
+            transition: var(--transition);
+        }
+
+        .threat-item:active {
+            cursor: grabbing;
+        }
+
+        .threat-item.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            background: rgba(100, 116, 139, 0.2);
+            border-color: var(--text-muted);
+        }
+
+        .threat-item:not(.disabled):hover {
+            transform: var(--hover-lift);
+            filter: brightness(1.02);
+        }
+
+        .threat-header {
+            display: flex;
+            align-items: start;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+
+        .threat-id {
+            font-size: 9px;
+            font-family: monospace;
+            font-weight: 700;
+            color: #ef4444;
+            background: var(--surface-soft);
+            padding: 2px 6px;
+            border-radius: 3px;
+            display: inline-flex;
+            width: fit-content;
+        }
+
+        .severity-badge {
+            font-size: 8px;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: 700;
+        }
+
+        .severity-high {
+            background: linear-gradient(135deg, #17324d 0%, #224b72 55%, #2f679a 100%);
+            border: 1px solid #4f7ea8;
+            color: #ffffff;
+        }
+
+        .severity-medium {
+            background: linear-gradient(135deg, #1a3754 0%, #28557f 55%, #3674ad 100%);
+            border: 1px solid #5b88af;
+            color: #ffffff;
+        }
+
+        .severity-low {
+            background: linear-gradient(135deg, #1d3d5c 0%, #2d5d8a 55%, #3c7cb7 100%);
+            border: 1px solid #6692b7;
+            color: #ffffff;
+        }
+
+        .threat-name {
+            font-size: 11px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .threat-tactic {
+            font-size: 9px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .threat-desc {
+            font-size: 8px;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+
+        .threat-item .threat-name,
+        .dropped-threat .threat-name {
+            color: #ffffff;
+        }
+
+        .threat-item .threat-tactic,
+        .dropped-threat .threat-tactic {
+            color: #ffd7d7;
+        }
+
+        .threat-item .threat-desc,
+        .dropped-threat .threat-desc {
+            color: #ffe5e5;
+        }
+
+        .drop-zone {
+            background: var(--bg-card);
+            border: 2px dashed var(--border);
+            border-radius: 16px;
+            padding: 32px;
+            min-height: 200px;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .drop-zone.drag-over {
+            background: #fee2e2;
+            border-color: #ef4444;
+        }
+
+        .drop-zone-empty {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 120px;
+            color: var(--text-muted);
+            font-size: 14px;
+            font-style: italic;
+        }
+
+        .dropped-threats {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+        }
+
+        .dropped-threat {
+            background: linear-gradient(145deg, #7f1d1d 0%, #b91c1c 58%, #dc2626 100%);
+            border: 2px solid #ef4444;
+            border-radius: 12px;
+            padding: 12px;
+            position: relative;
+        }
+
+        .remove-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: #ef4444;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .control-card {
+            background: var(--surface-soft);
+            border-radius: 12px;
+            padding: 11px;
+            transition: var(--transition);
+            display: flex;
+            gap: 8px;
+        }
+
+        .control-card:hover {
+            transform: var(--hover-lift);
+            background: var(--hover-surface);
+        }
+
+        .control-stripe {
+            width: 4px;
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+
+        .control-content {
+            flex: 1;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 6px;
+        }
+
+        .control-label {
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 3px;
+        }
+
+        .control-desc {
+            font-size: 9px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .control-why {
+            font-size: 8px;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+
+        .risk-reduction-badge {
+            padding: 4px 8px;
+            background: #10b981;
+            border: 1px solid #10b981;
+            border-radius: 6px;
+            font-size: 8px;
+            font-weight: 700;
+            color: #ffffff;
+            white-space: nowrap;
+        }
+
+        .threat-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-bottom: 6px;
+        }
+
+        .threat-tag {
+            font-size: 7px;
+            padding: 3px 6px;
+            border-radius: 4px;
+            background: #10b981;
+            color: #ffffff;
+            font-family: monospace;
+            font-weight: 600;
+        }
+
+        .best-practice-box {
+            font-size: 8px;
+            padding: 8px;
+            background: rgba(59, 130, 246, 0.08);
+            border-radius: 6px;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            color: #ffffff;
+        }
+
+        #controls-list {
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px !important;
+        }
+
+        .sidebar {
+            position: sticky;
+            top: 112px;
+            height: fit-content;
+        }
+
+        .sidebar-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 14px;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sidebar-card:hover {
+            transform: var(--hover-lift);
+            border-color: var(--hover-border);
+        }
+
+        .risk-meters {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            margin-bottom: 14px;
+        }
+
+        .risk-meter {
+            position: relative;
+            width: 70px;
+            height: 70px;
+        }
+
+        .risk-meter-label {
+            font-size: 8px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            text-align: center;
+        }
+
+        .risk-arrow {
+            font-size: 18px;
+            color: #60a5fa;
+        }
+
+        .risk-reduction {
+            text-align: center;
+            padding: 8px;
+            background: #10b981;
+            border-radius: 6px;
+            border: 1px solid #10b981;
+        }
+
+        .risk-reduction-text {
+            font-size: 10px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: var(--border);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 6px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #60a5fa);
+            transition: width 0.5s;
+        }
+
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 100;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            border-radius: 16px;
+            max-width: 900px;
+            max-height: 90vh;
+            overflow: auto;
+            border: 2px solid var(--border);
+        }
+
+        .modal-header {
+            position: sticky;
+            top: 0;
+            background: var(--bg-card);
+            padding: 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .bp-card {
+            background: var(--surface-soft);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            border: 1px solid var(--border);
+        }
+
+        .bp-card.critical {
+            border-color: #ef4444;
+        }
+
+        .bp-header {
+            display: flex;
+            align-items: start;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .bp-icon {
+            font-size: 32px;
+        }
+
+        .bp-content {
+            flex: 1;
+        }
+
+        .bp-title-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .bp-title {
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .bp-critical-badge {
+            font-size: 9px;
+            padding: 2px 8px;
+            background: #ef4444;
+            color: #ffffff;
+            border-radius: 4px;
+            font-weight: 700;
+        }
+
+        .bp-desc {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .bp-why {
+            font-size: 10px;
+            color: var(--text-secondary);
+            font-style: italic;
+            margin-bottom: 8px;
+        }
+
+        .bp-reference {
+            font-size: 9px;
+            color: #60a5fa;
+            padding: 4px 8px;
+            background: rgba(59, 130, 246, 0.1);
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .bp-steps {
+            background: var(--bg-card);
+            border-radius: 8px;
+            padding: 14px;
+        }
+
+        .bp-steps-title {
+            font-size: 9px;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .bp-step {
+            font-size: 10px;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .bp-step-num {
+            color: #3b82f6;
+            font-weight: 700;
+        }
+
+        .analysis-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .analysis-tab {
+            padding: 8px 16px;
+            background: var(--surface-soft);
+            border: 1px solid var(--surface-soft-border);
+            border-radius: 8px;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 10px;
+            font-weight: 700;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .analysis-tab:hover {
+            transform: var(--hover-lift);
+            border-color: var(--hover-border);
+            background: var(--hover-surface);
+        }
+
+        .analysis-tab.active {
+            background: rgba(59, 130, 246, 0.2);
+            border-color: #3b82f6;
+            color: #3b82f6;
+            box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.25), 0 4px 14px rgba(59, 130, 246, 0.2);
+        }
+
+        body[data-theme="security-ninja"] .section,
+        body[data-theme="security-ninja"] .threat-palette,
+        body[data-theme="security-ninja"] .sidebar-card,
+        body[data-theme="security-ninja"] .control-card,
+        body[data-theme="security-ninja"] .bp-card,
+        body[data-theme="security-ninja"] .modal-content,
+        body[data-theme="security-ninja"] .drop-zone {
+            border-color: var(--border);
+        }
+
+        body[data-theme="security-ninja"] .identity-option:not(.selected),
+        body[data-theme="security-ninja"] .target-option:not(.selected),
+        body[data-theme="security-ninja"] .analysis-tab:not(.active) {
+            border-color: var(--surface-soft-border);
+        }
+
+        body[data-theme="security-ninja"] .threat-item,
+        body[data-theme="security-ninja"] .dropped-threat {
+            background: linear-gradient(135deg, #11253b 0%, #17344f 55%, #214b70 100%);
+            border: 1px solid #2f628f;
+            color: #e9f3fc;
+            box-shadow: inset 0 0 0 1px rgba(201, 222, 241, 0.08);
+        }
+
+        body[data-theme="security-ninja"] .threat-item:not(.disabled):hover {
+            background: linear-gradient(135deg, #142d47 0%, #1c3f5f 55%, #2a5b86 100%);
+            border-color: #4a7baa;
+            filter: brightness(1.03);
+        }
+
+        body[data-theme="security-ninja"] .threat-item.disabled {
+            background: linear-gradient(135deg, #1a2a3d 0%, #23374d 100%);
+            border-color: #4d6783;
+            color: #9bb0c5;
+        }
+
+        body[data-theme="security-ninja"] .threat-id {
+            color: #d7eaff;
+            background: rgba(9, 21, 35, 0.55);
+            border: 1px solid rgba(109, 161, 213, 0.5);
+        }
+
+        body[data-theme="security-ninja"] .threat-name {
+            color: #f1f8ff;
+        }
+
+        body[data-theme="security-ninja"] .threat-tactic {
+            color: #c4daef;
+        }
+
+        body[data-theme="security-ninja"] .threat-desc {
+            color: #b0c8df;
+        }
+
+        body[data-theme="security-ninja"] .drop-zone.drag-over {
+            background: linear-gradient(135deg, #e5f2ff 0%, #d3e8ff 100%);
+            border-color: #2f6ea4;
+        }
+
+        body[data-theme="security-ninja"] .identity-option,
+        body[data-theme="security-ninja"] .target-option {
+            background: var(--cell-grad-main);
+            border: 1px solid #21486d;
+            color: #e9f3fc;
+        }
+
+        body[data-theme="security-ninja"] .identity-option .option-desc,
+        body[data-theme="security-ninja"] .target-option .option-desc {
+            color: #c6daee;
+        }
+
+        body[data-theme="security-ninja"] .identity-option:hover,
+        body[data-theme="security-ninja"] .target-option:hover {
+            border-color: #2d5a84;
+            background: linear-gradient(135deg, #0f2135 0%, #17304b 60%, #284f77 100%);
+        }
+
+        body[data-theme="security-ninja"] .identity-option.selected,
+        body[data-theme="security-ninja"] .target-option.selected {
+            background: linear-gradient(145deg, #193a5f 0%, #25527e 55%, #2f6a9f 100%) !important;
+            border-color: #6ea8e0 !important;
+            color: #f3f9ff !important;
+            box-shadow: 0 0 0 2px rgba(110, 168, 224, 0.32), inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+        }
+
+        body[data-theme="security-ninja"] .identity-option.selected:hover,
+        body[data-theme="security-ninja"] .target-option.selected:hover {
+            background: linear-gradient(145deg, #1c426b 0%, #2a5d8f 55%, #3678b1 100%) !important;
+            border-color: #81b7eb !important;
+            color: #ffffff !important;
+        }
+
+        body[data-theme="security-ninja"] .identity-option.selected .option-label,
+        body[data-theme="security-ninja"] .target-option.selected .option-label,
+        body[data-theme="security-ninja"] .identity-option.selected .option-icon,
+        body[data-theme="security-ninja"] .target-option.selected .option-icon {
+            color: #f3f9ff !important;
+        }
+
+        body[data-theme="security-ninja"] .identity-option.selected .option-desc,
+        body[data-theme="security-ninja"] .target-option.selected .option-desc {
+            color: #d3e8fb !important;
+        }
+
+        body[data-theme="security-ninja"] .analysis-tab {
+            background: var(--cell-grad-main);
+            border: 1px solid #21486d;
+            color: #c9def1;
+        }
+
+        body[data-theme="security-ninja"] .analysis-tab:hover {
+            border-color: #2d5a84;
+            color: #ffffff;
+            background: linear-gradient(135deg, #0f2135 0%, #17304b 60%, #284f77 100%);
+        }
+
+        body[data-theme="security-ninja"] .analysis-tab.active {
+            background: linear-gradient(135deg, #16314b 0%, #21486d 60%, #2d5a84 100%);
+            border-color: #3f6c95;
+            color: #ffffff;
+            box-shadow: inset 0 0 0 1px rgba(201, 222, 241, 0.22);
+        }
+
+        body[data-theme="vibe-code"] {
+            background:
+                radial-gradient(circle at 8% 12%, rgba(255, 120, 198, 0.16) 0%, transparent 34%),
+                radial-gradient(circle at 88% 16%, rgba(0, 229, 255, 0.16) 0%, transparent 36%),
+                radial-gradient(circle at 78% 84%, rgba(255, 204, 0, 0.12) 0%, transparent 34%),
+                var(--bg-primary);
+        }
+
+        body[data-theme="vibe-code"] .section,
+        body[data-theme="vibe-code"] .threat-palette,
+        body[data-theme="vibe-code"] .sidebar-card,
+        body[data-theme="vibe-code"] .control-card,
+        body[data-theme="vibe-code"] .bp-card,
+        body[data-theme="vibe-code"] .modal-content,
+        body[data-theme="vibe-code"] .drop-zone {
+            border-color: #9a7bff;
+        }
+
+        body[data-theme="vibe-code"] .identity-option,
+        body[data-theme="vibe-code"] .target-option,
+        body[data-theme="vibe-code"] .analysis-tab {
+            background: linear-gradient(135deg, #2a1550 0%, #4b2e86 55%, #2f76f5 100%);
+            border: 1px solid #9a7bff;
+            color: #f4f7ff;
+        }
+
+        body[data-theme="vibe-code"] .identity-option .option-desc,
+        body[data-theme="vibe-code"] .target-option .option-desc {
+            color: #d9d3ff;
+        }
+
+        body[data-theme="vibe-code"] .identity-option:hover,
+        body[data-theme="vibe-code"] .target-option:hover,
+        body[data-theme="vibe-code"] .analysis-tab:hover {
+            background: linear-gradient(135deg, #361a67 0%, #5a35a2 55%, #3f88ff 100%);
+            border-color: #c6a8ff;
+            color: #ffffff;
+        }
+
+        body[data-theme="vibe-code"] .identity-option.selected,
+        body[data-theme="vibe-code"] .target-option.selected,
+        body[data-theme="vibe-code"] .analysis-tab.active {
+            background: linear-gradient(135deg, #ff4db8 0%, #8a5dff 52%, #00d6ff 100%) !important;
+            border-color: #ffd166 !important;
+            color: #ffffff !important;
+            box-shadow: 0 0 0 2px rgba(255, 209, 102, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+        }
+
+        body[data-theme="vibe-code"] .threat-item,
+        body[data-theme="vibe-code"] .dropped-threat {
+            background: linear-gradient(135deg, #2d1460 0%, #5a2fac 55%, #e84fb7 100%);
+            border-color: #c8a6ff;
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+        }
+
+        body[data-theme="vibe-code"] .threat-item:not(.disabled):hover {
+            background: linear-gradient(135deg, #3a1a79 0%, #6a3fc4 55%, #ff66c4 100%);
+            border-color: #ffe08c;
+        }
+
+        body[data-theme="vibe-code"] .threat-id {
+            color: #ffffff;
+            background: rgba(39, 20, 75, 0.55);
+            border: 1px solid rgba(255, 224, 140, 0.65);
+        }
+
+        body[data-theme="vibe-code"] .xdr-header-band,
+        body[data-theme="vibe-code"] .sidebar-title {
+            background: linear-gradient(135deg, #241048 0%, #4f2f8d 50%, #2f76f5 100%);
+            border-bottom-color: #b089ff;
+        }
+
+        body[data-theme="cyber-mode"] {
+            background:
+                radial-gradient(circle at 12% 18%, rgba(0, 255, 163, 0.12) 0%, transparent 36%),
+                radial-gradient(circle at 88% 82%, rgba(0, 194, 120, 0.1) 0%, transparent 34%),
+                #050b08;
+        }
+
+        body[data-theme="cyber-mode"]::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            background: repeating-linear-gradient(
+                to bottom,
+                rgba(0, 255, 163, 0.05) 0px,
+                rgba(0, 255, 163, 0.05) 1px,
+                transparent 1px,
+                transparent 4px
+            );
+            mix-blend-mode: soft-light;
+        }
+
+        body[data-theme="cyber-mode"] .topnav,
+        body[data-theme="cyber-mode"] .section,
+        body[data-theme="cyber-mode"] .threat-palette,
+        body[data-theme="cyber-mode"] .sidebar-card,
+        body[data-theme="cyber-mode"] .control-card,
+        body[data-theme="cyber-mode"] .drop-zone,
+        body[data-theme="cyber-mode"] .modal-content {
+            border-color: #1f8a67;
+            box-shadow: 0 0 0 1px rgba(0, 255, 163, 0.08), 0 0 24px rgba(0, 255, 163, 0.08);
+        }
+
+        body[data-theme="cyber-mode"] .identity-option,
+        body[data-theme="cyber-mode"] .target-option,
+        body[data-theme="cyber-mode"] .analysis-tab {
+            background: linear-gradient(135deg, #06150f 0%, #0d2a1f 55%, #12704f 100%);
+            border: 1px solid #1f8a67;
+            color: #d4ffe9;
+        }
+
+        body[data-theme="cyber-mode"] .identity-option:hover,
+        body[data-theme="cyber-mode"] .target-option:hover,
+        body[data-theme="cyber-mode"] .analysis-tab:hover {
+            background: linear-gradient(135deg, #081d15 0%, #133725 55%, #179568 100%);
+            border-color: #33c896;
+            color: #effff7;
+        }
+
+        body[data-theme="cyber-mode"] .identity-option.selected,
+        body[data-theme="cyber-mode"] .target-option.selected,
+        body[data-theme="cyber-mode"] .analysis-tab.active {
+            background: linear-gradient(135deg, #0b3524 0%, #0f593b 55%, #1db577 100%) !important;
+            border-color: #7dffc8 !important;
+            color: #f2fff9 !important;
+            box-shadow: 0 0 0 2px rgba(125, 255, 200, 0.25), inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+        }
+
+        body[data-theme="cyber-mode"] .threat-item,
+        body[data-theme="cyber-mode"] .dropped-threat {
+            background: linear-gradient(135deg, #081811 0%, #0f2d21 55%, #1a7c59 100%);
+            border-color: #2bb98a;
+            box-shadow: inset 0 0 0 1px rgba(211, 255, 236, 0.08);
+        }
+
+        body[data-theme="cyber-mode"] .threat-item .threat-name,
+        body[data-theme="cyber-mode"] .dropped-threat .threat-name {
+            color: #ebfff6;
+        }
+
+        body[data-theme="cyber-mode"] .threat-item .threat-tactic,
+        body[data-theme="cyber-mode"] .dropped-threat .threat-tactic {
+            color: #b2f7da;
+        }
+
+        body[data-theme="cyber-mode"] .threat-item .threat-desc,
+        body[data-theme="cyber-mode"] .dropped-threat .threat-desc {
+            color: #95dfc1;
+        }
+
+        body[data-theme="cyber-mode"] .xdr-header-band,
+        body[data-theme="cyber-mode"] .sidebar-title {
+            background: linear-gradient(135deg, #06130f 0%, #0d2a20 55%, #147556 100%);
+            border-bottom-color: #1f8a67;
+        }
+
+        .sidebar-title {
+            display: flex;
+            align-items: center;
+            width: calc(100% + 36px);
+            margin: -18px -18px 12px -18px;
+            padding: 14px 18px;
+            border-radius: 10px 10px 0 0;
+            border-bottom: 1px solid #21486d;
+            background: var(--cell-grad-main);
+            color: #e9f3fc;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: -0.2px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid;
+        }
+
+        .stat-label {
+            font-size: 9px;
+            margin-bottom: 8px;
+            letter-spacing: 0.1em;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 900;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+
+        @media (max-width: 1200px) {
+            .grid-3 {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                top: 0;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .topnav {
+                min-height: 0;
+                gap: 8px;
+                padding: 12px 16px;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .topnav-main {
+                width: 100%;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .topnav-title {
+                white-space: normal;
+                font-size: 20px;
+            }
+
+            .main-content {
+                margin-top: 210px;
+                padding: 16px;
+            }
+
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+
+            .step1-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .scope-options-grid {
+                grid-template-columns: 1fr;
+            }
+
+            #controls-list {
+                grid-template-columns: 1fr;
+            }
+
+        }
+
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 12mm;
+            }
+
+            body {
+                background: #ffffff !important;
+                color: #111111 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .topnav,
+            .topnav-actions,
+            .topnav-status,
+            .analysis-tabs,
+            .modal,
+            .remove-btn {
+                display: none !important;
+            }
+
+            .main-content {
+                margin-top: 0 !important;
+                padding: 0 !important;
+            }
+
+            .container {
+                max-width: 100% !important;
+            }
+
+            .section {
+                page-break-inside: avoid;
+                break-inside: avoid;
+                box-shadow: none !important;
+                margin-bottom: 10mm !important;
+                border: 1px solid #d6d6d6 !important;
+                background: #ffffff !important;
+            }
+
+            .xdr-header-band,
+            .sidebar-title {
+                background: #ffffff !important;
+                color: #111111 !important;
+                border-bottom: 1px solid #d6d6d6 !important;
+            }
+
+            .grid-3,
+            .stats-grid,
+            .step1-grid,
+            .dropped-threats {
+                grid-template-columns: 1fr !important;
+            }
+
+            #controls-list {
+                grid-template-columns: 1fr !important;
+                gap: 6mm !important;
+            }
+
+            .threat-palette {
+                max-height: none !important;
+                overflow: visible !important;
+            }
+
+            .threat-item,
+            .dropped-threat,
+            .control-card,
+            .stat-card {
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+        }
+    </style>
 </head>
 <body>
-
-<div class="bg-grid"></div>
-<div class="orb orb-1"></div>
-<div class="orb orb-2"></div>
-<div class="orb orb-3"></div>
-
-<div class="page-wrapper">
-
-  <!-- Header -->
-  <header>
-    <div class="logo-area">
-      <img src="https://static.wixstatic.com/media/941965_fcb3d02bade94905a56a21281a494c64~mv2.png/v1/fill/w_266,h_63,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/941965_fcb3d02bade94905a56a21281a494c64~mv2.png" alt="Security Ninja">
-      <div class="logo-divider"></div>
-      <span class="logo-sub">Tools &amp; Apps</span>
-    </div>
-    <nav class="header-nav">
-      <a href="https://www.security-ninja.com">← Back to Main Site</a>
-    </nav>
-  </header>
-
-  <!-- Main -->
-  <main>
-
-    <!-- Hero -->
-    <section class="hero">
-      <div class="hero-badge">
-        <span class="pulse"></span>
-        Security Tools
-      </div>
-      <h1>Making Cloud Security <span class="gradient-text">Simpler</span></h1>
-      <p>Interactive tools designed to help you build, visualise and understand Conditional Access policies — no deep expertise required.</p>
-    </section>
-
-    <!-- App cards -->
-    <div class="apps-grid">
-
-      <!-- CARD 1: Conditional Access Policy Builder -->
-      <a href="https://secninjaltd.github.io/Tools/CA-Builder/" class="app-card blue">
-        <div class="card-icon">🛡️</div>
-        <div class="card-label">Interactive Builder</div>
-        <h2 class="card-title">Conditional Access Policy Builder</h2>
-        <p class="card-desc">Design and visualise Entra ID Conditional Access policies step by step. Select identity types, target applications, and layer security controls — then see the real-time impact on your risk posture with a live threat analytics dashboard.</p>
-        <div class="card-tags">
-          <span class="tag">Entra ID</span>
-          <span class="tag">Zero Trust</span>
-          <span class="tag">Risk Scoring</span>
-          <span class="tag">MITRE ATT&CK</span>
+    <div class="topnav">
+        <div class="topnav-brand">
+            <img class="topnav-logo" src="Website Logo 2.png" alt="Security Ninja logo">
         </div>
-        <div class="card-cta">
-          Launch App <span class="cta-arrow">→</span>
+        <div class="topnav-main">
+            <div class="topnav-copy">
+                <div class="topnav-title">🛡️ Threat-First CA Policy Builder</div>
+                <div class="topnav-subtitle">Drag threats to see required controls • Real-time MITRE ATT&CK analysis</div>
+            </div>
+            <div class="topnav-actions">
+                <button class="btn btn-secondary" onclick="toggleBestPractices()">📚 BEST PRACTICES</button>
+                <button class="btn btn-secondary" onclick="downloadPdf()">⬇ PDF</button>
+                <button class="btn btn-danger" onclick="resetAll()">↺ RESET</button>
+            </div>
         </div>
-      </a>
-
-      <!-- CARD 2: Threat-First CA Builder -->
-      <a href="https://secninjaltd.github.io/Tools/Threat-First-CABuilder/" class="app-card red">
-        <div class="card-icon">🎯</div>
-        <div class="card-label">Threat-Driven Approach</div>
-        <h2 class="card-title">Threat-First CA Policy Builder</h2>
-        <p class="card-desc">Start from the threats you're defending against, not the controls. Map real-world attack techniques to the Conditional Access policies that neutralise them — a threat-intelligence-led approach to building your Zero Trust strategy.</p>
-        <div class="card-tags">
-          <span class="tag">MITRE ATT&CK</span>
-          <span class="tag">Threat Modelling</span>
-          <span class="tag">Conditional Access</span>
-          <span class="tag">Defence Mapping</span>
+        <div class="topnav-status">
+            <span class="status-dot"></span>
+            <span>THEME</span>
+            <select id="theme-select" class="theme-select" onchange="setTheme(this.value)">
+                <option value="security-ninja">Security Ninja</option>
+                <option value="dark-mode">Dark Mode</option>
+                <option value="cyber-mode">Cyber Mode</option>
+                <option value="vibe-code">Vibe Code</option>
+            </select>
         </div>
-        <div class="card-cta">
-          Launch App <span class="cta-arrow">→</span>
-        </div>
-      </a>
-
     </div>
 
-    <!-- Coming soon -->
-    <section class="coming-soon">
-      <div class="divider">
-        <div class="divider-line"></div>
-        <span class="divider-text">More Tools Coming Soon</span>
-        <div class="divider-line"></div>
-      </div>
-      <p class="coming-soon-desc">This hub will continue to grow with new interactive tools focused on simplifying Microsoft cloud security. Watch this space. Note: these tools are provided for educational 
-      purposes only. Security Ninja Ltd accepts no responsibility or liability for any actions taken, configurations implemented, or decisions made based on the output of these tools. Users are solely 
-        responsible for validating any policies against their own organisational requirements, risk appetite, and compliance obligations before deployment in a production environment.</p>
-    </section>
+    <main class="main-content">
+    <div class="container">
+        <!-- Policy Scope Selection -->
+        <div id="step1-section" class="section section-accented">
+            <div class="step1-header">
+                <div class="xdr-header-band">
+                    <div class="xdr-header-title">SCOPE</div>
+                </div>
+                <div class="step1-hint">Pick one identity + one access scope</div>
+            </div>
+            <div class="step1-grid">
+                <!-- Identity Selection -->
+                <div>
+                    <div class="step1-col-title">Select Identity Type</div>
+                    <div id="identity-options" class="scope-options-grid"></div>
+                </div>
+                
+                <!-- Access Target Selection -->
+                <div>
+                    <div class="step1-col-title">Select Access Scope</div>
+                    <div id="target-options" class="scope-options-grid"></div>
+                </div>
+            </div>
+        </div>
 
-  </main>
+        <!-- Threat Coverage Analysis -->
+        <div id="analysis-section" class="section section-accented">
+            <div style="margin-bottom: 20px;">
+                <div class="xdr-header-band">
+                    <div class="xdr-header-title">COMPREHENSIVE THREAT COVERAGE ANALYSIS</div>
+                </div>
+                <div class="analysis-tabs" id="analysis-tabs">
+                    <button class="analysis-tab active" data-view="overview" onclick="switchAnalysisView('overview', event)">📊 Overview</button>
+                    <button class="analysis-tab" data-view="matrix" onclick="switchAnalysisView('matrix', event)">🎯 MITRE Matrix</button>
+                    <button class="analysis-tab" data-view="zerotrust" onclick="switchAnalysisView('zerotrust', event)">🔍 Zero Trust</button>
+                    <button class="analysis-tab" data-view="defense" onclick="switchAnalysisView('defense', event)">🛡️ Defense Layers</button>
+                </div>
+            </div>
+            <div id="analysis-content"></div>
+        </div>
 
-  <!-- Footer -->
-  <footer>
-    <span>&copy; 2026 <a href="https://www.security-ninja.com">Security Ninja Ltd</a>. All rights reserved.</span>
-    <div class="footer-links">
-      <a href="https://www.security-ninja.com/blog">Blog</a>
-      <a href="https://www.security-ninja.com">Services</a>
-      <a href="https://www.security-ninja.com">Contact</a>
+        <!-- Main Builder Area -->
+        <div id="builder-section">
+            <div class="grid-3">
+                <!-- Left: Threat Palette -->
+                <div class="threat-palette">
+                    <div class="xdr-header-band" style="margin: -20px -20px 16px -20px; border-radius: 10px 10px 0 0;">
+                        <div class="xdr-header-title">MITRE ATT&CK THREATS</div>
+                    </div>
+                    <div style="font-size: 10px; color: var(--text-secondary); margin-bottom: 16px;">
+                        Drag threats to the drop zone to see which controls protect against them
+                    </div>
+                    <div id="threat-palette"></div>
+                </div>
+
+                <!-- Center: Drop Zone & Controls -->
+                <div style="display: flex; flex-direction: column; gap: 24px;">
+                    <!-- Drop Zone -->
+                    <div id="drop-zone" class="drop-zone" ondragover="handleDragOver(event)" ondrop="handleDrop(event)" ondragleave="handleDragLeave(event)">
+                        <div style="margin-bottom: 16px;">
+                            <div class="xdr-header-band">
+                                <div class="xdr-header-title">THREATS TO DEFEND AGAINST</div>
+                            </div>
+                            <div style="font-size: 10px; color: var(--text-secondary); margin-top: 4px;">
+                                Drop threats here to build your defense strategy
+                            </div>
+                        </div>
+                        <div id="dropped-threats-container"></div>
+                    </div>
+
+                    <!-- Required Controls -->
+                    <div id="controls-section" class="section section-accented hidden">
+                        <div style="margin-bottom: 20px;">
+                            <div class="xdr-header-band">
+                                <div class="xdr-header-title">RECOMMENDED CONTROLS</div>
+                            </div>
+                            <div style="font-size: 10px; color: var(--text-secondary); margin-top: 4px;">
+                                These controls will mitigate the threats you've selected
+                            </div>
+                        </div>
+                        <div id="controls-list" style="display: flex; flex-direction: column; gap: 12px;"></div>
+                    </div>
+                </div>
+
+                <!-- Right: Sidebar -->
+                <div class="sidebar">
+                    <div id="sidebar-content"></div>
+                </div>
+            </div>
+        </div>
     </div>
-  </footer>
+    </main>
 
-</div>
+    <!-- Best Practices Modal -->
+    <div id="best-practices-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Microsoft Best Practices & Guidance</div>
+                <button class="modal-close" onclick="toggleBestPractices()">×</button>
+            </div>
+            <div class="modal-body" id="best-practices-content"></div>
+        </div>
+    </div>
 
+    <script>
+        // Data
+        const COLORS = {
+            danger: '#ef4444',
+            warning: '#f59e0b',
+            success: '#10b981',
+            accent: '#3b82f6'
+        };
+
+        const CONTROL_COLORS = {
+            phish_mfa: '#a855f7',
+            mfa: '#3b82f6',
+            legacy_auth: '#f97316',
+            compliant_device: '#10b981',
+            hybrid_join: '#059669',
+            app_protection: '#14b8a6',
+            approved_client: '#0d9488',
+            named_locations: '#eab308',
+            sign_in_risk: '#ef4444',
+            user_risk: '#ec4899',
+            session_controls: '#6366f1',
+            terms_of_use: '#8b5cf6',
+            block_unknown_platforms: '#dc2626',
+            require_password_change: '#f97316'
+        };
+
+        const ZERO_TRUST_PRINCIPLES = {
+            verify: { label: "Verify Explicitly", color: "#3b82f6", icon: "🔍" },
+            least: { label: "Least Privilege Access", color: "#8b5cf6", icon: "🔒" },
+            breach: { label: "Assume Breach", color: "#ef4444", icon: "🛡️" }
+        };
+
+        const MITRE_TECHNIQUES = {
+            'T1078': { name: 'Valid Accounts', tactic: 'Initial Access', severity: 'High', desc: 'Adversaries use legitimate credentials to gain initial access, persistence, or privilege escalation.' },
+            'T1110': { name: 'Brute Force', tactic: 'Credential Access', severity: 'High', desc: 'Attackers attempt to guess passwords or use credential stuffing to gain access.' },
+            'T1528': { name: 'Steal Application Access Token', tactic: 'Credential Access', severity: 'High', desc: 'Adversaries steal OAuth tokens to access cloud services without needing passwords.' },
+            'T1539': { name: 'Steal Web Session Cookie', tactic: 'Credential Access', severity: 'Medium', desc: 'Attackers steal session cookies to hijack authenticated sessions.' },
+            'T1556': { name: 'Modify Authentication Process', tactic: 'Credential Access', severity: 'High', desc: 'Adversaries modify authentication mechanisms to bypass controls.' },
+            'T1621': { name: 'MFA Request Generation', tactic: 'Credential Access', severity: 'High', desc: 'MFA fatigue attacks - flooding users with push notifications until they approve.' },
+            'T1098': { name: 'Account Manipulation', tactic: 'Persistence', severity: 'Medium', desc: 'Attackers modify account settings to maintain access or escalate privileges.' },
+            'T1484': { name: 'Domain Policy Modification', tactic: 'Defense Evasion', severity: 'Medium', desc: 'Adversaries modify domain policies to evade defenses or maintain access.' },
+            'T1557': { name: 'Adversary-in-the-Middle', tactic: 'Credential Access', severity: 'High', desc: 'Man-in-the-middle attacks to intercept credentials or session tokens (AiTM).' },
+            'T1606': { name: 'Forge Web Credentials', tactic: 'Credential Access', severity: 'High', desc: 'Attackers forge authentication tokens or cookies to bypass authentication.' },
+            'T1133': { name: 'External Remote Services', tactic: 'Persistence', severity: 'Medium', desc: 'Using external remote services like VPNs or legacy protocols for persistence.' },
+            'T1199': { name: 'Trusted Relationship', tactic: 'Initial Access', severity: 'Medium', desc: 'Exploiting trust relationships with third parties or partners.' }
+        };
+
+        const IDENTITY_TYPES = [
+            { id: "user", label: "Standard User", icon: "👤", desc: "Regular employees, contractors", baseRisk: 45 },
+            { id: "admin", label: "Administrator", icon: "⚙️", desc: "Global admin, privileged roles", baseRisk: 85 },
+            { id: "guest", label: "Guest / External", icon: "🌐", desc: "B2B collaborators, partners", baseRisk: 70 },
+            { id: "workload", label: "Workload Identity", icon: "🤖", desc: "Service principals, managed identities", baseRisk: 60 }
+        ];
+
+        const ACCESS_TARGETS = [
+            { id: "all_apps", label: "All Cloud Apps", icon: "☁️", desc: "Broadest coverage", riskMultiplier: 1.6 },
+            { id: "admin_portals", label: "Microsoft Admin Portals", icon: "🏛️", desc: "Azure, Entra, Intune", riskMultiplier: 1.9 },
+            { id: "office365", label: "Microsoft 365", icon: "📧", desc: "Exchange, SharePoint, Teams", riskMultiplier: 1.3 },
+            { id: "specific", label: "Specific Applications", icon: "🎯", desc: "Target individual apps", riskMultiplier: 1.0 }
+        ];
+
+        const POLICY_CONTROLS = [
+            {
+                id: "phish_mfa",
+                label: "Phishing-Resistant MFA",
+                baseRiskReduction: 35,
+                ztPrinciples: ["verify"],
+                defenseLayer: "Identity",
+                desc: "FIDO2 security keys or Windows Hello for Business",
+                why: "Cryptographically bound to origin - cannot be phished, relayed, or replayed. Blocks AiTM attacks completely.",
+                mitreBlocked: ['T1621', 'T1110', 'T1557', 'T1078', 'T1606'],
+                bestPractice: "Mandatory for all administrator accounts. Consider hardware tokens for high-value users."
+            },
+            {
+                id: "mfa",
+                label: "Require MFA",
+                baseRiskReduction: 25,
+                ztPrinciples: ["verify"],
+                defenseLayer: "Identity",
+                desc: "Multi-factor authentication (any method)",
+                why: "Blocks 99.9% of automated attacks even with stolen passwords.",
+                mitreBlocked: ['T1110', 'T1078'],
+                bestPractice: "Minimum baseline for all users. Upgrade to phishing-resistant for admins."
+            },
+            {
+                id: "legacy_auth",
+                label: "Block Legacy Authentication",
+                baseRiskReduction: 22,
+                ztPrinciples: ["verify"],
+                defenseLayer: "Network",
+                desc: "Block IMAP, POP3, SMTP Auth, older protocols",
+                why: "Legacy protocols bypass MFA. 99% of password spray attacks use legacy auth.",
+                mitreBlocked: ['T1110', 'T1078', 'T1133'],
+                bestPractice: "Block for all users. No legitimate need for legacy auth in modern environments."
+            },
+            {
+                id: "compliant_device",
+                label: "Require Compliant Device",
+                baseRiskReduction: 20,
+                ztPrinciples: ["verify", "breach"],
+                defenseLayer: "Device",
+                desc: "Intune-enrolled, policy-compliant devices only",
+                why: "Ensures endpoint security baselines, encryption, and patch compliance before access.",
+                mitreBlocked: ['T1078', 'T1528', 'T1539'],
+                bestPractice: "Required for accessing sensitive data. Provide enrollment grace period for new devices."
+            },
+            {
+                id: "hybrid_join",
+                label: "Hybrid Azure AD Joined Device",
+                baseRiskReduction: 15,
+                ztPrinciples: ["verify"],
+                defenseLayer: "Device",
+                desc: "Corporate-managed devices joined to AD and Azure AD",
+                why: "Ensures corporate device control and management.",
+                mitreBlocked: ['T1078', 'T1199'],
+                bestPractice: "Use for hybrid environments. Prefer compliant device check for pure cloud."
+            },
+            {
+                id: "app_protection",
+                label: "Require App Protection Policy",
+                baseRiskReduction: 18,
+                ztPrinciples: ["breach", "least"],
+                defenseLayer: "Application",
+                desc: "Mobile app management policies for BYOD",
+                why: "Prevents data leakage on unmanaged mobile devices. Copy/paste controls, encryption.",
+                mitreBlocked: ['T1528', 'T1539'],
+                bestPractice: "Essential for BYOD scenarios. Combine with compliant device for corporate devices."
+            },
+            {
+                id: "approved_client",
+                label: "Require Approved Client App",
+                baseRiskReduction: 12,
+                ztPrinciples: ["least"],
+                defenseLayer: "Application",
+                desc: "Only allow Microsoft approved mobile apps",
+                why: "Prevents browser-based access on mobile that bypasses app protection.",
+                mitreBlocked: ['T1528'],
+                bestPractice: "Use with app protection policies for complete mobile security."
+            },
+            {
+                id: "named_locations",
+                label: "Require Trusted Locations",
+                baseRiskReduction: 15,
+                ztPrinciples: ["verify"],
+                defenseLayer: "Network",
+                desc: "Only allow access from known IP ranges",
+                why: "Reduces attack surface by limiting access geography. Blocks impossible travel scenarios.",
+                mitreBlocked: ['T1078', 'T1199'],
+                bestPractice: "Define corporate offices + VPN ranges. Allow MFA step-up from untrusted locations."
+            },
+            {
+                id: "sign_in_risk",
+                label: "Block High Sign-In Risk",
+                baseRiskReduction: 25,
+                ztPrinciples: ["breach"],
+                defenseLayer: "Identity",
+                desc: "Azure AD Identity Protection sign-in risk signals",
+                why: "ML-based detection of anomalous sign-ins, leaked credentials, atypical travel.",
+                mitreBlocked: ['T1078', 'T1110', 'T1557', 'T1606'],
+                bestPractice: "Block high risk, require MFA for medium risk. Essential for admins."
+            },
+            {
+                id: "user_risk",
+                label: "Block High User Risk",
+                baseRiskReduction: 20,
+                ztPrinciples: ["breach"],
+                defenseLayer: "Identity",
+                desc: "Azure AD Identity Protection user risk signals",
+                why: "Detects compromised accounts based on leaked credentials, behavioral anomalies.",
+                mitreBlocked: ['T1078', 'T1098', 'T1556'],
+                bestPractice: "Require password change for high risk users. Block access until remediated."
+            },
+            {
+                id: "session_controls",
+                label: "Session Management",
+                baseRiskReduction: 10,
+                ztPrinciples: ["breach", "least"],
+                defenseLayer: "Application",
+                desc: "Session timeouts and sign-in frequency controls",
+                why: "Limits session hijacking window. Forces periodic re-authentication.",
+                mitreBlocked: ['T1539', 'T1528'],
+                bestPractice: "4-hour timeout for standard users, 1-hour for admins."
+            },
+            {
+                id: "terms_of_use",
+                label: "Require Terms of Use Acceptance",
+                baseRiskReduction: 5,
+                ztPrinciples: ["verify"],
+                defenseLayer: "Application",
+                desc: "Force acceptance of usage policies",
+                why: "Legal/compliance requirement. User acknowledgment of acceptable use.",
+                mitreBlocked: [],
+                bestPractice: "Use for guest users and contractors. Annual re-acceptance."
+            },
+            {
+                id: "block_unknown_platforms",
+                label: "Block Unknown Platforms",
+                baseRiskReduction: 10,
+                ztPrinciples: ["verify"],
+                defenseLayer: "Device",
+                desc: "Block unrecognized device platforms",
+                why: "Prevents access from unusual or spoofed platforms.",
+                mitreBlocked: ['T1078'],
+                bestPractice: "Useful for highly controlled environments."
+            },
+            {
+                id: "require_password_change",
+                label: "Require Password Change",
+                baseRiskReduction: 15,
+                ztPrinciples: ["verify"],
+                defenseLayer: "Identity",
+                desc: "Force password reset on risky sign-in",
+                why: "Ensures compromised credentials are rotated immediately.",
+                mitreBlocked: ['T1078', 'T1110'],
+                bestPractice: "Combine with user risk policies. Use for detected compromises."
+            }
+        ];
+
+        const DEFENSE_IN_DEPTH_LAYERS = [
+            { layer: "Perimeter", example: "Network firewalls, WAF", color: "#ef4444" },
+            { layer: "Network", example: "Named locations, geo-blocking", color: "#f97316" },
+            { layer: "Identity", example: "MFA, phishing-resistant auth", color: "#eab308" },
+            { layer: "Device", example: "Compliant devices, app protection", color: "#10b981" },
+            { layer: "Application", example: "App controls, session limits", color: "#3b82f6" },
+            { layer: "Data", example: "Encryption, DLP policies", color: "#8b5cf6" }
+        ];
+
+        const ZERO_TRUST_MATURITY = {
+            traditional: { level: "Traditional", color: COLORS.danger, desc: "Perimeter-based security, limited identity verification" },
+            advanced: { level: "Advanced", color: COLORS.warning, desc: "Some cloud-based controls, basic MFA" },
+            optimal: { level: "Optimal", color: COLORS.success, desc: "Full Zero Trust implementation with phishing-resistant MFA" }
+        };
+
+        const BEST_PRACTICES = [
+            {
+                id: "breakglass",
+                title: "Break-Glass Accounts",
+                icon: "🚨",
+                desc: "Maintain 2+ emergency access accounts excluded from ALL Conditional Access policies",
+                why: "Prevents complete lockout if policies misconfigure. Critical for disaster recovery.",
+                steps: [
+                    "Create 2 cloud-only global admin accounts (not synced from AD)",
+                    "Use 25+ character random passwords stored in secure physical safe",
+                    "Exclude from ALL CA policies including MFA",
+                    "Monitor with dedicated alerts - any use triggers investigation",
+                    "Rotate passwords quarterly",
+                    "Document in security runbook"
+                ],
+                critical: true,
+                msReference: "Microsoft Zero Trust Deployment Guide - Emergency Access"
+            },
+            {
+                id: "report_only",
+                title: "Report-Only Mode Testing",
+                icon: "📊",
+                desc: "Always test new policies in report-only mode first",
+                why: "Identifies potential lockout scenarios before enforcement. See who would be impacted.",
+                steps: [
+                    "Create policy in 'Report-only' state",
+                    "Monitor sign-in logs for 7-14 days",
+                    "Review 'What If' tool results for different scenarios",
+                    "Check for unexpected user/app combinations",
+                    "Only enable after validation"
+                ],
+                critical: true,
+                msReference: "Microsoft Conditional Access Deployment Best Practices"
+            },
+            {
+                id: "admin_protection",
+                title: "Administrator Protection Strategy",
+                icon: "🛡️",
+                desc: "Separate policies for privileged accounts",
+                why: "Admin accounts are highest-value targets. Require strictest controls.",
+                steps: [
+                    "Phishing-resistant MFA mandatory (no exceptions)",
+                    "Require compliant devices only",
+                    "1-hour session lifetime maximum",
+                    "Block legacy authentication entirely",
+                    "Restrict to trusted locations only",
+                    "Separate admin accounts from daily-use accounts",
+                    "Consider Privileged Access Workstations (PAWs)"
+                ],
+                critical: true,
+                msReference: "Zero Trust - Least Privilege & Microsoft Privileged Access Strategy"
+            }
+        ];
+
+        const THEME_PRESETS = {
+            "security-ninja": {
+                "--bg-primary": "#ffffff",
+                "--bg-card": "#ffffff",
+                "--bg-card-hover": "#f3f8fd",
+                "--border": "#c8d9ea",
+                "--text-primary": "#13263c",
+                "--text-secondary": "#42617f",
+                "--text-muted": "#6683a1",
+                "--accent-ninja": "#1e3a5a",
+                "--accent-ninja-glow": "rgba(30,58,90,0.25)",
+                "--cell-grad-main": "linear-gradient(135deg, #0B1726 0%, #12263C 60%, #1E3A5A 100%)",
+                "--nav-title": "#f0f7ff",
+                "--nav-subtitle": "#c6daee",
+                "--nav-border": "#21486d",
+                "--btn-secondary-bg": "rgba(255, 255, 255, 0.12)",
+                "--btn-secondary-border": "rgba(189, 213, 234, 0.5)",
+                "--btn-secondary-text": "#e4f0fb",
+                "--btn-danger-bg": "#ef4444",
+                "--btn-danger-border": "#ef4444",
+                "--btn-danger-text": "#ffffff",
+                "--surface-soft": "#edf5fc",
+                "--surface-soft-border": "#c8d9ea",
+                "--card-shadow": "0 4px 24px rgba(16, 36, 60, 0.06)",
+                "--elev-step1": "0 2px 12px rgba(16, 36, 60, 0.05)",
+                "--elev-analysis": "0 6px 24px rgba(16, 36, 60, 0.08)",
+                "--elev-builder": "0 8px 28px rgba(16, 36, 60, 0.1)",
+                "--hover-lift": "translateY(-1px)",
+                "--hover-border": "#3b82f6",
+                "--hover-surface": "#f3f8fd",
+                "--theme-control-bg": "rgba(255,255,255,0.12)",
+                "--theme-control-border": "rgba(189,213,234,0.5)",
+                "--theme-control-text": "#e4f0fb"
+            },
+            "dark-mode": {
+                "--bg-primary": "#0b1320",
+                "--bg-card": "#101b2e",
+                "--bg-card-hover": "#16253a",
+                "--border": "#274060",
+                "--text-primary": "#d8e7f8",
+                "--text-secondary": "#a5c0dc",
+                "--text-muted": "#7e9bb8",
+                "--accent-ninja": "#6aa7ff",
+                "--accent-ninja-glow": "rgba(106,167,255,0.35)",
+                "--cell-grad-main": "linear-gradient(135deg, #0a101a 0%, #16253a 55%, #243a59 100%)",
+                "--nav-title": "#f2f7ff",
+                "--nav-subtitle": "#b8d1ee",
+                "--nav-border": "#35577f",
+                "--btn-secondary-bg": "rgba(106,167,255,0.14)",
+                "--btn-secondary-border": "rgba(106,167,255,0.5)",
+                "--btn-secondary-text": "#dceaff",
+                "--btn-danger-bg": "#ef4444",
+                "--btn-danger-border": "#ef4444",
+                "--btn-danger-text": "#ffffff",
+                "--surface-soft": "#14243b",
+                "--surface-soft-border": "#2b4668",
+                "--card-shadow": "0 8px 28px rgba(0, 0, 0, 0.35)",
+                "--elev-step1": "0 3px 14px rgba(0, 0, 0, 0.32)",
+                "--elev-analysis": "0 8px 26px rgba(0, 0, 0, 0.4)",
+                "--elev-builder": "0 10px 30px rgba(0, 0, 0, 0.45)",
+                "--hover-lift": "translateY(-1px)",
+                "--hover-border": "#6aa7ff",
+                "--hover-surface": "#16253a",
+                "--theme-control-bg": "rgba(106,167,255,0.14)",
+                "--theme-control-border": "rgba(106,167,255,0.45)",
+                "--theme-control-text": "#dceaff"
+            },
+            "cyber-mode": {
+                "--bg-primary": "#050b08",
+                "--bg-card": "#091410",
+                "--bg-card-hover": "#0f2119",
+                "--border": "#1f8a67",
+                "--text-primary": "#d0ffe9",
+                "--text-secondary": "#9aebca",
+                "--text-muted": "#6ec8a7",
+                "--accent-ninja": "#23d694",
+                "--accent-ninja-glow": "rgba(35,214,148,0.4)",
+                "--cell-grad-main": "linear-gradient(135deg, #06130f 0%, #0d2a20 55%, #147556 100%)",
+                "--nav-title": "#ecfff6",
+                "--nav-subtitle": "#b7f7dc",
+                "--nav-border": "#1f8a67",
+                "--btn-secondary-bg": "rgba(0,245,160,0.14)",
+                "--btn-secondary-border": "rgba(0,245,160,0.45)",
+                "--btn-secondary-text": "#d4ffef",
+                "--btn-danger-bg": "#ef4444",
+                "--btn-danger-border": "#ef4444",
+                "--btn-danger-text": "#ffffff",
+                "--surface-soft": "#0f261d",
+                "--surface-soft-border": "#237d5e",
+                "--card-shadow": "0 10px 32px rgba(0, 0, 0, 0.45)",
+                "--elev-step1": "0 3px 14px rgba(0, 0, 0, 0.32)",
+                "--elev-analysis": "0 8px 26px rgba(0, 0, 0, 0.4)",
+                "--elev-builder": "0 10px 30px rgba(0, 0, 0, 0.45)",
+                "--hover-lift": "translateY(-1px)",
+                "--hover-border": "#33c896",
+                "--hover-surface": "#153327",
+                "--theme-control-bg": "rgba(0,245,160,0.14)",
+                "--theme-control-border": "rgba(0,245,160,0.45)",
+                "--theme-control-text": "#d4ffef"
+            },
+            "vibe-code": {
+                "--bg-primary": "#f7f3ff",
+                "--bg-card": "#fff9ff",
+                "--bg-card-hover": "#f6edff",
+                "--border": "#c9b3ff",
+                "--text-primary": "#2a1f4a",
+                "--text-secondary": "#55407f",
+                "--text-muted": "#7961a6",
+                "--accent-ninja": "#8a5dff",
+                "--accent-ninja-glow": "rgba(138,93,255,0.4)",
+                "--cell-grad-main": "linear-gradient(135deg, #241048 0%, #4f2f8d 50%, #2f76f5 100%)",
+                "--nav-title": "#fff7ff",
+                "--nav-subtitle": "#e6d8ff",
+                "--nav-border": "#b089ff",
+                "--btn-secondary-bg": "rgba(255,255,255,0.2)",
+                "--btn-secondary-border": "rgba(255,224,140,0.55)",
+                "--btn-secondary-text": "#fff8db",
+                "--btn-danger-bg": "#ef4444",
+                "--btn-danger-border": "#ef4444",
+                "--btn-danger-text": "#ffffff",
+                "--surface-soft": "#efe6ff",
+                "--surface-soft-border": "#c9b3ff",
+                "--card-shadow": "0 10px 30px rgba(76, 38, 148, 0.18)",
+                "--elev-step1": "0 4px 14px rgba(76, 38, 148, 0.12)",
+                "--elev-analysis": "0 10px 28px rgba(76, 38, 148, 0.16)",
+                "--elev-builder": "0 12px 30px rgba(76, 38, 148, 0.2)",
+                "--hover-lift": "translateY(-1px)",
+                "--hover-border": "#ff4db8",
+                "--hover-surface": "#f6edff",
+                "--theme-control-bg": "rgba(255,255,255,0.2)",
+                "--theme-control-border": "rgba(255,224,140,0.55)",
+                "--theme-control-text": "#fff8db"
+            }
+        };
+
+        // State
+        let state = {
+            identity: null,
+            target: null,
+            selectedThreats: [],
+            draggedThreat: null,
+            analysisView: 'overview',
+            pulseInterval: null,
+            theme: 'security-ninja'
+        };
+
+        // Initialize
+        function init() {
+            const savedTheme = (() => {
+                try {
+                    return localStorage.getItem('tfca-theme');
+                } catch (_) {
+                    return null;
+                }
+            })();
+
+            setTheme(savedTheme && THEME_PRESETS[savedTheme] ? savedTheme : 'security-ninja');
+            renderIdentityOptions();
+            renderTargetOptions();
+            renderThreatPalette();
+            renderDroppedThreats();
+            updateAnalysis();
+            updateSidebar();
+            renderBestPractices();
+            startPulseAnimation();
+        }
+
+        function setTheme(themeId) {
+            const selectedTheme = THEME_PRESETS[themeId] ? themeId : 'security-ninja';
+            const themeVars = THEME_PRESETS[selectedTheme];
+            Object.entries(themeVars).forEach(([varName, value]) => {
+                document.documentElement.style.setProperty(varName, value);
+            });
+            document.body.setAttribute('data-theme', selectedTheme);
+
+            state.theme = selectedTheme;
+            const selector = document.getElementById('theme-select');
+            if (selector && selector.value !== selectedTheme) {
+                selector.value = selectedTheme;
+            }
+
+            try {
+                localStorage.setItem('tfca-theme', selectedTheme);
+            } catch (_) {
+                // Ignore storage errors in restricted environments.
+            }
+
+            // Re-render analysis pane because it uses theme-aware inline styles.
+            if (document.getElementById('analysis-content')) {
+                updateAnalysis();
+            }
+        }
+
+        function renderIdentityOptions() {
+            const container = document.getElementById('identity-options');
+            container.innerHTML = IDENTITY_TYPES.map(identity => {
+                const riskClass = identity.baseRisk > 75 ? 'risk-high' : identity.baseRisk > 50 ? 'risk-medium' : 'risk-low';
+                return `
+                    <button class="identity-option scope-option ${state.identity === identity.id ? 'selected' : ''}" 
+                            onclick="selectIdentity('${identity.id}')">
+                        <div class="option-header">
+                            <span class="option-icon">${identity.icon}</span>
+                            <div class="option-label">${identity.label}</div>
+                            <div class="risk-badge ${riskClass}">${identity.baseRisk}% RISK</div>
+                        </div>
+                        <div class="option-desc">${identity.desc}</div>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function renderTargetOptions() {
+            const container = document.getElementById('target-options');
+            const identityData = state.identity ? IDENTITY_TYPES.find(i => i.id === state.identity) : null;
+            
+            container.innerHTML = ACCESS_TARGETS.map(target => {
+                const combinedRisk = identityData ? Math.min(95, Math.round(identityData.baseRisk * target.riskMultiplier)) : null;
+                const riskClass = combinedRisk > 75 ? 'risk-high' : combinedRisk > 50 ? 'risk-medium' : 'risk-low';
+                
+                return `
+                    <button class="target-option scope-option ${state.target === target.id ? 'selected' : ''}" 
+                            onclick="selectTarget('${target.id}')">
+                        <div class="option-header">
+                            <span class="option-icon">${target.icon}</span>
+                            <div style="flex: 1;">
+                                <div class="option-label">${target.label}</div>
+                            </div>
+                            ${combinedRisk ? `<div class="risk-badge ${riskClass}">${combinedRisk}% RISK</div>` : ''}
+                        </div>
+                        <div class="option-desc">${target.desc}</div>
+                        ${identityData ? `<div style="font-size: 9px; color: var(--text-secondary); margin-top: 6px; font-style: italic;">${target.riskMultiplier}x risk multiplier</div>` : ''}
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function selectIdentity(id) {
+            state.identity = id;
+            renderIdentityOptions();
+            renderTargetOptions();
+            checkCanStartBuilding();
+        }
+
+        function selectTarget(id) {
+            state.target = id;
+            renderTargetOptions();
+            checkCanStartBuilding();
+        }
+
+        function checkCanStartBuilding() {
+            updateAnalysis();
+            updateSidebar();
+        }
+
+        function renderThreatPalette() {
+            const container = document.getElementById('threat-palette');
+            container.innerHTML = Object.entries(MITRE_TECHNIQUES).map(([id, threat]) => {
+                const isSelected = state.selectedThreats.includes(id);
+                return `
+                    <div class="threat-item ${isSelected ? 'disabled' : ''}" 
+                         draggable="${!isSelected}" 
+                         ondragstart="handleThreatDragStart(event, '${id}')"
+                         ondragend="handleThreatDragEnd(event)">
+                        <div class="threat-header">
+                            <div class="threat-id">${id}</div>
+                            <div class="severity-badge severity-${threat.severity.toLowerCase()}">${threat.severity}</div>
+                        </div>
+                        <div class="threat-name">${threat.name}</div>
+                        <div class="threat-tactic">${threat.tactic}</div>
+                        ${!isSelected ? `<div class="threat-desc">${threat.desc}</div>` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function handleThreatDragStart(event, threatId) {
+            if (!state.selectedThreats.includes(threatId)) {
+                state.draggedThreat = threatId;
+                event.dataTransfer.effectAllowed = 'move';
+            }
+        }
+
+        function handleThreatDragEnd(event) {
+            state.draggedThreat = null;
+            document.getElementById('drop-zone').classList.remove('drag-over');
+        }
+
+        function handleDragOver(event) {
+            event.preventDefault();
+            document.getElementById('drop-zone').classList.add('drag-over');
+        }
+
+        function handleDragLeave(event) {
+            document.getElementById('drop-zone').classList.remove('drag-over');
+        }
+
+        function handleDrop(event) {
+            event.preventDefault();
+            document.getElementById('drop-zone').classList.remove('drag-over');
+            if (state.draggedThreat && !state.selectedThreats.includes(state.draggedThreat)) {
+                state.selectedThreats.push(state.draggedThreat);
+                state.draggedThreat = null;
+                updateAll();
+            }
+        }
+
+        function removeThreat(threatId) {
+            state.selectedThreats = state.selectedThreats.filter(id => id !== threatId);
+            updateAll();
+        }
+
+        function updateAll() {
+            renderThreatPalette();
+            renderDroppedThreats();
+            renderControls();
+            updateAnalysis();
+            updateSidebar();
+        }
+
+        function renderDroppedThreats() {
+            const container = document.getElementById('dropped-threats-container');
+            if (state.selectedThreats.length === 0) {
+                container.innerHTML = `
+                    <div class="drop-zone-empty">
+                        ${state.draggedThreat ? 'Drop threat here' : 'No threats selected yet'}
+                    </div>
+                `;
+                document.getElementById('controls-section').classList.add('hidden');
+            } else {
+                container.innerHTML = `
+                    <div class="dropped-threats">
+                        ${state.selectedThreats.map(id => {
+                            const threat = MITRE_TECHNIQUES[id];
+                            return `
+                                <div class="dropped-threat">
+                                    <button class="remove-btn" onclick="removeThreat('${id}')">×</button>
+                                    <div class="threat-id">${id}</div>
+                                    <div class="threat-name">${threat.name}</div>
+                                    <div class="threat-tactic">${threat.tactic}</div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+                document.getElementById('controls-section').classList.remove('hidden');
+            }
+        }
+
+        function getControlsForThreats() {
+            const controlMap = {};
+            state.selectedThreats.forEach(threatId => {
+                POLICY_CONTROLS.forEach(control => {
+                    if (control.mitreBlocked.includes(threatId)) {
+                        if (!controlMap[control.id]) {
+                            controlMap[control.id] = { control, threats: [] };
+                        }
+                        controlMap[control.id].threats.push(threatId);
+                    }
+                });
+            });
+            return Object.values(controlMap).sort((a, b) => b.threats.length - a.threats.length);
+        }
+
+        function hexToRgb(hex) {
+            const clean = hex.replace('#', '');
+            const normalized = clean.length === 3
+                ? clean.split('').map(c => c + c).join('')
+                : clean;
+            const int = parseInt(normalized, 16);
+            return {
+                r: (int >> 16) & 255,
+                g: (int >> 8) & 255,
+                b: int & 255
+            };
+        }
+
+        function mixHex(colorA, colorB, amount = 0.5) {
+            const a = hexToRgb(colorA);
+            const b = hexToRgb(colorB);
+            const mix = (x, y) => Math.round(x + (y - x) * amount);
+            const r = mix(a.r, b.r);
+            const g = mix(a.g, b.g);
+            const bCh = mix(a.b, b.b);
+            return `rgb(${r}, ${g}, ${bCh})`;
+        }
+
+        function getMitreSeverityBadgeStyle(severity) {
+            const level = (severity || '').toLowerCase();
+            if (level === 'high') {
+                return 'font-size: 8px; padding: 2px 6px; border-radius: 3px; font-weight: 700; border: 1px solid #4f7ea8; color: #ffffff; background: linear-gradient(135deg, #17324d 0%, #224b72 55%, #2f679a 100%);';
+            }
+            if (level === 'medium') {
+                return 'font-size: 8px; padding: 2px 6px; border-radius: 3px; font-weight: 700; border: 1px solid #5b88af; color: #ffffff; background: linear-gradient(135deg, #1a3754 0%, #28557f 55%, #3674ad 100%);';
+            }
+            if (level === 'low') {
+                return 'font-size: 8px; padding: 2px 6px; border-radius: 3px; font-weight: 700; border: 1px solid #6692b7; color: #ffffff; background: linear-gradient(135deg, #1d3d5c 0%, #2d5d8a 55%, #3c7cb7 100%);';
+            }
+            return 'font-size: 8px; padding: 2px 6px; border-radius: 3px; font-weight: 700; border: 1px solid var(--border); color: var(--text-secondary); background: transparent;';
+        }
+
+        function renderControls() {
+            const controlsNeeded = getControlsForThreats();
+            const container = document.getElementById('controls-list');
+            
+            container.innerHTML = controlsNeeded.map(({ control, threats }) => {
+                const color = CONTROL_COLORS[control.id] || COLORS.accent;
+                const gradientStart = mixHex(color, '#091627', 0.68);
+                const gradientMid = mixHex(color, '#0d2138', 0.56);
+                const gradientEnd = mixHex(color, '#123456', 0.42);
+                const borderColor = mixHex(color, '#d7e7f7', 0.2);
+                const labelColor = '#f2f8ff';
+                const descColor = '#d5e6f6';
+                const whyColor = '#b8d0e8';
+                const mitigationColor = mixHex(color, '#ffffff', 0.35);
+                const badgeBg = mixHex(color, '#0f2a22', 0.26);
+                const badgeBorder = mixHex(color, '#c8fbe8', 0.22);
+                return `
+                    <div class="control-card" style="border: 2px solid ${borderColor}; background: linear-gradient(155deg, ${gradientStart} 0%, ${gradientMid} 55%, ${gradientEnd} 100%); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08), 0 8px 20px rgba(9,22,39,0.22);">
+                        <div class="control-stripe" style="background: linear-gradient(180deg, ${mixHex(color, '#ffffff', 0.08)}, ${mixHex(color, '#0a101a', 0.2)});"></div>
+                        <div class="control-content">
+                            <div class="control-header">
+                                <div>
+                                    <div class="control-label" style="color: ${labelColor};">${control.label}</div>
+                                    <div class="control-desc" style="color: ${descColor};">${control.desc}</div>
+                                    <div class="control-why" style="color: ${whyColor};">${control.why}</div>
+                                </div>
+                                <div class="risk-reduction-badge" style="background: ${badgeBg}; border-color: ${badgeBorder}; color: #eafff6;">-${control.baseRiskReduction}% RISK</div>
+                            </div>
+                            <div style="margin-bottom: 8px;">
+                                <div style="font-size: 9px; color: ${mitigationColor}; margin-bottom: 4px; font-weight: 700;">
+                                    MITIGATES ${threats.length} SELECTED THREAT${threats.length !== 1 ? 'S' : ''}:
+                                </div>
+                                <div class="threat-tags">
+                                    ${threats.map(tid => `<span class="threat-tag">${tid}</span>`).join('')}
+                                </div>
+                            </div>
+                            <div class="best-practice-box">
+                                💡 <strong>Best Practice:</strong> ${control.bestPractice}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function getBaseRisk() {
+            if (!state.identity || !state.target) return 100;
+            const identityData = IDENTITY_TYPES.find(i => i.id === state.identity);
+            const targetData = ACCESS_TARGETS.find(t => t.id === state.target);
+            return Math.min(95, Math.round(identityData.baseRisk * targetData.riskMultiplier));
+        }
+
+        function calculateRiskReduction() {
+            const controls = getControlsForThreats();
+            let total = 0;
+            controls.forEach(({ control }) => {
+                total += control.baseRiskReduction;
+            });
+            return Math.min(total, 90);
+        }
+
+        function getCoveredThreats() {
+            const covered = new Set();
+            const controls = getControlsForThreats();
+            controls.forEach(({ control }) => {
+                control.mitreBlocked.forEach(t => covered.add(t));
+            });
+            return covered;
+        }
+
+        function calculateMaturity() {
+            const controlIds = getControlsForThreats().map(c => c.control.id);
+            if (controlIds.includes('phish_mfa') && controlIds.includes('compliant_device') && controlIds.length >= 6) {
+                return 'optimal';
+            } else if (controlIds.includes('mfa') && controlIds.length >= 3) {
+                return 'advanced';
+            }
+            return 'traditional';
+        }
+
+        function getLayerCoverage(controlIds) {
+            const coverage = {};
+            controlIds.forEach(controlId => {
+                const control = POLICY_CONTROLS.find(c => c.id === controlId);
+                if (control) {
+                    coverage[control.defenseLayer] = (coverage[control.defenseLayer] || 0) + 1;
+                }
+            });
+            return coverage;
+        }
+
+        function getZTPrincipleCoverage(controlIds) {
+            const coverage = {};
+            Object.keys(ZERO_TRUST_PRINCIPLES).forEach(key => {
+                coverage[key] = [];
+            });
+
+            controlIds.forEach(controlId => {
+                const control = POLICY_CONTROLS.find(c => c.id === controlId);
+                if (control) {
+                    control.ztPrinciples.forEach(principle => {
+                        coverage[principle].push(control);
+                    });
+                }
+            });
+            return coverage;
+        }
+
+        function updateSidebar() {
+            const baseRisk = getBaseRisk();
+            const riskReduction = calculateRiskReduction();
+            const finalRisk = Math.max(5, baseRisk - riskReduction);
+            const coveredThreats = getCoveredThreats();
+            const allThreats = Object.keys(MITRE_TECHNIQUES);
+            const coveragePercent = Math.round((coveredThreats.size / allThreats.length) * 100);
+            const controlIds = getControlsForThreats().map(c => c.control.id);
+
+            document.getElementById('sidebar-content').innerHTML = `
+                <!-- Risk Score -->
+                <div class="sidebar-card">
+                    <div class="sidebar-title">REAL-TIME RISK ANALYSIS</div>
+                    <div class="risk-meters">
+                        <div style="text-align: center;">
+                            <div class="risk-meter-label">BASELINE</div>
+                            ${renderRiskMeter(baseRisk)}
+                        </div>
+                        <div class="risk-arrow">→</div>
+                        <div style="text-align: center;">
+                            <div class="risk-meter-label">CURRENT</div>
+                            ${renderRiskMeter(finalRisk)}
+                        </div>
+                    </div>
+                    <div class="risk-reduction">
+                        <div class="risk-reduction-text">↓ ${riskReduction} POINTS REDUCED</div>
+                    </div>
+                </div>
+
+                <!-- MITRE Coverage -->
+                <div class="sidebar-card">
+                    <div class="sidebar-title">MITRE ATT&CK COVERAGE</div>
+                    <div style="margin-bottom: 12px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                            <span style="font-size: 9px; color: var(--text-muted);">TECHNIQUES MITIGATED</span>
+                            <span style="font-size: 11px; font-weight: 700; color: #10b981;">${coveredThreats.size}/${allThreats.length}</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${coveragePercent}%;"></div>
+                        </div>
+                        <div style="font-size: 10px; font-weight: 700; color: #10b981; margin-top: 4px; text-align: center;">${coveragePercent}%</div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                        ${['High', 'Medium'].map(severity => {
+                            const total = Object.values(MITRE_TECHNIQUES).filter(t => t.severity === severity).length;
+                            const covered = Array.from(coveredThreats).filter(id => MITRE_TECHNIQUES[id].severity === severity).length;
+                            return `
+                                <div style="background: var(--surface-soft); border-radius: 6px; padding: 8px;">
+                                    <div style="font-size: 8px; color: var(--text-muted); margin-bottom: 4px;">${severity.toUpperCase()}</div>
+                                    <div style="font-size: 12px; font-weight: 700; color: ${covered === total ? '#10b981' : '#f59e0b'};">
+                                        ${covered}/${total}
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+
+                <!-- Active Controls -->
+                <div class="sidebar-card">
+                    <div class="sidebar-title">ACTIVE CONTROLS (${controlIds.length})</div>
+                    ${controlIds.length === 0 ? 
+                        '<div style="font-size: 10px; color: var(--text-muted); text-align: center; padding: 16px;">No controls selected</div>' :
+                        `<div style="display: flex; flex-direction: column; gap: 4px;">
+                            ${controlIds.map(id => {
+                                const control = POLICY_CONTROLS.find(c => c.id === id);
+                                const color = CONTROL_COLORS[id] || COLORS.accent;
+                                return `
+                                    <div style="font-size: 9px; color: ${color}; display: flex; align-items: center; gap: 6px;">
+                                        <div style="width: 4px; height: 4px; border-radius: 50%; background: ${color};"></div>
+                                        <span>${control.label}</span>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>`
+                    }
+                </div>
+
+                <!-- Uncovered Threats -->
+                ${coveredThreats.size < allThreats.length && state.selectedThreats.length > 0 ? `
+                    <div style="background: #ef4444; border: 1px solid #ef4444; border-radius: 12px; padding: 14px; min-height: 230px;">
+                        <div style="font-size: 11px; letter-spacing: 0.12em; color: #ffffff; margin-bottom: 8px; font-weight: 700;">⚠ GAPS IDENTIFIED</div>
+                        <div style="font-size: 11px; color: #ffffff; margin-bottom: 8px;">
+                            ${allThreats.length - coveredThreats.size} techniques not mitigated
+                        </div>
+                        <div style="font-size: 10px; color: #ffffff; max-height: 150px; overflow-y: auto; padding-right: 4px; line-height: 1.35;">
+                            ${allThreats.filter(id => !coveredThreats.has(id)).map(id => 
+                                `<div style="margin-bottom: 2px;">• ${id}: ${MITRE_TECHNIQUES[id].name}</div>`
+                            ).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+            `;
+        }
+
+        function renderRiskMeter(score) {
+            const color = score < 25 ? COLORS.success : score < 50 ? COLORS.warning : COLORS.danger;
+            const radius = 31;
+            const circumference = 2 * Math.PI * radius;
+            const offset = circumference * (1 - score / 100);
+            
+            return `
+                <div class="risk-meter">
+                    <svg width="70" height="70" style="transform: rotate(-90deg);">
+                        <circle cx="35" cy="35" r="${radius}" fill="none" stroke="var(--border)" stroke-width="6" />
+                        <circle cx="35" cy="35" r="${radius}" fill="none" stroke="${color}" stroke-width="6"
+                                stroke-dasharray="${circumference}" stroke-dashoffset="${offset}" 
+                                style="transition: stroke-dashoffset 0.5s;" />
+                    </svg>
+                    <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                        <div style="font-size: 17px; font-weight: 700; color: ${color};">${score}</div>
+                        <div style="font-size: 7px; color: var(--text-muted);">RISK</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function switchAnalysisView(view, clickEvent) {
+            state.analysisView = view;
+            document.querySelectorAll('.analysis-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            const activeTab = clickEvent?.currentTarget || document.querySelector(`.analysis-tab[data-view="${view}"]`);
+            if (activeTab) activeTab.classList.add('active');
+            updateAnalysis();
+        }
+
+        function updateAnalysis() {
+            const container = document.getElementById('analysis-content');
+            const coveredThreats = getCoveredThreats();
+            const controlIds = getControlsForThreats().map(c => c.control.id);
+            const controlSet = new Set(controlIds);
+            const maturity = calculateMaturity();
+            const maturityInfo = ZERO_TRUST_MATURITY[maturity];
+            const allThreats = Object.keys(MITRE_TECHNIQUES);
+            const layerCoverage = getLayerCoverage(controlSet);
+            const ztCoverage = getZTPrincipleCoverage(controlSet);
+            const coveragePercent = allThreats.length > 0 ? Math.round((coveredThreats.size / allThreats.length) * 100) : 0;
+            const isSecurityNinja = state.theme === 'security-ninja';
+            const analysisBaseStyle = isSecurityNinja ? 'background: #ffffff; border-radius: 12px; padding: 4px;' : '';
+            const blueCardGrad = 'linear-gradient(145deg, #17324d 0%, #224b72 55%, #2f679a 100%)';
+            const blueCardBorder = '#4f7ea8';
+            const blueCardFill = `background: ${blueCardGrad}; border: 1px solid ${blueCardBorder}; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);`;
+            const maturityGradStart = mixHex(maturityInfo.color, '#091627', 0.66);
+            const maturityGradMid = mixHex(maturityInfo.color, '#123256', 0.52);
+            const maturityGradEnd = mixHex(maturityInfo.color, '#1f4a72', 0.34);
+            const maturityFill = `linear-gradient(145deg, ${maturityGradStart} 0%, ${maturityGradMid} 55%, ${maturityGradEnd} 100%)`;
+            const maturityBorder = mixHex(maturityInfo.color, '#d7e7f7', 0.2);
+
+            if (state.analysisView === 'overview') {
+                if (state.selectedThreats.length === 0) {
+                    container.innerHTML = `
+                        <div style="padding: 40px; text-align: center; color: var(--text-muted); font-size: 12px; font-style: italic;">
+                            Select threats below to see comprehensive coverage analysis
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = `
+                        <div style="${analysisBaseStyle}">
+                        <div class="stats-grid">
+                            <div class="stat-card" style="${isSecurityNinja ? blueCardFill : 'background: #ef4444; border-color: #ef4444;'}">
+                                <div class="stat-label" style="color: #ffffff;">THREATS SELECTED</div>
+                                <div class="stat-value" style="color: #ffffff;">${state.selectedThreats.length}</div>
+                            </div>
+                            <div class="stat-card" style="${isSecurityNinja ? blueCardFill : 'background: #10b981; border-color: #10b981;'}">
+                                <div class="stat-label" style="color: #ffffff;">CONTROLS NEEDED</div>
+                                <div class="stat-value" style="color: #ffffff;">${controlIds.length}</div>
+                            </div>
+                            <div class="stat-card" style="${isSecurityNinja ? `background: ${maturityFill}; border-color: ${maturityBorder}; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);` : `background: ${maturityInfo.color}10; border-color: ${maturityInfo.color};`}">
+                                <div class="stat-label" style="color: ${isSecurityNinja ? '#ffffff' : maturityInfo.color};">MATURITY LEVEL</div>
+                                <div style="font-size: 18px; font-weight: 900; color: ${isSecurityNinja ? '#ffffff' : maturityInfo.color};">${maturityInfo.level}</div>
+                            </div>
+                        </div>
+                        <div style="${isSecurityNinja ? `padding: 20px; ${blueCardFill} border-radius: 12px;` : 'padding: 20px; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.4); border-radius: 12px;'}">
+                            <div style="font-size: 12px; font-weight: 700; color: ${isSecurityNinja ? '#e8f3ff' : '#60a5fa'}; margin-bottom: 12px;">
+                                💡 Defense Strategy Summary
+                            </div>
+                            <div style="font-size: 11px; color: ${isSecurityNinja ? '#f4f9ff' : 'var(--text-primary)'}; line-height: 1.6;">
+                                To defend against the ${state.selectedThreats.length} selected threat${state.selectedThreats.length !== 1 ? 's' : ''}, 
+                                you need to implement ${controlIds.length} conditional access control${controlIds.length !== 1 ? 's' : ''}. 
+                                This configuration will achieve <strong>${maturityInfo.level}</strong> Zero Trust maturity
+                                and provide coverage across ${Object.keys(layerCoverage).length} defense layer${Object.keys(layerCoverage).length !== 1 ? 's' : ''}.
+                            </div>
+                        </div>
+                        </div>
+                    `;
+                }
+                return;
+            }
+
+            if (state.analysisView === 'matrix') {
+                container.innerHTML = `
+                    <div style="${analysisBaseStyle}">
+                    <div style="${isSecurityNinja ? `padding: 14px; ${blueCardFill} border-radius: 12px; margin-bottom: 14px;` : 'background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 14px;'}">
+                        <div style="font-size: 11px; font-weight: 700; color: ${isSecurityNinja ? '#f0f7ff' : 'var(--text-primary)'}; margin-bottom: 8px;">📊 MITRE ATT&CK Technique Coverage Matrix</div>
+                        <div style="font-size: 9px; color: ${isSecurityNinja ? '#c7ddf1' : 'var(--text-muted)'};">Coverage view with neutral card styling</div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px;">
+                        ${allThreats.map(threatId => {
+                            const threat = MITRE_TECHNIQUES[threatId];
+                            const isSelected = state.selectedThreats.includes(threatId);
+                            const isCovered = coveredThreats.has(threatId);
+                            const severityLevel = (threat.severity || '').trim().toLowerCase();
+                            const severityStyle = severityLevel === 'high'
+                                ? 'font-size: 8px; padding: 2px 6px; border-radius: 3px; font-weight: 700; border: 1px solid #4f7ea8; color: #ffffff; background: linear-gradient(135deg, #17324d 0%, #224b72 55%, #2f679a 100%);'
+                                : severityLevel === 'medium'
+                                    ? 'font-size: 8px; padding: 2px 6px; border-radius: 3px; font-weight: 700; border: 1px solid #5b88af; color: #ffffff; background: linear-gradient(135deg, #1a3754 0%, #28557f 55%, #3674ad 100%);'
+                                    : severityLevel === 'low'
+                                        ? 'font-size: 8px; padding: 2px 6px; border-radius: 3px; font-weight: 700; border: 1px solid #6692b7; color: #ffffff; background: linear-gradient(135deg, #1d3d5c 0%, #2d5d8a 55%, #3c7cb7 100%);'
+                                        : 'font-size: 8px; padding: 2px 6px; border-radius: 3px; font-weight: 700; border: 1px solid var(--border); color: var(--text-secondary); background: transparent;';
+                            const coveringControls = POLICY_CONTROLS.filter(c =>
+                                controlSet.has(c.id) && c.mitreBlocked.includes(threatId)
+                            );
+                            return `
+                                <div style="${isSecurityNinja ? `background: ${blueCardGrad}; border: 2px solid ${isSelected ? '#81b7eb' : blueCardBorder}; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);` : `background: var(--bg-card); border: 2px solid ${isSelected ? '#60a5fa' : 'var(--border)'};`} border-radius: 8px; padding: 12px;">
+                                    <div style="display: flex; align-items: start; justify-content: space-between; margin-bottom: 8px;">
+                                        <div style="display: flex; align-items: center; gap: 6px;">
+                                            <span style="font-family: monospace; font-size: 9px; font-weight: 700; background: ${isSecurityNinja ? 'rgba(9, 21, 35, 0.55)' : 'var(--surface-soft)'}; color: ${isSecurityNinja ? '#d7eaff' : 'var(--text-muted)'}; padding: 2px 6px; border-radius: 3px;">${threatId}</span>
+                                            <span style="${severityStyle}">${threat.severity}</span>
+                                        </div>
+                                        <span style="font-size: 18px; line-height: 1; color: ${isCovered ? '#10b981' : '#c6daee'};">${isCovered ? '✓' : '○'}</span>
+                                    </div>
+                                    <div style="font-size: 11px; font-weight: 700; margin-bottom: 4px; color: ${isSecurityNinja ? '#f1f8ff' : 'var(--text-primary)'};">${threat.name}</div>
+                                    <div style="font-size: 9px; color: ${isSecurityNinja ? '#c4daef' : 'var(--text-muted)'}; margin-bottom: 6px;">${threat.tactic}</div>
+                                    <div style="font-size: 8px; color: ${isSecurityNinja ? '#b0c8df' : 'var(--text-secondary)'}; font-style: italic; margin-bottom: 8px;">${threat.desc}</div>
+                                    ${isSelected ? '<div style="font-size: 8px; padding: 4px 8px; background: rgba(59,130,246,0.12); color: #3b82f6; border-radius: 4px; margin-bottom: 8px; font-weight: 700;">🎯 SELECTED FOR DEFENSE</div>' : ''}
+                                    ${isCovered && coveringControls.length > 0 ? `
+                                        <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border);">
+                                            <div style="font-size: 9px; color: ${isSecurityNinja ? '#c8f7e6' : '#10b981'}; font-weight: 700; margin-bottom: 6px;">✓ MITIGATED BY:</div>
+                                            ${coveringControls.map(c => `
+                                                <div style="font-size: 9px; color: ${isSecurityNinja ? '#d5e6f6' : 'var(--text-secondary)'}; margin-bottom: 4px; padding-left: 8px; border-left: 2px solid ${CONTROL_COLORS[c.id] || '#10b981'};">
+                                                    • ${c.label}
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                    </div>
+                `;
+                return;
+            }
+
+            if (state.analysisView === 'zerotrust') {
+                container.innerHTML = `
+                    <div style="${analysisBaseStyle}">
+                    <div style="margin-bottom: 12px;">
+                        <div style="font-size: 11px; font-weight: 700; color: ${isSecurityNinja ? '#60a5fa' : '#60a5fa'}; margin-bottom: 6px;">🔍 Zero Trust Maturity Assessment</div>
+                        <div style="font-size: 9px; color: ${isSecurityNinja ? '#4d6b89' : 'var(--text-muted)'};">Based on Microsoft Zero Trust principles.</div>
+                    </div>
+                    <div style="${isSecurityNinja ? `background: ${maturityFill}; border-radius: 12px; padding: 16px; border: 2px solid ${maturityBorder}; margin-bottom: 14px; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);` : `background: var(--surface-soft); border-radius: 12px; padding: 16px; border: 2px solid ${maturityInfo.color}; margin-bottom: 14px;`}">
+                        <div style="font-size: 9px; letter-spacing: 0.1em; color: ${isSecurityNinja ? '#d6e7f8' : 'var(--text-muted)'}; margin-bottom: 6px;">CURRENT MATURITY LEVEL</div>
+                        <div style="font-size: 20px; font-weight: 800; color: ${isSecurityNinja ? '#ffffff' : maturityInfo.color}; margin-bottom: 6px;">${maturityInfo.level}</div>
+                        <div style="font-size: 10px; color: ${isSecurityNinja ? '#e6f2ff' : 'var(--text-secondary)'};">${maturityInfo.desc}</div>
+                    </div>
+                    <div style="display: grid; gap: 10px;">
+                        ${Object.entries(ZERO_TRUST_PRINCIPLES).map(([key, principle]) => {
+                            const controls = ztCoverage[key] || [];
+                            const principleCoverage = Math.min(100, Math.round((controls.length / 3) * 100));
+                            return `
+                                <div style="${isSecurityNinja ? `${blueCardFill} border-radius: 8px; padding: 12px;` : `background: var(--surface-soft); border-radius: 8px; padding: 12px; border: 1px solid ${principle.color}50;`}">
+                                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                                        <div style="font-size: 11px; font-weight: 700; color: ${isSecurityNinja ? '#f0f7ff' : principle.color};">${principle.icon} ${principle.label}</div>
+                                        <div style="font-size: 10px; font-weight: 700; color: ${isSecurityNinja ? '#d5e6f6' : principle.color};">${controls.length} control${controls.length !== 1 ? 's' : ''}</div>
+                                    </div>
+                                    <div style="height: 6px; background: ${isSecurityNinja ? 'rgba(255,255,255,0.22)' : 'var(--border)'}; border-radius: 3px; overflow: hidden; margin-bottom: 6px;">
+                                        <div style="height: 100%; width: ${principleCoverage}%; background: ${principle.color};"></div>
+                                    </div>
+                                    <div style="font-size: 9px; color: ${isSecurityNinja ? '#d8e8f8' : 'var(--text-secondary)'};">${controls.map(c => c.label).join(' • ') || 'No active controls mapped yet'}</div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = `
+                <div style="${analysisBaseStyle}">
+                <div style="margin-bottom: 12px;">
+                    <div style="font-size: 11px; font-weight: 700; color: #60a5fa; margin-bottom: 6px;">🛡️ Defense in Depth Layer Analysis</div>
+                    <div style="font-size: 9px; color: ${isSecurityNinja ? '#4d6b89' : 'var(--text-muted)'};">Layered coverage from perimeter to data controls.</div>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+                    ${DEFENSE_IN_DEPTH_LAYERS.map(layer => {
+                        const count = layerCoverage[layer.layer] || 0;
+                        const isActive = count > 0;
+                        return `
+                            <div style="${isSecurityNinja ? `${blueCardFill} border-radius: 8px; padding: 14px;` : `background: var(--surface-soft); border-radius: 8px; padding: 14px; border: 1px solid ${isActive ? layer.color : 'var(--border)'};`}">
+                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                                    <div style="font-size: 11px; font-weight: 700; color: ${isSecurityNinja ? '#f0f7ff' : (isActive ? layer.color : 'var(--text-muted)')};">${layer.layer} Layer</div>
+                                    <div style="font-size: 14px; color: ${isSecurityNinja ? (isActive ? '#c8f7e6' : '#c6daee') : (isActive ? layer.color : 'var(--text-muted)')};">${isActive ? '✓' : '○'}</div>
+                                </div>
+                                <div style="font-size: 9px; color: ${isSecurityNinja ? '#d5e6f6' : 'var(--text-secondary)'}; margin-bottom: 6px;">${layer.example}</div>
+                                <div style="font-size: 9px; font-weight: 700; color: ${isSecurityNinja ? (isActive ? '#c8f7e6' : '#f5d7a5') : (isActive ? '#10b981' : '#f59e0b')};">
+                                    ${isActive ? `${count} control${count > 1 ? 's' : ''} active` : 'Not covered by current selection'}
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+                </div>
+            `;
+        }
+
+        function toggleBestPractices() {
+            const modal = document.getElementById('best-practices-modal');
+            modal.classList.toggle('show');
+        }
+
+        function downloadPdf() {
+            window.print();
+        }
+
+        function renderBestPractices() {
+            const container = document.getElementById('best-practices-content');
+            container.innerHTML = BEST_PRACTICES.map(bp => `
+                <div class="bp-card ${bp.critical ? 'critical' : ''}">
+                    <div class="bp-header">
+                        <div class="bp-icon">${bp.icon}</div>
+                        <div class="bp-content">
+                            <div class="bp-title-row">
+                                <div class="bp-title">${bp.title}</div>
+                                ${bp.critical ? '<span class="bp-critical-badge">CRITICAL</span>' : ''}
+                            </div>
+                            <div class="bp-desc">${bp.desc}</div>
+                            <div class="bp-why">Why: ${bp.why}</div>
+                            <div class="bp-reference">📚 ${bp.msReference}</div>
+                        </div>
+                    </div>
+                    <div class="bp-steps">
+                        <div class="bp-steps-title">IMPLEMENTATION STEPS:</div>
+                        ${bp.steps.map((step, idx) => `
+                            <div class="bp-step">
+                                <span class="bp-step-num">${idx + 1}.</span>
+                                <span>${step}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function resetAll() {
+            state = {
+                identity: null,
+                target: null,
+                selectedThreats: [],
+                draggedThreat: null,
+                analysisView: 'overview'
+            };
+            renderIdentityOptions();
+            renderTargetOptions();
+            renderThreatPalette();
+            renderDroppedThreats();
+            updateAnalysis();
+            updateSidebar();
+        }
+
+        function startPulseAnimation() {
+            // Pulse animation is handled via CSS
+        }
+
+        // Initialize on load
+        window.onload = init;
+    </script>
 </body>
 </html>
