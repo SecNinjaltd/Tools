@@ -24,14 +24,14 @@
   --cell-grad-main: linear-gradient(135deg, #0B1726 0%, #12263C 60%, #1E3A5A 100%);
   --cell-grad-sub: linear-gradient(135deg, #edf5fc 0%, #e1edf8 100%);
   --cell-grad-sub-hover: linear-gradient(135deg, #e5f0fb 0%, #d7e7f6 100%);
-  --severity-critical: #ff3b5c;
-  --severity-high: #ff7b42;
-  --severity-medium: #ffb830;
-  --severity-low: #4dc9f6;
+  --severity-critical: #e1063a;
+  --severity-high: #e75a00;
+  --severity-medium: #f2aa00;
+  --severity-low: #008fd6;
   --severity-info: #7c8db0;
-  --status-compliant: #00e5a0;
-  --status-warning: #ffb830;
-  --status-noncompliant: #ff3b5c;
+  --status-compliant: #0dbf67;
+  --status-warning: #f2aa00;
+  --status-noncompliant: #e1063a;
   --chart-1: #00e5a0;
   --chart-2: #4dc9f6;
   --chart-3: #a78bfa;
@@ -84,7 +84,9 @@ body {
 
 .topnav-brand span.ninja-text {
   background: linear-gradient(135deg, #ffffff 0%, #cfe6fb 100%);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .topnav-center {
@@ -149,7 +151,7 @@ body {
 /* ===== EXECUTIVE SUMMARY STRIP ===== */
 .exec-strip {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(7, 1fr);
   gap: 12px;
   margin-bottom: 20px;
 }
@@ -357,15 +359,18 @@ body {
   font-size: 11px; font-weight: 700; padding: 2px 8px;
   border-radius: 4px;
   font-family: 'JetBrains Mono', monospace;
+  border: 2px solid transparent;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.14);
 }
 
-.vuln-cvss.critical { background: rgba(255,59,92,0.15); color: var(--severity-critical); }
-.vuln-cvss.high { background: rgba(255,123,66,0.15); color: var(--severity-high); }
-.vuln-cvss.medium { background: rgba(255,184,48,0.15); color: var(--severity-medium); }
-.vuln-cvss.low { background: rgba(77,201,246,0.15); color: var(--severity-low); }
+.vuln-cvss.critical { background: linear-gradient(135deg, #b3002d 0%, #ff2d55 100%); color: #ffffff; border: 2px solid #970025; }
+.vuln-cvss.high { background: linear-gradient(135deg, #c94900 0%, #ff8f00 100%); color: #ffffff; border: 2px solid #a43b00; }
+.vuln-cvss.medium { background: linear-gradient(135deg, #f39a00 0%, #ffd000 100%); color: #2d2100; border: 2px solid #d48600; }
+.vuln-cvss.low { background: linear-gradient(135deg, #007bc7 0%, #29c8ff 100%); color: #ffffff; border: 2px solid #0069ab; }
 
 /* ===== UNLICENSED THREAT RELEVANCE ===== */
 .threat-list { display: grid; gap: 8px; max-height: 300px; overflow-y: auto; }
+.threat-workbench-list { display: grid; gap: 8px; max-height: 520px; overflow-y: auto; }
 .threat-item {
   padding: 10px 12px;
   border: 1px solid var(--border-subtle);
@@ -380,10 +385,12 @@ body {
 .threat-score {
   font-size: 10px; font-family: 'JetBrains Mono', monospace; font-weight: 700;
   padding: 3px 8px; border-radius: 999px;
+  border: 2px solid transparent;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.14);
 }
-.threat-score.critical { color: #8F1D1D; background: #FEE2E2; border: 1px solid #FCA5A5; }
-.threat-score.high { color: #8A4B00; background: #FFEDD5; border: 1px solid #FDBA74; }
-.threat-score.medium { color: #0B4F6C; background: #E0F2FE; border: 1px solid #93C5FD; }
+.threat-score.critical { color: #ffffff; background: linear-gradient(135deg, #b3002d 0%, #ff2d55 100%); border: 2px solid #970025; }
+.threat-score.high { color: #ffffff; background: linear-gradient(135deg, #c94900 0%, #ff8f00 100%); border: 2px solid #a43b00; }
+.threat-score.medium { color: #2d2100; background: linear-gradient(135deg, #f39a00 0%, #ffd000 100%); border: 2px solid #d48600; }
 .threat-meta { font-size: 11px; color: var(--text-secondary); line-height: 1.45; }
 
 .remediation-list { display: grid; gap: 8px; max-height: 320px; overflow-y: auto; }
@@ -401,21 +408,59 @@ body {
 .prio-tag {
   font-size: 10px; font-family: 'JetBrains Mono', monospace; font-weight: 700;
   padding: 3px 8px; border-radius: 999px;
+  border: 2px solid transparent;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.14);
 }
-.prio-tag.p1 { color: #7F1D1D; background: #FECACA; border: 1px solid #F87171; }
-.prio-tag.p2 { color: #854D0E; background: #FDE68A; border: 1px solid #F59E0B; }
-.prio-tag.p3 { color: #14532D; background: #BBF7D0; border: 1px solid #4ADE80; }
+.prio-tag.p1 { color: #ffffff; background: linear-gradient(135deg, #b3002d 0%, #ff2d55 100%); border: 2px solid #970025; }
+.prio-tag.p2 { color: #2d2100; background: linear-gradient(135deg, #f39a00 0%, #ffd000 100%); border: 2px solid #d48600; }
+.prio-tag.p3 { color: #ffffff; background: linear-gradient(135deg, #0b8a49 0%, #22d47a 100%); border: 2px solid #0a733e; }
 .remediation-meta { font-size: 11px; color: var(--text-secondary); line-height: 1.45; }
 .remediation-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
 .remediation-pill {
   font-size: 9px; font-family: 'JetBrains Mono', monospace; font-weight: 600;
   border: 1px solid var(--border-subtle); border-radius: 999px; padding: 2px 7px; color: var(--text-muted);
   background: #f3f8fd;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.14);
 }
-.remediation-pill.critical { color: #7F1D1D; background: #FECACA; border-color: #F87171; }
-.remediation-pill.high { color: #854D0E; background: #FDE68A; border-color: #F59E0B; }
-.remediation-pill.medium { color: #0B4F6C; background: #E0F2FE; border-color: #93C5FD; }
-.remediation-pill.low { color: #14532D; background: #BBF7D0; border-color: #4ADE80; }
+.remediation-pill.critical { color: #ffffff; background: linear-gradient(135deg, #b3002d 0%, #ff2d55 100%); border: 2px solid #970025; }
+.remediation-pill.high { color: #ffffff; background: linear-gradient(135deg, #c94900 0%, #ff8f00 100%); border: 2px solid #a43b00; }
+.remediation-pill.medium { color: #2d2100; background: linear-gradient(135deg, #f39a00 0%, #ffd000 100%); border: 2px solid #d48600; }
+.remediation-pill.low { color: #ffffff; background: linear-gradient(135deg, #0b8a49 0%, #22d47a 100%); border: 2px solid #0a733e; }
+
+.threat-key-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.threat-key-section {
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
+  border-radius: var(--radius-sm);
+  padding: 10px;
+}
+.threat-key-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.threat-key-list {
+  display: grid;
+  gap: 6px;
+}
+.threat-key-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.threat-key-text {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
 
 .defender-grid {
   display: grid;
@@ -437,7 +482,6 @@ body {
   font-size: 11px; color: var(--text-secondary); display: flex; justify-content: space-between; gap: 8px;
 }
 
-.mitre-wrap { display: grid; gap: 12px; }
 .mitre-tactic-list { display: grid; gap: 8px; }
 .mitre-tactic-row {
   border: 1px solid var(--border-subtle); border-radius: 8px; background: #f6faff; padding: 8px 10px;
@@ -452,20 +496,51 @@ body {
 .mitre-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #1e3a5a 0%, #2f6fa8 100%); }
 .mitre-heatmap {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 6px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
 }
 .mitre-cell {
-  border-radius: 6px;
-  padding: 8px 6px;
-  text-align: center;
-  font-size: 10px;
+  border-radius: 8px;
+  padding: 10px 10px;
+  min-height: 78px;
+  text-align: left;
+  font-size: 11px;
+  line-height: 1.25;
   font-family: 'JetBrains Mono', monospace;
   font-weight: 700;
   cursor: pointer;
   transition: var(--transition);
+  border: 2px solid #c6d8e9;
+  display: grid;
+  gap: 5px;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12);
 }
-.mitre-cell:hover { transform: translateY(-1px); box-shadow: 0 0 0 1px rgba(30,58,90,0.15) inset; }
+.mitre-cell:hover { transform: translateY(-1px); box-shadow: 0 0 0 1px #9cbddc inset; }
+.mitre-cell .tactic {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+}
+.mitre-cell .meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+}
+.mitre-cell .meta .k {
+  opacity: 0.78;
+  font-weight: 600;
+}
+.mitre-cell .meta .v {
+  font-weight: 800;
+}
+.mitre-cell .risk {
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
 .hidden { display: none !important; }
 
 .policy-gap-grid {
@@ -480,6 +555,13 @@ body {
   background: var(--bg-elevated);
   border-radius: 8px;
   padding: 10px 12px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.policy-gap-cell:hover {
+  border-color: var(--border);
+  transform: translateY(-1px);
 }
 
 .policy-gap-cell .k {
@@ -522,6 +604,18 @@ body {
   background: var(--bg-elevated);
   border-radius: 8px;
   padding: 10px 12px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.policy-gap-item:hover,
+.policy-mitre-item:hover {
+  border-color: var(--border);
+  transform: translateY(-1px);
+}
+.policy-gap-item.selected,
+.policy-mitre-item.selected {
+  border-color: var(--accent-ninja);
+  box-shadow: inset 0 0 0 1px rgba(22, 107, 179, 0.22);
 }
 
 .policy-gap-head,
@@ -553,13 +647,14 @@ body {
   font-weight: 700;
   border-radius: 999px;
   padding: 2px 7px;
-  border: 1px solid var(--border-subtle);
+  border: 2px solid var(--border-subtle);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.14);
 }
 
-.policy-pill.critical { color: #7F1D1D; background: #FECACA; border-color: #F87171; }
-.policy-pill.high { color: #854D0E; background: #FDE68A; border-color: #F59E0B; }
-.policy-pill.medium { color: #0B4F6C; background: #E0F2FE; border-color: #93C5FD; }
-.policy-pill.low { color: #14532D; background: #BBF7D0; border-color: #4ADE80; }
+.policy-pill.critical { color: #ffffff; background: linear-gradient(135deg, #b3002d 0%, #ff2d55 100%); border-color: #970025; }
+.policy-pill.high { color: #ffffff; background: linear-gradient(135deg, #c94900 0%, #ff8f00 100%); border-color: #a43b00; }
+.policy-pill.medium { color: #2d2100; background: linear-gradient(135deg, #f39a00 0%, #ffd000 100%); border-color: #d48600; }
+.policy-pill.low { color: #ffffff; background: linear-gradient(135deg, #0b8a49 0%, #22d47a 100%); border-color: #0a733e; }
 
 /* ===== DEVICE TABLE ===== */
 .device-table-wrap { max-height: 380px; overflow-y: auto; }
@@ -605,18 +700,20 @@ body {
   width: 6px; height: 6px; border-radius: 50%;
 }
 
-.health-dot.healthy { background: var(--status-compliant); box-shadow: 0 0 6px rgba(0,229,160,0.4); }
-.health-dot.warning { background: var(--status-warning); box-shadow: 0 0 6px rgba(255,184,48,0.4); }
-.health-dot.critical { background: var(--status-noncompliant); box-shadow: 0 0 6px rgba(255,59,92,0.4); }
+.health-dot.healthy { background: var(--status-compliant); box-shadow: 0 0 0 2px #d8f6e7; }
+.health-dot.warning { background: var(--status-warning); box-shadow: 0 0 0 2px #ffe8b0; }
+.health-dot.critical { background: var(--status-noncompliant); box-shadow: 0 0 0 2px #ffd0db; }
 
 .version-badge {
   font-family: 'JetBrains Mono', monospace; font-size: 10px;
   padding: 2px 6px; border-radius: 3px;
+  border: 2px solid transparent;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.14);
 }
 
-.version-badge.current { background: rgba(0,229,160,0.12); color: var(--status-compliant); }
-.version-badge.outdated { background: rgba(255,184,48,0.12); color: var(--status-warning); }
-.version-badge.critical { background: rgba(255,59,92,0.12); color: var(--status-noncompliant); }
+.version-badge.current { background: linear-gradient(135deg, #0b8a49 0%, #22d47a 100%); color: #ffffff; border: 2px solid #0a733e; }
+.version-badge.outdated { background: linear-gradient(135deg, #f39a00 0%, #ffd000 100%); color: #2d2100; border: 2px solid #d48600; }
+.version-badge.critical { background: linear-gradient(135deg, #b3002d 0%, #ff2d55 100%); color: #ffffff; border: 2px solid #970025; }
 
 /* ===== CA POLICY COVERAGE ===== */
 .ca-policy-list { max-height: 340px; overflow-y: auto; }
@@ -633,6 +730,11 @@ body {
 }
 
 .ca-item:hover { border-left-color: var(--accent-ninja); background: var(--cell-grad-sub-hover); }
+.ca-item.selected {
+  border-left-color: var(--accent-ninja);
+  border-color: #b9d5ee;
+  background: var(--cell-grad-sub-hover);
+}
 
 .ca-item-header {
   display: flex; align-items: center; justify-content: space-between;
@@ -645,11 +747,13 @@ body {
 
 .ca-status-badge {
   padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600;
+  border: 2px solid transparent;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.14);
 }
 
-.ca-status-badge.enabled { background: rgba(0,229,160,0.12); color: var(--status-compliant); }
-.ca-status-badge.report-only { background: rgba(255,184,48,0.12); color: var(--status-warning); }
-.ca-status-badge.disabled { background: rgba(255,59,92,0.12); color: var(--status-noncompliant); }
+.ca-status-badge.enabled { background: linear-gradient(135deg, #0b8a49 0%, #22d47a 100%); color: #ffffff; border: 2px solid #0a733e; }
+.ca-status-badge.report-only { background: linear-gradient(135deg, #f39a00 0%, #ffd000 100%); color: #2d2100; border: 2px solid #d48600; }
+.ca-status-badge.disabled { background: linear-gradient(135deg, #b3002d 0%, #ff2d55 100%); color: #ffffff; border: 2px solid #970025; }
 
 .ca-detail-row {
   display: flex; gap: 16px; font-size: 11px; color: var(--text-muted);
@@ -691,15 +795,17 @@ body {
   font-size: 11px; font-weight: 700; cursor: pointer;
   transition: var(--transition); position: relative;
   font-family: 'JetBrains Mono', monospace;
+  border: 2px solid transparent;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12);
 }
 
 .risk-cell:hover { transform: scale(1.08); z-index: 2; }
 
-.risk-cell.r5 { background: rgba(255,59,92,0.78); color: #fff; }
-.risk-cell.r4 { background: rgba(255,123,66,0.72); color: #fff; }
-.risk-cell.r3 { background: rgba(255,184,48,0.72); color: #fff; }
-.risk-cell.r2 { background: rgba(77,201,246,0.62); color: #0f2437; }
-.risk-cell.r1 { background: rgba(0,229,160,0.55); color: #0f2437; }
+.risk-cell.r5 { background: linear-gradient(135deg, #b3002d 0%, #ff2d55 100%); color: #ffffff; }
+.risk-cell.r4 { background: linear-gradient(135deg, #c94900 0%, #ff8f00 100%); color: #ffffff; }
+.risk-cell.r3 { background: linear-gradient(135deg, #f39a00 0%, #ffd000 100%); color: #2d2100; }
+.risk-cell.r2 { background: linear-gradient(135deg, #188ac6 0%, #45d2ff 100%); color: #0f2437; }
+.risk-cell.r1 { background: linear-gradient(135deg, #0ea55e 0%, #4be99a 100%); color: #0f2437; }
 
 .risk-label {
   font-size: 9px; color: var(--text-muted);
@@ -724,7 +830,7 @@ body {
   width: 6px;
   height: 6px;
   border-radius: 999px;
-  background: rgba(255,255,255,0.9);
+  background: #ffffff;
 }
 
 .risk-matrix.compact .risk-label,
@@ -742,40 +848,188 @@ body {
 
 .trend-chart-svg { width: 100%; height: 100%; }
 
-/* ===== LOCATION MAP (Simplified) ===== */
-.location-grid {
-  display: grid; grid-template-columns: 1fr 1fr;
+/* ===== SECURE SCORE CHART ===== */
+.secure-score-chart {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+  align-items: end;
+  height: 180px;
+  margin-top: 8px;
+}
+.secure-score-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.secure-score-bar-wrap {
+  width: 100%;
+  max-width: 40px;
+  height: 130px;
+  border-radius: 8px;
+  background: #fff7d6;
+  border: 1px solid #f5d77b;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+}
+.secure-score-bar {
+  width: 100%;
+  background: linear-gradient(180deg, var(--score-color-top) 0%, var(--score-color-bottom) 100%);
+  border-top: 1px solid rgba(255,255,255,0.35);
+  transition: height 0.6s ease;
+}
+.secure-score-val {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.secure-score-label {
+  font-size: 9px;
+  color: var(--text-muted);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ===== STANDARDS VIEW ===== */
+.standards-kpi {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 10px;
+}
+.standards-kpi .label {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.standards-kpi .value {
+  font-size: 28px;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-primary);
+}
+.standards-list {
+  display: grid;
   gap: 8px;
 }
-
-.location-item {
-  background: var(--cell-grad-sub);
-  border: 1px solid #d8e7f5;
-  border-radius: var(--radius-sm);
-  padding: 12px;
-  display: flex; align-items: center; justify-content: space-between;
-  cursor: pointer; transition: var(--transition);
+.standards-row {
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--bg-elevated);
+  padding: 8px 10px;
+  cursor: pointer;
+  transition: var(--transition);
 }
-
-.location-item:hover { background: var(--cell-grad-sub-hover); }
-
-.location-info { display: flex; align-items: center; gap: 10px; }
-
-.location-flag { font-size: 20px; }
-
-.location-name { font-size: 12px; font-weight: 600; }
-.location-count { font-size: 11px; color: var(--text-muted); }
-
-.location-health {
-  display: flex; flex-direction: column; align-items: flex-end; gap: 3px;
+.standards-row:hover {
+  border-color: var(--border);
+  transform: translateY(-1px);
 }
-
-.location-bar {
-  display: flex; gap: 2px;
+.standards-row-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
 }
-
-.loc-bar-seg {
-  width: 4px; height: 18px; border-radius: 2px;
+.standards-row-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.standards-row-meta {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-family: 'JetBrains Mono', monospace;
+}
+.standards-bar {
+  height: 7px;
+  border-radius: 999px;
+  background: #deebf7;
+  overflow: hidden;
+}
+.standards-bar > div {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #1e3a5a 0%, #2f6fa8 100%);
+}
+.nist-grid {
+  display: grid;
+  gap: 8px;
+}
+.nist-item {
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: #f6faff;
+  padding: 8px 10px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.nist-item:hover {
+  border-color: var(--border);
+  transform: translateY(-1px);
+}
+.nist-item .k {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+.nist-item .v {
+  margin-top: 4px;
+  font-size: 16px;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-primary);
+}
+.identity-list {
+  display: grid;
+  gap: 8px;
+}
+.identity-item {
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: #f7fbff;
+  padding: 8px 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.identity-item:hover {
+  border-color: var(--border);
+  transform: translateY(-1px);
+}
+.identity-item .name {
+  font-size: 11px;
+  color: var(--text-primary);
+  font-weight: 700;
+}
+.identity-status {
+  font-size: 10px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 2px solid;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.14);
+}
+.identity-status.good {
+  color: #ffffff;
+  background: linear-gradient(135deg, #0b8a49 0%, #22d47a 100%);
+  border-color: #0a733e;
+}
+.identity-status.warn {
+  color: #2d2100;
+  background: linear-gradient(135deg, #f39a00 0%, #ffd000 100%);
+  border-color: #d48600;
+}
+.identity-status.bad {
+  color: #ffffff;
+  background: linear-gradient(135deg, #b3002d 0%, #ff2d55 100%);
+  border-color: #970025;
 }
 
 /* ===== SOFTWARE / APP INVENTORY ===== */
@@ -864,12 +1118,26 @@ body {
 }
 
 .detail-row {
-  display: flex; justify-content: space-between; padding: 6px 0;
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr);
+  column-gap: 12px;
+  align-items: start;
+  padding: 6px 0;
   font-size: 12px;
 }
 
-.detail-row .label { color: var(--text-muted); }
-.detail-row .value { color: var(--text-primary); font-weight: 500; }
+.detail-row .label {
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.detail-row .value {
+  color: var(--text-primary);
+  font-weight: 500;
+  line-height: 1.45;
+  text-align: left;
+  word-break: break-word;
+}
 
 .detail-tag-list {
   display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;
@@ -888,93 +1156,192 @@ body {
 .view-hidden { display: none !important; }
 
 body[data-active-view="threat"] .dashboard-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-body[data-active-view="threat"] .threat-relevance-card,
-body[data-active-view="threat"] .remediation-card {
-  grid-column: span 1 !important;
-}
-body[data-active-view="threat"] .mitre-card {
-  grid-column: span 2 !important;
-}
-body[data-active-view="vulnerabilities"] .dashboard-grid {
-  grid-template-columns: 1.35fr 1fr;
-  grid-auto-rows: auto;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1.15fr) minmax(260px, 0.8fr);
   align-items: start;
 }
-body[data-active-view="vulnerabilities"] .vuln-main-card {
+body[data-active-view="threat"] .threat-workbench-card {
   grid-column: 1;
-  grid-row: 1 / span 2;
+  grid-row: 1;
+  height: 100%;
   display: flex;
   flex-direction: column;
 }
-body[data-active-view="vulnerabilities"] .vuln-main-card .card-body {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-body[data-active-view="vulnerabilities"] .vuln-main-card .vuln-list-wrap {
-  margin-top: 14px;
+body[data-active-view="threat"] .threat-workbench-card .card-body {
   flex: 1;
   min-height: 0;
 }
-body[data-active-view="vulnerabilities"] .vuln-main-card .vuln-list {
-  max-height: 100%;
-}
-body[data-active-view="vulnerabilities"] .remediation-card {
-  grid-column: 2 !important;
-  grid-row: 1;
-}
-body[data-active-view="vulnerabilities"] .risk-matrix-card {
+body[data-active-view="threat"] .threat-missing-patches-card {
   grid-column: 2;
-  grid-row: 2;
+  grid-row: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
-body[data-active-view="vulnerabilities"] .risk-matrix-card .card-body {
-  padding: 10px 12px;
+body[data-active-view="threat"] .threat-missing-patches-card .card-body {
+  flex: 1;
+  min-height: 0;
 }
-body[data-active-view="vulnerabilities"] .software-card {
-  grid-column: 1 / span 2 !important;
-  grid-row: 3;
+body[data-active-view="threat"] .threat-key-card {
+  grid-column: 3;
+  grid-row: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+body[data-active-view="threat"] .threat-key-card .card-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+body[data-active-view="threat"] .threat-key-card .threat-key-grid {
+  grid-template-columns: 1fr;
 }
 body[data-active-view="devices"] .dashboard-grid {
-  grid-template-columns: 1.35fr 1fr;
-  grid-auto-rows: auto;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: 420px 390px;
+  grid-auto-rows: 390px;
   align-items: start;
 }
 body[data-active-view="devices"] .device-inventory-card {
-  grid-column: 1;
-  grid-row: 1 / span 2;
+  grid-column: 1 / span 3;
+  grid-row: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+body[data-active-view="devices"] .device-inventory-card .card-body {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 body[data-active-view="devices"] .device-type-card {
-  grid-column: 2;
-  grid-row: 1;
+  grid-column: 1;
+  grid-row: 2;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+body[data-active-view="devices"] .device-type-card .card-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 body[data-active-view="devices"] .os-card {
   grid-column: 2;
   grid-row: 2;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
-body[data-active-view="devices"] .location-card {
-  grid-column: 1 / span 2;
-  grid-row: 3;
+body[data-active-view="devices"] .os-card .card-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+body[data-active-view="devices"] .defender-version-card {
+  grid-column: 3;
+  grid-row: 2;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+body[data-active-view="devices"] .defender-version-card .card-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+body[data-active-view="defender"] .dashboard-grid {
+  grid-template-columns: 1fr;
+}
+body[data-active-view="defender"] .defender-stack-card {
+  grid-column: 1 !important;
+  grid-row: auto;
 }
 body[data-active-view="policies"] .dashboard-grid {
-  grid-template-columns: 1.3fr 1fr;
-  grid-auto-rows: auto;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.05fr) minmax(0, 1fr);
+  grid-template-rows: 520px;
+  grid-auto-rows: 520px;
+  align-items: start;
 }
 body[data-active-view="policies"] .ca-policy-card {
   grid-column: 1;
-  grid-row: 1 / span 2;
+  grid-row: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 body[data-active-view="policies"] .policy-gaps-card {
   grid-column: 2;
   grid-row: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 body[data-active-view="policies"] .policy-mitre-card {
-  grid-column: 2;
-  grid-row: 2;
+  grid-column: 3;
+  grid-row: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+body[data-active-view="policies"] .ca-policy-card .card-body,
+body[data-active-view="policies"] .policy-gaps-card .card-body,
+body[data-active-view="policies"] .policy-mitre-card .card-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 body[data-active-view="policies"] .ca-policy-card .ca-policy-list {
   max-height: none;
+}
+body[data-active-view="standards"] .dashboard-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-rows: 390px;
+  align-items: start;
+}
+body[data-active-view="standards"] .standards-cis-card,
+body[data-active-view="standards"] .standards-nist-card,
+body[data-active-view="standards"] .standards-identity-card,
+body[data-active-view="standards"] .standards-nis2-card,
+body[data-active-view="standards"] .standards-mitre-tactic-card,
+body[data-active-view="standards"] .standards-mitre-heatmap-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+body[data-active-view="standards"] .standards-cis-card .card-body,
+body[data-active-view="standards"] .standards-nist-card .card-body,
+body[data-active-view="standards"] .standards-identity-card .card-body,
+body[data-active-view="standards"] .standards-nis2-card .card-body,
+body[data-active-view="standards"] .standards-mitre-tactic-card .card-body,
+body[data-active-view="standards"] .standards-mitre-heatmap-card .card-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+body[data-active-view="standards"] .standards-cis-card {
+  grid-column: 1;
+  grid-row: 1;
+}
+body[data-active-view="standards"] .standards-nist-card {
+  grid-column: 2;
+  grid-row: 1;
+}
+body[data-active-view="standards"] .standards-identity-card {
+  grid-column: 3;
+  grid-row: 1;
+}
+body[data-active-view="standards"] .standards-nis2-card {
+  grid-column: 1;
+  grid-row: 2;
+}
+body[data-active-view="standards"] .standards-mitre-tactic-card {
+  grid-column: 2;
+  grid-row: 2;
+}
+body[data-active-view="standards"] .standards-mitre-heatmap-card {
+  grid-column: 3;
+  grid-row: 2;
 }
 
 @media (min-width: 1201px) {
@@ -1010,16 +1377,16 @@ body[data-active-view="policies"] .ca-policy-card .ca-policy-list {
     grid-row: 2;
   }
   .dashboard-grid.overview-layout .software-card {
-    grid-column: 1 / span 2;
+    grid-column: 1;
+    grid-row: 3;
+  }
+  .dashboard-grid.overview-layout .secure-score-card {
+    grid-column: 2;
     grid-row: 3;
   }
   .dashboard-grid.overview-layout .ca-policy-card {
     grid-column: 3;
     grid-row: 3;
-  }
-  .dashboard-grid.overview-layout .location-card {
-    grid-column: 1 / span 3;
-    grid-row: 4;
   }
   .dashboard-grid.overview-layout .vuln-main-card .card-body {
     display: flex;
@@ -1056,9 +1423,6 @@ body[data-active-view="policies"] .ca-policy-card .ca-policy-list {
     width: 100%;
     height: 100%;
     aspect-ratio: auto;
-  }
-  .dashboard-grid.overview-layout .location-card .card-body {
-    max-height: none;
   }
 }
 
@@ -1147,25 +1511,41 @@ body[data-active-view="policies"] .ca-policy-card .ca-policy-list {
   body[data-active-view="devices"] .device-inventory-card,
   body[data-active-view="devices"] .device-type-card,
   body[data-active-view="devices"] .os-card,
-  body[data-active-view="devices"] .location-card { grid-column: 1 !important; grid-row: auto; }
-  body[data-active-view="vulnerabilities"] .dashboard-grid { grid-template-columns: 1fr; }
-  body[data-active-view="vulnerabilities"] .vuln-main-card,
-  body[data-active-view="vulnerabilities"] .remediation-card,
-  body[data-active-view="vulnerabilities"] .risk-matrix-card,
-  body[data-active-view="vulnerabilities"] .software-card { grid-column: 1 !important; grid-row: auto; }
+  body[data-active-view="devices"] .defender-version-card { grid-column: 1 !important; grid-row: auto; }
   body[data-active-view="policies"] .dashboard-grid { grid-template-columns: 1fr; }
   body[data-active-view="policies"] .ca-policy-card,
   body[data-active-view="policies"] .policy-gaps-card,
   body[data-active-view="policies"] .policy-mitre-card { grid-column: 1; grid-row: auto; }
+  body[data-active-view="standards"] .dashboard-grid { grid-template-columns: 1fr; }
+  body[data-active-view="standards"] .standards-cis-card,
+  body[data-active-view="standards"] .standards-nist-card,
+  body[data-active-view="standards"] .standards-identity-card,
+  body[data-active-view="standards"] .standards-nis2-card,
+  body[data-active-view="standards"] .standards-mitre-tactic-card,
+  body[data-active-view="standards"] .standards-mitre-heatmap-card { grid-column: 1 !important; grid-row: auto; }
 }
 
 @media (max-width: 768px) {
   .exec-strip { grid-template-columns: repeat(2, 1fr); }
   .dashboard-grid { grid-template-columns: 1fr; }
   .span-2, .span-3 { grid-column: span 1; }
+  body[data-active-view="threat"] .threat-workbench-card {
+    grid-column: 1 !important;
+    grid-row: auto;
+  }
+  body[data-active-view="threat"] .threat-missing-patches-card {
+    grid-column: 1 !important;
+    grid-row: auto;
+  }
+  body[data-active-view="threat"] .threat-key-card {
+    grid-column: 1 !important;
+    grid-row: auto;
+  }
   .os-card { grid-column: span 1; }
   .defender-grid { grid-template-columns: 1fr; }
   .mitre-heatmap { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .threat-key-grid { grid-template-columns: 1fr; }
+  .detail-row { grid-template-columns: 1fr; row-gap: 4px; }
   .topnav-center { display: none; }
 }
 </style>
@@ -1181,11 +1561,11 @@ body[data-active-view="policies"] .ca-policy-card .ca-policy-list {
 
   <div class="topnav-center">
     <button class="topnav-tab active" onclick="switchView('overview', this)">Overview</button>
-    <button class="topnav-tab" onclick="switchView('vulnerabilities', this)">Vulnerabilities</button>
     <button class="topnav-tab" onclick="switchView('devices', this)">Devices</button>
     <button class="topnav-tab" onclick="switchView('policies', this)">Policies</button>
     <button class="topnav-tab" onclick="switchView('defender', this)">Defender</button>
     <button class="topnav-tab" onclick="switchView('threat', this)">Threat</button>
+    <button class="topnav-tab" onclick="switchView('standards', this)">Standards</button>
   </div>
 
   <div class="topnav-right">
@@ -1224,6 +1604,11 @@ body[data-active-view="policies"] .ca-policy-card .ca-policy-list {
       <div class="exec-value critical" id="execExposureValue">72.4</div>
       <div class="exec-sub" id="execExposureSub"><span class="trend-up">▲ 3.2</span> vs last week</div>
     </div>
+    <div class="exec-card info" onclick="openDetail('mitreCompliance')">
+      <div class="exec-label">MITRE ATT&CK Compliance</div>
+      <div class="exec-value info" id="execMitreComplianceValue">68%</div>
+      <div class="exec-sub" id="execMitreComplianceSub">6 tactics below 70%</div>
+    </div>
     <div class="exec-card warning" onclick="openDetail('criticalVulns')">
       <div class="exec-label">Critical Vulns</div>
       <div class="exec-value warning" id="execCriticalVulnsValue">23</div>
@@ -1237,7 +1622,7 @@ body[data-active-view="policies"] .ca-policy-card .ca-policy-list {
     <div class="exec-card info" onclick="openDetail('totalDevices')">
       <div class="exec-label">Managed Devices</div>
       <div class="exec-value info" id="execManagedDevicesValue">1,247</div>
-      <div class="exec-sub" id="execManagedDevicesSub">across 6 locations</div>
+      <div class="exec-sub" id="execManagedDevicesSub"></div>
     </div>
     <div class="exec-card neutral" onclick="openDetail('caPolicies')">
       <div class="exec-label">CA Policies Active</div>
@@ -1255,7 +1640,7 @@ body[data-active-view="policies"] .ca-policy-card .ca-policy-list {
   <div class="dashboard-grid">
 
     <!-- Vulnerability Severity Breakdown -->
-    <div class="card vuln-main-card" data-views="overview,vulnerabilities">
+    <div class="card vuln-main-card" data-views="overview">
       <div class="card-header">
         <div class="card-title">
           <span class="icon">
@@ -1264,12 +1649,12 @@ body[data-active-view="policies"] .ca-policy-card .ca-policy-list {
           Vulnerability Severity
         </div>
         <div class="card-actions">
-          <button class="card-action-btn active">Summary</button>
-          <button class="card-action-btn">By OS</button>
+          <button class="card-action-btn active" id="vulnViewSummaryBtn" type="button">Summary</button>
+          <button class="card-action-btn" id="vulnViewByOsBtn" type="button">By OS</button>
         </div>
       </div>
       <div class="card-body">
-        <div class="vuln-severity-grid">
+        <div class="vuln-severity-grid" id="vulnSeverityGrid">
           <div class="severity-cell crit" onclick="openDetail('vulnCritical')">
             <div class="sev-count" id="sevCountCritical">23</div>
             <div class="sev-label">Critical</div>
@@ -1316,7 +1701,7 @@ body[data-active-view="policies"] .ca-policy-card .ca-policy-list {
     </div>
 
     <!-- Risk Matrix -->
-    <div class="card risk-matrix-card" data-views="overview,vulnerabilities">
+    <div class="card risk-matrix-card" data-views="overview">
       <div class="card-header">
         <div class="card-title">
           <span class="icon">
@@ -1351,7 +1736,7 @@ body[data-active-view="policies"] .ca-policy-card .ca-policy-list {
     </div>
 
     <!-- Top Vulnerable Software -->
-    <div class="card span-2 software-card" data-views="overview,vulnerabilities">
+    <div class="card span-2 software-card" data-views="overview">
       <div class="card-header">
         <div class="card-title">
           <span class="icon">
@@ -1360,12 +1745,34 @@ body[data-active-view="policies"] .ca-policy-card .ca-policy-list {
           Vulnerable Software Inventory
         </div>
         <div class="card-actions">
-          <button class="card-action-btn active">Grid</button>
-          <button class="card-action-btn">List</button>
+          <button class="card-action-btn active" id="appViewGridBtn" type="button">Grid</button>
+          <button class="card-action-btn" id="appViewListBtn" type="button">List</button>
         </div>
       </div>
       <div class="card-body">
         <div class="app-grid" id="appGrid"></div>
+      </div>
+    </div>
+
+    <!-- Microsoft Secure Score Trend -->
+    <div class="card secure-score-card" data-views="overview">
+      <div class="card-header">
+        <div class="card-title">
+          <span class="icon">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 13.5H14M3.5 12V8M7 12V5M10.5 12V6.5M14 12V3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+          Microsoft Secure Score
+        </div>
+      </div>
+      <div class="card-body">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">
+          Rolling 6-month secure score trend with current snapshot and target threshold.
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+          <div style="font-size:11px;color:var(--text-secondary);">Current</div>
+          <div id="secureScoreCurrentValue" style="font-size:26px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--text-primary);">0%</div>
+        </div>
+        <div class="secure-score-chart" id="secureScoreChart"></div>
       </div>
     </div>
 
@@ -1386,72 +1793,243 @@ body[data-active-view="policies"] .ca-policy-card .ca-policy-list {
       </div>
     </div>
 
-    <!-- Threat Relevance (Unlicensed Mode) -->
-    <div class="card span-2 threat-relevance-card" data-views="threat">
+    <!-- Threat Prioritization Workbench -->
+    <div class="card span-2 threat-workbench-card" data-views="threat">
       <div class="card-header">
         <div class="card-title">
           <span class="icon">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1L14 4V8C14 11.3137 11.3137 14 8 14C4.68629 14 2 11.3137 2 8V4L8 1Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8 5V8.5M8 10.8V11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
           </span>
-          Threat Relevance (Unlicensed Mode)
+          Threat Prioritization Workbench
         </div>
         <div class="card-actions">
-          <button class="card-action-btn active">Top 10</button>
-          <button class="card-action-btn">Scoring Model</button>
+          <button class="card-action-btn active" id="threatWorkbenchRiskBtn" type="button">Risk Ranking</button>
+          <button class="card-action-btn" id="threatWorkbenchRemediationBtn" type="button">Action Queue</button>
         </div>
       </div>
       <div class="card-body">
         <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;">
-          Prioritised from Defender vulnerability + device exposure data (CVSS, exploited flag, affected endpoints, business criticality proxy).
+          Switch between threat-driven ranking and remediation-focused action sequencing without leaving the Threat view.
         </div>
-        <div class="threat-list" id="threatRelevanceList"></div>
+        <div class="threat-workbench-list" id="threatWorkbenchList"></div>
       </div>
     </div>
 
-    <!-- Prioritized Remediation Queue -->
-    <div class="card span-2 remediation-card" data-views="threat,vulnerabilities">
+    <!-- Missing Patches -->
+    <div class="card threat-missing-patches-card" data-views="threat">
       <div class="card-header">
         <div class="card-title">
           <span class="icon">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 3.5A1.5 1.5 0 0 1 3.5 2h9A1.5 1.5 0 0 1 14 3.5v9a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 12.5v-9Z" stroke="currentColor" stroke-width="1.5"/><path d="M5 8L7 10L11 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1L14 4V8C14 11.3137 11.3137 14 8 14C4.68629 14 2 11.3137 2 8V4L8 1Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8 5V8.5M8 10.8V11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
           </span>
-          Prioritized Remediation Queue
-        </div>
-        <div class="card-actions">
-          <button class="card-action-btn active">Actionable Queue</button>
-          <button class="card-action-btn">Risk Reduction</button>
+          Missing Patches
         </div>
       </div>
       <div class="card-body">
         <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;">
-          Ranking uses exploit status, CVSS, exposed device volume, and average impacted device risk to prioritize remediation sequencing.
+          Patch backlog ranked with the same threat relevance and remediation-priority signals used in the workbench.
         </div>
-        <div class="remediation-list" id="remediationQueueList"></div>
+        <div class="threat-workbench-list" id="missingPatchesList"></div>
       </div>
     </div>
 
-    <!-- MITRE ATT&CK Coverage Map -->
-    <div class="card span-3 mitre-card" data-views="threat">
+    <!-- Threat Scoring Key -->
+    <div class="card span-2 threat-key-card" data-views="threat">
+      <div class="card-header">
+        <div class="card-title">
+          <span class="icon">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1L14 4V8C14 11.3137 11.3137 14 8 14C4.68629 14 2 11.3137 2 8V4L8 1Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8 5V8.5M8 10.8V11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </span>
+          Threat Scoring Key
+        </div>
+      </div>
+      <div class="card-body">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;">
+          Legend for the badges and tags used in Threat Prioritization and Missing Patches.
+        </div>
+        <div class="threat-key-grid">
+          <section class="threat-key-section">
+            <div class="threat-key-title">Priority Tag</div>
+            <div class="threat-key-list">
+              <div class="threat-key-row">
+                <span class="prio-tag p1">P1 · Critical</span>
+                <span class="threat-key-text">Immediate remediation required</span>
+              </div>
+              <div class="threat-key-row">
+                <span class="prio-tag p2">P2 · Important</span>
+                <span class="threat-key-text">Fix in next planned window</span>
+              </div>
+              <div class="threat-key-row">
+                <span class="prio-tag p3">P3 · Planned</span>
+                <span class="threat-key-text">Track in standard cycle</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="threat-key-section">
+            <div class="threat-key-title">Exploit Status</div>
+            <div class="threat-key-list">
+              <div class="threat-key-row">
+                <span class="remediation-pill critical">Actively exploited</span>
+                <span class="threat-key-text">Known exploit activity in the wild</span>
+              </div>
+              <div class="threat-key-row">
+                <span class="remediation-pill low">No active exploit</span>
+                <span class="threat-key-text">No current exploitation signal</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="threat-key-section">
+            <div class="threat-key-title">CVSS Severity</div>
+            <div class="threat-key-list">
+              <div class="threat-key-row">
+                <span class="remediation-pill critical">CVSS 9.0-10.0</span>
+                <span class="threat-key-text">Critical severity</span>
+              </div>
+              <div class="threat-key-row">
+                <span class="remediation-pill high">CVSS 7.0-8.9</span>
+                <span class="threat-key-text">High severity</span>
+              </div>
+              <div class="threat-key-row">
+                <span class="remediation-pill medium">CVSS 4.0-6.9</span>
+                <span class="threat-key-text">Medium severity</span>
+              </div>
+              <div class="threat-key-row">
+                <span class="remediation-pill low">CVSS 0.1-3.9</span>
+                <span class="threat-key-text">Low severity</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="threat-key-section">
+            <div class="threat-key-title">Other Tags</div>
+            <div class="threat-key-list">
+              <div class="threat-key-row">
+                <span class="remediation-pill critical">300+ affected</span>
+                <span class="threat-key-text">Large exposure blast radius</span>
+              </div>
+              <div class="threat-key-row">
+                <span class="remediation-pill high">Avg device risk 55+</span>
+                <span class="threat-key-text">Higher business/endpoint risk concentration</span>
+              </div>
+              <div class="threat-key-row">
+                <span class="remediation-pill medium">2+ vulnerabilities mapped</span>
+                <span class="threat-key-text">Single patch may remediate multiple CVEs</span>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <!-- MITRE ATT&CK Tactic Coverage -->
+    <div class="card standards-mitre-tactic-card" data-views="standards">
       <div class="card-header">
         <div class="card-title">
           <span class="icon">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 2H14V14H2V2Z" stroke="currentColor" stroke-width="1.5"/><path d="M2 6H14M2 10H14M6 2V14M10 2V14" stroke="currentColor" stroke-width="1" opacity="0.6"/></svg>
           </span>
-          MITRE ATT&CK Coverage Map
-        </div>
-        <div class="card-actions">
-          <button class="card-action-btn active">Tactics</button>
-          <button class="card-action-btn">Heatmap</button>
+          MITRE ATT&CK Tactic Coverage
         </div>
       </div>
       <div class="card-body">
-        <div class="mitre-wrap">
-          <div style="font-size:11px;color:var(--text-muted);">
-            Visual coverage of ATT&CK tactics based on current detection and control posture. Lower coverage and higher observed activity indicate higher risk.
-          </div>
-          <div class="mitre-tactic-list" id="mitreTacticList"></div>
-          <div class="mitre-heatmap" id="mitreHeatmap"></div>
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">
+          Coverage bars by ATT&CK tactic with mapped gap counts.
         </div>
+        <div class="mitre-tactic-list" id="mitreTacticList"></div>
+      </div>
+    </div>
+
+    <!-- MITRE ATT&CK Heatmap -->
+    <div class="card standards-mitre-heatmap-card" data-views="standards">
+      <div class="card-header">
+        <div class="card-title">
+          <span class="icon">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 2H14V14H2V2Z" stroke="currentColor" stroke-width="1.5"/><path d="M2 6H14M2 10H14M6 2V14M10 2V14" stroke="currentColor" stroke-width="1" opacity="0.6"/></svg>
+          </span>
+          MITRE ATT&CK Heatmap
+        </div>
+      </div>
+      <div class="card-body">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">
+          Hotspot matrix for rapid detection of lower-coverage tactics.
+        </div>
+        <div class="mitre-heatmap" id="mitreHeatmap"></div>
+      </div>
+    </div>
+
+    <!-- Standards: CIS -->
+    <div class="card standards-cis-card" data-views="standards">
+      <div class="card-header">
+        <div class="card-title">
+          <span class="icon">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1L14 4V8C14 11.3137 11.3137 14 8 14C4.68629 14 2 11.3137 2 8V4L8 1Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+          </span>
+          CIS Controls (v8) Coverage
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="standards-kpi">
+          <div class="label">Estimated coverage</div>
+          <div class="value" id="cisCoverageValue">0%</div>
+        </div>
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;" id="cisCoverageSub">Based on control telemetry and policy posture.</div>
+        <div class="standards-list" id="cisControlList"></div>
+      </div>
+    </div>
+
+    <!-- Standards: NIST CSF -->
+    <div class="card standards-nist-card" data-views="standards">
+      <div class="card-header">
+        <div class="card-title">
+          <span class="icon">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M2 6H14M2 10H14" stroke="currentColor" stroke-width="1"/></svg>
+          </span>
+          NIST CSF 2.0 Snapshot
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="standards-kpi">
+          <div class="label">Estimated function coverage</div>
+          <div class="value" id="nistCoverageValue">0%</div>
+        </div>
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;" id="nistCoverageSub">Based on function telemetry and control posture.</div>
+        <div class="standards-list" id="nistFunctionList"></div>
+      </div>
+    </div>
+
+    <!-- Standards: Identity -->
+    <div class="card standards-identity-card" data-views="standards">
+      <div class="card-header">
+        <div class="card-title">
+          <span class="icon">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M2.5 14C3.2 10.9 5.2 9.5 8 9.5C10.8 9.5 12.8 10.9 13.5 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </span>
+          Identity Security Baseline
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="identity-list" id="identityBaselineList"></div>
+      </div>
+    </div>
+
+    <!-- Standards: NIS2 -->
+    <div class="card standards-nis2-card" data-views="standards">
+      <div class="card-header">
+        <div class="card-title">
+          <span class="icon">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 13.5H14M3.5 12V8M7 12V6M10.5 12V4M14 12V7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+          NIS2.0 Essential Measures
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="standards-kpi">
+          <div class="label">Estimated NIS2 alignment</div>
+          <div class="value" id="nis2OverallValue">0%</div>
+        </div>
+        <div class="standards-list" id="nis2List"></div>
       </div>
     </div>
 
@@ -1465,9 +2043,9 @@ body[data-active-view="policies"] .ca-policy-card .ca-policy-list {
           Device Inventory
         </div>
         <div class="card-actions">
-          <button class="card-action-btn">Export CSV</button>
-          <button class="card-action-btn active">All Devices</button>
-          <button class="card-action-btn">Non-Compliant</button>
+          <button class="card-action-btn" id="deviceExportCsvBtn" type="button">Export CSV</button>
+          <button class="card-action-btn active" id="deviceFilterAllBtn" type="button">All Devices</button>
+          <button class="card-action-btn" id="deviceFilterNonCompliantBtn" type="button">Non-Compliant</button>
         </div>
       </div>
       <div class="card-body" style="padding: 0;">
@@ -1538,34 +2116,19 @@ body[data-active-view="policies"] .ca-policy-card .ca-policy-list {
           <span class="icon">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 2H14V14H2V2Z" stroke="currentColor" stroke-width="1.5"/><path d="M2 6H14M2 10H14M6 2V14M10 2V14" stroke="currentColor" stroke-width="1" opacity="0.6"/></svg>
           </span>
-          Policy-to-MITRE Threat Coverage
+          Selected Policy Context
         </div>
       </div>
       <div class="card-body">
         <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;">
-          Shows ATT&amp;CK tactics and threat patterns each control is reducing; highlights gaps where controls are weak or not enforced.
+          Select a policy or gap on the left to view its current risk posture, mapped ATT&amp;CK coverage, and next actions.
         </div>
-        <div class="policy-mitre-list" id="policyMitreList"></div>
-      </div>
-    </div>
-
-    <!-- Location Breakdown -->
-    <div class="card location-card" data-views="devices,overview">
-      <div class="card-header">
-        <div class="card-title">
-          <span class="icon">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/><path d="M1.5 8H14.5M8 1.5C8 1.5 5 4.5 5 8C5 11.5 8 14.5 8 14.5M8 1.5C8 1.5 11 4.5 11 8C11 11.5 8 14.5 8 14.5" stroke="currentColor" stroke-width="1"/></svg>
-          </span>
-          Devices by Location
-        </div>
-      </div>
-      <div class="card-body">
-        <div class="location-grid" id="locationGrid"></div>
+        <div id="policyFocusPanel"></div>
       </div>
     </div>
 
     <!-- Defender Stack Compliance -->
-    <div class="card span-2" data-views="defender">
+    <div class="card span-2 defender-stack-card" data-views="defender">
       <div class="card-header">
         <div class="card-title">
           <span class="icon">
@@ -1585,7 +2148,7 @@ body[data-active-view="policies"] .ca-policy-card .ca-policy-list {
     </div>
 
     <!-- Defender Version Distribution -->
-    <div class="card" data-views="defender">
+    <div class="card defender-version-card" data-views="devices">
       <div class="card-header">
         <div class="card-title">
           <span class="icon">
@@ -1807,6 +2370,73 @@ const DEVICE_OS_DATA = [
   { label: 'iOS/Android', value: 156, color: '#EF4444' },
 ];
 
+const MITRE_TACTICS = [
+  { name: 'Initial Access', coverage: 72, gaps: 5 },
+  { name: 'Execution', coverage: 81, gaps: 3 },
+  { name: 'Persistence', coverage: 68, gaps: 7 },
+  { name: 'Privilege Escalation', coverage: 61, gaps: 8 },
+  { name: 'Defense Evasion', coverage: 58, gaps: 10 },
+  { name: 'Credential Access', coverage: 66, gaps: 6 },
+  { name: 'Lateral Movement', coverage: 54, gaps: 9 },
+  { name: 'Command and Control', coverage: 79, gaps: 4 },
+  { name: 'Exfiltration', coverage: 63, gaps: 5 },
+  { name: 'Impact', coverage: 74, gaps: 4 },
+];
+
+const NIST_FUNCTION_DETAILS = {
+  govern: {
+    focus: 'Policy ownership, risk governance, and control oversight.',
+    primaryGap: 'Inconsistent policy enforcement and role accountability across all control domains.',
+    priorityAction: 'Set quarterly governance reviews with named control owners and tracked exceptions.'
+  },
+  identify: {
+    focus: 'Asset visibility, risk analysis, and security context completeness.',
+    primaryGap: 'Asset and risk records are present, but not all services are fully mapped to risk owners.',
+    priorityAction: 'Complete business-service to asset mapping and tie each to a risk register owner.'
+  },
+  protect: {
+    focus: 'Preventive controls for identity, endpoint, and platform hardening.',
+    primaryGap: 'Control coverage is broad but still uneven for unhealthy endpoints and partial policy states.',
+    priorityAction: 'Move high-impact controls from report-only to enforce mode after validation.'
+  },
+  detect: {
+    focus: 'Monitoring depth, anomaly detection confidence, and detection process maturity.',
+    primaryGap: 'Detection quality is reduced by critical backlog and inconsistent endpoint signal quality.',
+    priorityAction: 'Improve sensor quality baseline and prioritize high-risk detection engineering gaps.'
+  },
+  respond: {
+    focus: 'Incident planning, triage quality, and mitigation execution speed.',
+    primaryGap: 'Response pressure remains high while exploited findings remain open.',
+    priorityAction: 'Run a fast-track workflow for exploited vulnerabilities and major incident classes.'
+  },
+  recover: {
+    focus: 'Recovery readiness, continuous improvement, and communication discipline.',
+    primaryGap: 'Recovery confidence is constrained by inconsistent remediation outcomes.',
+    priorityAction: 'Define recovery KPIs and run regular resilience/tabletop validation exercises.'
+  }
+};
+
+const NIST_CONTROL_DETAILS = {
+  'GV.OC': { owner: 'Security Governance', cadence: 'Quarterly', whyLow: 'Risk context is not fully normalized across all business services.', action: 'Standardize risk taxonomy and map all critical services to owners.' },
+  'GV.RR': { owner: 'CISO Office', cadence: 'Monthly', whyLow: 'Role handoffs for response and exceptions are not uniformly codified.', action: 'Publish and enforce RACI for risk acceptance and incident decisions.' },
+  'GV.PO': { owner: 'Policy & Compliance', cadence: 'Monthly', whyLow: 'Some controls remain report-only and reduce governance assurance.', action: 'Convert validated report-only policies into enforced controls.' },
+  'ID.AM': { owner: 'Asset Management', cadence: 'Weekly', whyLow: 'Inventory coverage exists but still misses some transient or stale assets.', action: 'Reconcile endpoint, identity, and CMDB inventories on a fixed cycle.' },
+  'ID.RA': { owner: 'Vulnerability Management', cadence: 'Weekly', whyLow: 'Open critical vulnerabilities are driving residual risk.', action: 'Apply critical risk burn-down targets with tracked SLA breaches.' },
+  'ID.IM': { owner: 'Security Engineering', cadence: 'Monthly', whyLow: 'Telemetry freshness is uneven across endpoint cohorts.', action: 'Fix stale telemetry sources and enforce heartbeat compliance.' },
+  'PR.AA': { owner: 'Identity & Access', cadence: 'Weekly', whyLow: 'Authentication policy strength is strong but not fully universal.', action: 'Expand strong-auth controls to all privileged and high-risk cohorts.' },
+  'PR.PS': { owner: 'Endpoint Engineering', cadence: 'Weekly', whyLow: 'Endpoint health inconsistency reduces platform hardening confidence.', action: 'Remediate unhealthy endpoints and enforce minimum baseline posture.' },
+  'PR.DS': { owner: 'Security Architecture', cadence: 'Monthly', whyLow: 'Safeguards are broad but not consistently enforced across all paths.', action: 'Close control exceptions and validate safeguard effectiveness by segment.' },
+  'DE.CM': { owner: 'SOC Detection Team', cadence: 'Daily', whyLow: 'Monitoring coverage is impacted by sensor quality variance.', action: 'Harden sensor deployment standards and alert on telemetry drop-offs.' },
+  'DE.AE': { owner: 'Threat Detection', cadence: 'Daily', whyLow: 'Critical backlog lowers confidence in anomaly baselines.', action: 'Prioritize exploit-relevant detections and reduce severe exposure backlog.' },
+  'DE.DP': { owner: 'SOC Engineering', cadence: 'Weekly', whyLow: 'Detection process maturity varies by platform and tactic.', action: 'Implement a unified detection QA cycle and ATT&CK coverage reviews.' },
+  'RS.RP': { owner: 'Incident Response', cadence: 'Quarterly', whyLow: 'Planning quality depends on remediation speed and scenario readiness.', action: 'Refresh playbooks and validate against top threat scenarios.' },
+  'RS.AN': { owner: 'Threat Intel / IR', cadence: 'Daily', whyLow: 'Active exploitation creates sustained triage pressure.', action: 'Create exploit-priority queues and reduce time-to-containment targets.' },
+  'RS.MI': { owner: 'Remediation Operations', cadence: 'Weekly', whyLow: 'Mitigation consistency is constrained by high-severity closure rates.', action: 'Track mitigation completion per severity and enforce escalation gates.' },
+  'RC.RP': { owner: 'Business Resilience', cadence: 'Quarterly', whyLow: 'Recovery posture is tied to overall control maturity variance.', action: 'Define measurable recovery readiness criteria and validate quarterly.' },
+  'RC.IM': { owner: 'Continuous Improvement', cadence: 'Monthly', whyLow: 'Lessons learned are not yet fully reflected in closure consistency.', action: 'Feed incident findings directly into remediation and policy updates.' },
+  'RC.CO': { owner: 'Crisis Communications', cadence: 'Quarterly', whyLow: 'Recovery communications are not always aligned to technical recovery state.', action: 'Align communication triggers to objective recovery milestones and KPIs.' }
+};
+
 let riskCellCache = {};
 let riskMatrixMode = 'full';
 let msalInstance = null;
@@ -1815,6 +2445,10 @@ let msalInstanceTenantId = '';
 let msalInstanceClientId = '';
 let lastConnectedContext = null;
 let liveExposureScore = null;
+let liveSecureScore = null;
+let standardsDetailModel = { cis: {}, nist: {}, identity: {}, nis2: {} };
+let exposureTrendPoints = [];
+let exposureTrendAnchorScore = null;
 
 const GRAPH_CONNECT_SCOPE_CANDIDATES = [
   [
@@ -2358,16 +2992,22 @@ function applyLiveExposureScore(payload) {
   if (!payload) return false;
 
   let score = null;
+  let secureScore = null;
   if (typeof payload.score === 'number') score = payload.score;
   if (typeof payload.currentScore === 'number') score = payload.currentScore;
+  if (typeof payload.secureScore === 'number') secureScore = payload.secureScore;
+  if (typeof payload.scorePercentage === 'number') secureScore = payload.scorePercentage;
   if (score === null && Array.isArray(payload.value) && payload.value.length) {
     const row = payload.value[0] || {};
     if (typeof row.score === 'number') score = row.score;
     if (typeof row.currentScore === 'number') score = row.currentScore;
+    if (typeof row.secureScore === 'number') secureScore = row.secureScore;
+    if (typeof row.scorePercentage === 'number') secureScore = row.scorePercentage;
   }
 
   if (!Number.isFinite(score)) return false;
   liveExposureScore = Number(score);
+  if (Number.isFinite(secureScore)) liveSecureScore = Number(secureScore);
 
   const valueEl = document.querySelector('.exec-card.critical .exec-value');
   if (valueEl) valueEl.textContent = Number(score).toFixed(1);
@@ -2494,11 +3134,137 @@ async function loadLiveTenantData(graphAccessToken, defenderAccessToken) {
   return { sources, errors, noRows: false };
 }
 let activePolicyFilter = 'all';
+let activeDataFilter = 'all';
+let activeSeverityFilter = 'all';
+let appInventoryViewMode = 'grid';
+let vulnSeverityViewMode = 'summary';
+let remediationViewMode = 'actionable';
+let threatWorkbenchMode = 'risk';
+let deviceInventoryFilterMode = 'all';
+let selectedPolicyName = '';
+
+function toDateSafe(value) {
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function getSeverityBucket(vuln) {
+  const raw = String(vuln?.severity || '').toLowerCase();
+  if (raw.includes('critical')) return 'critical';
+  if (raw.includes('high')) return 'high';
+  if (raw.includes('medium') || raw.includes('moderate')) return 'medium';
+  if (raw.includes('low') || raw.includes('info')) return 'low';
+
+  const cvss = Number(vuln?.cvss);
+  if (Number.isFinite(cvss)) {
+    if (cvss >= 9) return 'critical';
+    if (cvss >= 7) return 'high';
+    if (cvss >= 4) return 'medium';
+  }
+  return 'low';
+}
+
+function getSeverityLabel(bucket) {
+  if (bucket === 'critical') return 'Critical';
+  if (bucket === 'high') return 'High';
+  if (bucket === 'medium') return 'Medium';
+  return 'Low';
+}
+
+function getSeverityRank(vuln) {
+  const bucket = getSeverityBucket(vuln);
+  if (bucket === 'critical') return 4;
+  if (bucket === 'high') return 3;
+  if (bucket === 'medium') return 2;
+  return 1;
+}
+
+function getEffectiveFilterAnchor(vulnList) {
+  const dates = vulnList
+    .map(v => toDateSafe(v.published))
+    .filter(Boolean)
+    .map(d => d.getTime());
+  if (!dates.length) return new Date();
+  return new Date(Math.max(...dates));
+}
+
+function getFilteredVulnerabilities() {
+  let filtered = [...vulnerabilities];
+
+  if (activeDataFilter === 'critical') {
+    filtered = filtered.filter(v => getSeverityBucket(v) === 'critical');
+  } else if (activeDataFilter === 'last7' || activeDataFilter === 'last30') {
+    const days = activeDataFilter === 'last7' ? 7 : 30;
+    const anchor = getEffectiveFilterAnchor(filtered);
+    const from = new Date(anchor);
+    from.setDate(from.getDate() - days);
+    filtered = filtered.filter(v => {
+      const date = toDateSafe(v.published);
+      return date && date >= from && date <= anchor;
+    });
+  }
+
+  if (activeSeverityFilter !== 'all') {
+    filtered = filtered.filter(v => getSeverityBucket(v) === activeSeverityFilter);
+  }
+
+  return filtered;
+}
+
+function renderVulnSeverityPanel() {
+  const grid = document.getElementById('vulnSeverityGrid');
+  if (!grid) return;
+
+  const summaryBtn = document.getElementById('vulnViewSummaryBtn');
+  const byOsBtn = document.getElementById('vulnViewByOsBtn');
+  if (summaryBtn) summaryBtn.classList.toggle('active', vulnSeverityViewMode === 'summary');
+  if (byOsBtn) byOsBtn.classList.toggle('active', vulnSeverityViewMode === 'os');
+
+  if (vulnSeverityViewMode === 'os') {
+    const osAgg = {};
+    devices.forEach(d => {
+      const key = d.os || 'Unknown OS';
+      osAgg[key] = (osAgg[key] || 0) + Number(d.vulns || 0);
+    });
+    const topOs = Object.entries(osAgg)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 4);
+    const classes = ['crit', 'high', 'med', 'low'];
+
+    grid.innerHTML = topOs.map(([os, total], idx) => `
+      <div class="severity-cell ${classes[idx] || 'low'}" onclick="openDetail('os-${os.replace(/'/g, '')}')">
+        <div class="sev-count">${total}</div>
+        <div class="sev-label">${os.length > 20 ? `${os.slice(0, 19)}…` : os}</div>
+      </div>
+    `).join('');
+    return;
+  }
+
+  grid.innerHTML = `
+    <div class="severity-cell crit" onclick="openDetail('vulnCritical')">
+      <div class="sev-count" id="sevCountCritical">0</div>
+      <div class="sev-label">Critical</div>
+    </div>
+    <div class="severity-cell high" onclick="openDetail('vulnHigh')">
+      <div class="sev-count" id="sevCountHigh">0</div>
+      <div class="sev-label">High</div>
+    </div>
+    <div class="severity-cell med" onclick="openDetail('vulnMedium')">
+      <div class="sev-count" id="sevCountMedium">0</div>
+      <div class="sev-label">Medium</div>
+    </div>
+    <div class="severity-cell low" onclick="openDetail('vulnLow')">
+      <div class="sev-count" id="sevCountLow">0</div>
+      <div class="sev-label">Low</div>
+    </div>
+  `;
+  renderVulnSeveritySummary();
+}
 
 function renderVulnSeveritySummary() {
   const counts = { critical: 0, high: 0, medium: 0, low: 0 };
-  vulnerabilities.forEach(v => {
-    const key = String(v.severity || '').toLowerCase();
+  getFilteredVulnerabilities().forEach(v => {
+    const key = getSeverityBucket(v);
     if (counts[key] !== undefined) counts[key] += 1;
   });
 
@@ -2514,7 +3280,8 @@ function renderVulnSeveritySummary() {
 }
 
 function renderExecutiveSummary() {
-  const criticalVulns = vulnerabilities.filter(v => String(v.severity).toLowerCase() === 'critical').length;
+  const filteredVulns = getFilteredVulnerabilities();
+  const criticalVulns = filteredVulns.filter(v => getSeverityBucket(v) === 'critical').length;
   const totalDevices = devices.length;
   const healthyDevices = devices.filter(d => String(d.health).toLowerCase() === 'healthy').length;
   const compliancePct = totalDevices ? Math.round((healthyDevices / totalDevices) * 100) : 0;
@@ -2523,11 +3290,17 @@ function renderExecutiveSummary() {
   const likelyCurrentDefender = devices.filter(d => String(d.defenderVer).includes('24110') || String(d.defenderVer).includes('24112')).length;
   const defenderCoverage = totalDevices ? Math.round((likelyCurrentDefender / totalDevices) * 100) : 0;
   const outdatedDefender = Math.max(0, totalDevices - likelyCurrentDefender);
+  const mitreCompliance = MITRE_TACTICS.length
+    ? Math.round(MITRE_TACTICS.reduce((sum, tactic) => sum + tactic.coverage, 0) / MITRE_TACTICS.length)
+    : 0;
+  const mitreLowCoverageCount = MITRE_TACTICS.filter(tactic => tactic.coverage < 70).length;
   const avgRisk = totalDevices ? (devices.reduce((sum, d) => sum + Number(d.riskScore || 0), 0) / totalDevices) : 0;
   const displayExposure = Number.isFinite(liveExposureScore) ? liveExposureScore : avgRisk;
 
   const exposureValue = document.getElementById('execExposureValue');
   const exposureSub = document.getElementById('execExposureSub');
+  const mitreComplianceValue = document.getElementById('execMitreComplianceValue');
+  const mitreComplianceSub = document.getElementById('execMitreComplianceSub');
   const criticalValue = document.getElementById('execCriticalVulnsValue');
   const criticalSub = document.getElementById('execCriticalVulnsSub');
   const complianceValue = document.getElementById('execDeviceComplianceValue');
@@ -2541,12 +3314,14 @@ function renderExecutiveSummary() {
 
   if (exposureValue) exposureValue.textContent = displayExposure.toFixed(1);
   if (exposureSub) exposureSub.innerHTML = `<span class="${displayExposure >= 60 ? 'trend-up' : 'trend-down'}">${displayExposure >= 60 ? '▲' : '▼'} ${Math.abs(displayExposure - 50).toFixed(1)}</span> risk index`;
+  if (mitreComplianceValue) mitreComplianceValue.textContent = `${mitreCompliance}%`;
+  if (mitreComplianceSub) mitreComplianceSub.textContent = `${mitreLowCoverageCount} tactics below 70%`;
   if (criticalValue) criticalValue.textContent = criticalVulns.toLocaleString();
-  if (criticalSub) criticalSub.innerHTML = `${vulnerabilities.length.toLocaleString()} total tracked vulnerabilities`;
+  if (criticalSub) criticalSub.innerHTML = `${filteredVulns.length.toLocaleString()} total tracked vulnerabilities`;
   if (complianceValue) complianceValue.textContent = `${compliancePct}%`;
   if (complianceSub) complianceSub.innerHTML = `${healthyDevices.toLocaleString()} healthy of ${totalDevices.toLocaleString()} devices`;
   if (devicesValue) devicesValue.textContent = totalDevices.toLocaleString();
-  if (devicesSub) devicesSub.textContent = `across ${locations.length.toLocaleString()} locations`;
+  if (devicesSub) devicesSub.textContent = '';
   if (policiesValue) policiesValue.textContent = enabledPolicies.toLocaleString();
   if (policiesSub) policiesSub.textContent = `${reportOnlyPolicies.toLocaleString()} in report-only`;
   if (defenderValue) defenderValue.textContent = `${defenderCoverage}%`;
@@ -2555,8 +3330,51 @@ function renderExecutiveSummary() {
 
 function renderVulnList() {
   const container = document.getElementById('vulnList');
-  container.innerHTML = vulnerabilities.slice(0, 8).map(v => {
-    const sevClass = v.severity.toLowerCase();
+  if (!container) return;
+
+  if (vulnSeverityViewMode === 'os') {
+    const byOs = {};
+    devices.forEach(device => {
+      const key = device.os || 'Unknown OS';
+      if (!byOs[key]) byOs[key] = { os: key, devices: 0, vulns: 0, highRisk: 0 };
+      byOs[key].devices += 1;
+      byOs[key].vulns += Number(device.vulns || 0);
+      if (Number(device.riskScore || 0) >= 60) byOs[key].highRisk += 1;
+    });
+
+    const rows = Object.values(byOs)
+      .sort((a, b) => b.vulns - a.vulns || b.devices - a.devices)
+      .slice(0, 8);
+
+    if (!rows.length) {
+      container.innerHTML = `<div style="padding:10px 0;font-size:12px;color:var(--text-muted);">No OS vulnerability data available.</div>`;
+      return;
+    }
+
+    container.innerHTML = rows.map(row => `
+      <div class="vuln-item" onclick="openDetail('os-${row.os.replace(/'/g, '')}')">
+        <div class="vuln-sev-badge ${row.vulns >= 20 ? 'critical' : row.vulns >= 12 ? 'high' : row.vulns >= 6 ? 'medium' : 'low'}"></div>
+        <div class="vuln-info">
+          <div class="vuln-cve">${row.os}</div>
+          <div class="vuln-desc">${row.devices} device(s) · ${row.highRisk} high-risk endpoint(s)</div>
+        </div>
+        <div class="vuln-meta">
+          <div class="vuln-devices">${row.devices} assets</div>
+          <div class="vuln-cvss ${row.vulns >= 20 ? 'critical' : row.vulns >= 12 ? 'high' : row.vulns >= 6 ? 'medium' : 'low'}">${row.vulns}</div>
+        </div>
+      </div>
+    `).join('');
+    return;
+  }
+
+  const filteredVulns = getFilteredVulnerabilities();
+  if (!filteredVulns.length) {
+    container.innerHTML = `<div style="padding:10px 0;font-size:12px;color:var(--text-muted);">No vulnerabilities match the selected filters.</div>`;
+    return;
+  }
+
+  container.innerHTML = filteredVulns.slice(0, 8).map(v => {
+    const sevClass = getSeverityBucket(v);
     return `<div class="vuln-item" onclick="openVulnDetail('${v.id}')">
       <div class="vuln-sev-badge ${sevClass}"></div>
       <div class="vuln-info">
@@ -2887,33 +3705,147 @@ function threatRelevanceScore(vuln) {
   return { score, relatedDevices, avgRisk };
 }
 
-function scoreBand(score) {
-  if (score >= 80) return 'critical';
-  if (score >= 65) return 'high';
-  return 'medium';
-}
+function renderThreatWorkbench() {
+  const riskBtn = document.getElementById('threatWorkbenchRiskBtn');
+  const remediationBtn = document.getElementById('threatWorkbenchRemediationBtn');
+  if (riskBtn) riskBtn.classList.toggle('active', threatWorkbenchMode === 'risk');
+  if (remediationBtn) remediationBtn.classList.toggle('active', threatWorkbenchMode === 'remediation');
 
-function renderThreatRelevance() {
-  const ranked = vulnerabilities
-    .map(vuln => ({ vuln, ...threatRelevanceScore(vuln) }))
-    .sort((a, b) => b.score - a.score)
+  const container = document.getElementById('threatWorkbenchList');
+  if (!container) return;
+
+  const ranked = getFilteredVulnerabilities()
+    .map(vuln => ({ vuln, ...remediationPriority(vuln) }))
+    .sort((a, b) => {
+      if (threatWorkbenchMode === 'remediation') {
+        const order = { P1: 3, P2: 2, P3: 1 };
+        return (order[b.priority] - order[a.priority]) || (b.reductionEstimate - a.reductionEstimate) || (b.score - a.score);
+      }
+      return b.score - a.score;
+    })
     .slice(0, 10);
 
-  document.getElementById('threatRelevanceList').innerHTML = ranked.map(item => {
-    const sevClass = scoreBand(item.score);
-    return `
-      <article class="threat-item" onclick="openThreatRelevanceDetail('${item.vuln.id}')">
-        <div class="threat-head">
-          <div class="threat-cve">${item.vuln.id}</div>
-          <span class="threat-score ${sevClass}">Score ${item.score}</span>
-        </div>
-        <div class="threat-meta">
-          ${item.vuln.title}<br>
-          CVSS ${item.vuln.cvss.toFixed(1)} · ${item.vuln.exploited ? 'Actively exploited' : 'No active exploitation flag'} · ${item.vuln.affectedDevices} affected devices
-        </div>
-      </article>
-    `;
-  }).join('');
+  if (!ranked.length) {
+    container.innerHTML = '<div style="font-size:12px;color:var(--text-muted);">No threat items match the selected filters.</div>';
+    return;
+  }
+
+  container.innerHTML = ranked.map(item => `
+    <article class="remediation-item" onclick="${threatWorkbenchMode === 'remediation' ? 'openRemediationDetail' : 'openThreatRelevanceDetail'}('${item.vuln.id}')">
+      <div class="remediation-head">
+        <div class="remediation-title">${item.vuln.id}</div>
+        <span class="prio-tag ${item.priority.toLowerCase()}">${item.priority} · ${priorityLabel(item.priority)}</span>
+      </div>
+      <div class="remediation-meta">
+        ${item.vuln.title}<br>
+        ${threatWorkbenchMode === 'remediation'
+          ? `Suggested action: ${item.action}<br>Est. exposure score reduction if fixed: ${item.reductionEstimate} pts · Threat relevance score: ${item.score}/100`
+          : `Threat relevance score: ${item.score}/100 · ${item.vuln.exploited ? 'Actively exploited' : 'No active exploitation flag'} · ${item.vuln.affectedDevices} affected endpoints`}
+      </div>
+      <div class="remediation-tags">
+        ${item.tags.map(tag => `<span class="remediation-pill ${tag.tone}">${tag.text}</span>`).join('')}
+      </div>
+    </article>
+  `).join('');
+}
+
+function renderMissingPatchesCard() {
+  const container = document.getElementById('missingPatchesList');
+  if (!container) return;
+
+  const priorityWeight = { P1: 3, P2: 2, P3: 1 };
+  const patchMap = new Map();
+
+  getFilteredVulnerabilities().forEach(vuln => {
+    const model = remediationPriority(vuln);
+    const patchRefs = (KB_PATCH_MAP[vuln.id] && KB_PATCH_MAP[vuln.id].length)
+      ? KB_PATCH_MAP[vuln.id]
+      : [{ kb: `Patch for ${vuln.software}`, target: vuln.software, note: 'Vendor security update required' }];
+
+    patchRefs.forEach(ref => {
+      const key = `${ref.kb}__${ref.target}`;
+      const published = toDateSafe(vuln.published);
+      const existing = patchMap.get(key) || {
+        kb: ref.kb,
+        target: ref.target,
+        note: ref.note || 'Security update required',
+        priority: model.priority,
+        score: 0,
+        reductionEstimate: 0,
+        maxCvss: 0,
+        affectedDevices: 0,
+        vulnCount: 0,
+        exploitedCount: 0,
+        primaryVulnId: vuln.id,
+        oldestPublished: published,
+        latestPublished: published,
+        action: model.action
+      };
+
+      if (priorityWeight[model.priority] > priorityWeight[existing.priority]) existing.priority = model.priority;
+      if (model.score > existing.score) {
+        existing.score = model.score;
+        existing.primaryVulnId = vuln.id;
+        existing.action = model.action;
+      }
+
+      existing.reductionEstimate = Math.min(35, existing.reductionEstimate + model.reductionEstimate);
+      existing.maxCvss = Math.max(existing.maxCvss, Number(vuln.cvss) || 0);
+      existing.affectedDevices += Number(vuln.affectedDevices) || 0;
+      existing.vulnCount += 1;
+      existing.exploitedCount += vuln.exploited ? 1 : 0;
+
+      if (published) {
+        if (!existing.oldestPublished || published < existing.oldestPublished) existing.oldestPublished = published;
+        if (!existing.latestPublished || published > existing.latestPublished) existing.latestPublished = published;
+      }
+
+      patchMap.set(key, existing);
+    });
+  });
+
+  const ranked = Array.from(patchMap.values())
+    .map(item => {
+      const ageDays = item.oldestPublished ? Math.max(0, Math.floor((Date.now() - item.oldestPublished.getTime()) / 86400000)) : null;
+      const cvssTone = item.maxCvss >= 9 ? 'critical' : item.maxCvss >= 7 ? 'high' : item.maxCvss >= 4 ? 'medium' : 'low';
+      const exposureTone = item.affectedDevices >= 300 ? 'critical' : item.affectedDevices >= 150 ? 'high' : item.affectedDevices >= 60 ? 'medium' : 'low';
+      const backlogTone = item.vulnCount >= 4 ? 'critical' : item.vulnCount >= 2 ? 'high' : 'medium';
+      const tags = [
+        { text: item.exploitedCount > 0 ? 'Exploit-linked patch' : 'No active exploit', tone: item.exploitedCount > 0 ? 'critical' : 'low' },
+        { text: `Max CVSS ${item.maxCvss.toFixed(1)}`, tone: cvssTone },
+        { text: `${item.affectedDevices} affected`, tone: exposureTone },
+        { text: `${item.vulnCount} vulnerabilities mapped`, tone: backlogTone }
+      ];
+      return { ...item, ageDays, tags };
+    })
+    .sort((a, b) =>
+      (priorityWeight[b.priority] - priorityWeight[a.priority]) ||
+      (b.reductionEstimate - a.reductionEstimate) ||
+      (b.score - a.score)
+    )
+    .slice(0, 10);
+
+  if (!ranked.length) {
+    container.innerHTML = '<div style="font-size:12px;color:var(--text-muted);">No patch gaps match the selected filters.</div>';
+    return;
+  }
+
+  container.innerHTML = ranked.map(item => `
+    <article class="remediation-item" onclick="openRemediationDetail('${item.primaryVulnId}')">
+      <div class="remediation-head">
+        <div class="remediation-title">${item.kb}</div>
+        <span class="prio-tag ${item.priority.toLowerCase()}">${item.priority} · ${priorityLabel(item.priority)}</span>
+      </div>
+      <div class="remediation-meta">
+        ${item.target} · ${item.note}<br>
+        Suggested action: ${item.action}<br>
+        Exposure reduction if deployed: ${item.reductionEstimate} pts · Threat relevance: ${item.score}/100 · ${item.ageDays === null ? 'Advisory date unavailable' : `${item.ageDays} days since earliest advisory`}
+      </div>
+      <div class="remediation-tags">
+        ${item.tags.map(tag => `<span class="remediation-pill ${tag.tone}">${tag.text}</span>`).join('')}
+      </div>
+    </article>
+  `).join('');
 }
 
 function remediationPriority(vuln) {
@@ -2973,24 +3905,44 @@ function remediationPlaybook(vuln) {
 }
 
 function renderRemediationQueue() {
-  const ranked = vulnerabilities
-    .map(vuln => ({ vuln, ...remediationPriority(vuln) }))
-    .sort((a, b) => {
-      const order = { P1: 3, P2: 2, P3: 1 };
-      return (order[b.priority] - order[a.priority]) || (b.score - a.score);
-    })
-    .slice(0, 12);
+  const actionableBtn = document.getElementById('remediationActionableBtn');
+  const reductionBtn = document.getElementById('remediationReductionBtn');
+  const container = document.getElementById('remediationQueueList');
+  if (!container) return;
+  if (actionableBtn) actionableBtn.classList.toggle('active', remediationViewMode === 'actionable');
+  if (reductionBtn) reductionBtn.classList.toggle('active', remediationViewMode === 'reduction');
 
-  document.getElementById('remediationQueueList').innerHTML = ranked.map(item => `
+  let ranked = getFilteredVulnerabilities().map(vuln => ({ vuln, ...remediationPriority(vuln) }));
+  if (remediationViewMode === 'reduction') {
+    ranked = ranked
+      .sort((a, b) => b.reductionEstimate - a.reductionEstimate || b.score - a.score)
+      .slice(0, 12);
+  } else {
+    ranked = ranked
+      .sort((a, b) => {
+        const order = { P1: 3, P2: 2, P3: 1 };
+        return (order[b.priority] - order[a.priority]) || (b.score - a.score);
+      })
+      .slice(0, 12);
+  }
+
+  if (!ranked.length) {
+    container.innerHTML = '<div style="font-size:12px;color:var(--text-muted);">No remediation items match the selected filters.</div>';
+    return;
+  }
+
+  container.innerHTML = ranked.map(item => `
     <article class="remediation-item" onclick="openRemediationDetail('${item.vuln.id}')">
       <div class="remediation-head">
         <div class="remediation-title">${item.vuln.id}</div>
-        <span class="prio-tag ${item.priority.toLowerCase()}">${item.priority} · ${priorityLabel(item.priority)}</span>
+        <span class="prio-tag ${item.priority.toLowerCase()}">${remediationViewMode === 'reduction' ? `${item.reductionEstimate}pts` : `${item.priority} · ${priorityLabel(item.priority)}`}</span>
       </div>
       <div class="remediation-meta">
         ${item.vuln.title}<br>
         Suggested action: ${item.action}<br>
-        Est. exposure score reduction if fixed: ${item.reductionEstimate} pts
+        ${remediationViewMode === 'reduction'
+          ? `Risk reduction potential: ${item.reductionEstimate} points if remediated promptly`
+          : `Est. exposure score reduction if fixed: ${item.reductionEstimate} pts`}
       </div>
       <div class="remediation-tags">
         ${item.tags.map(tag => `<span class="remediation-pill ${tag.tone}">${tag.text}</span>`).join('')}
@@ -3072,11 +4024,9 @@ function openRiskCellDetail(li, im) {
   const title = document.getElementById('detailTitle');
   const body = document.getElementById('detailBody');
 
-  const severityRank = { Critical: 4, High: 3, Medium: 2, Low: 1 };
-
   const items = cellDevices.map(device => {
     const mappedVulns = mapVulnerabilitiesForDevice(device)
-      .sort((a, b) => (severityRank[b.severity] || 0) - (severityRank[a.severity] || 0) || b.cvss - a.cvss);
+      .sort((a, b) => getSeverityRank(b) - getSeverityRank(a) || b.cvss - a.cvss);
     return { device, mappedVulns };
   });
 
@@ -3102,7 +4052,7 @@ function openRiskCellDetail(li, im) {
                 ${
                   mappedVulns.length
                     ? `<div style="font-size:11px;color:var(--text-secondary);line-height:1.5;">
-                        ${mappedVulns.map(v => `<div>• <span style=\"font-family:'JetBrains Mono',monospace;color:var(--text-primary);\">${v.id}</span> (${v.severity}, ${v.cvss.toFixed(1)}) - ${v.title}</div>`).join('')}
+                        ${mappedVulns.map(v => `<div>• <span style=\"font-family:'JetBrains Mono',monospace;color:var(--text-primary);\">${v.id}</span> (${getSeverityLabel(getSeverityBucket(v))}, ${v.cvss.toFixed(1)}) - ${v.title}</div>`).join('')}
                       </div>`
                     : `<div style="font-size:11px;color:var(--text-muted);">No direct vulnerability mapping available in sample data.</div>`
                 }
@@ -3118,7 +4068,16 @@ function openRiskCellDetail(li, im) {
 
 function renderDeviceTable() {
   const tbody = document.getElementById('deviceTableBody');
-  tbody.innerHTML = devices.map(d => {
+  if (!tbody) return;
+
+  const allBtn = document.getElementById('deviceFilterAllBtn');
+  const nonCompliantBtn = document.getElementById('deviceFilterNonCompliantBtn');
+  if (allBtn) allBtn.classList.toggle('active', deviceInventoryFilterMode === 'all');
+  if (nonCompliantBtn) nonCompliantBtn.classList.toggle('active', deviceInventoryFilterMode === 'non-compliant');
+
+  const rows = getFilteredDevicesForInventory();
+
+  tbody.innerHTML = rows.map(d => {
     const healthClass = d.health.toLowerCase();
     let verClass = 'current';
     if (d.defenderVer.includes('2309') || d.defenderVer.includes('2305') || d.defenderVer.includes('2308')) verClass = 'critical';
@@ -3135,15 +4094,68 @@ function renderDeviceTable() {
       <td style="font-family:'JetBrains Mono';font-size:11px;">${d.caPolicies}</td>
     </tr>`;
   }).join('');
+
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="8" style="font-size:12px;color:var(--text-muted);padding:14px 12px;">No devices match the selected inventory filter.</td></tr>`;
+  }
+}
+
+function isDeviceNonCompliant(device) {
+  const health = String(device.health || '').toLowerCase();
+  const defenderVer = String(device.defenderVer || '');
+  const outdatedDefender = !defenderVer.includes('24110') && !defenderVer.includes('24112');
+  return health !== 'healthy' || Number(device.riskScore || 0) >= 55 || outdatedDefender;
+}
+
+function getFilteredDevicesForInventory() {
+  if (deviceInventoryFilterMode === 'non-compliant') {
+    return devices.filter(isDeviceNonCompliant);
+  }
+  return devices;
+}
+
+function exportDeviceInventoryCsv() {
+  const rows = getFilteredDevicesForInventory();
+  const headers = ['Device Name', 'Type', 'OS', 'Location', 'Health', 'Defender Version', 'Vulnerabilities', 'CA Policies', 'Risk Score', 'Last Seen'];
+  const csvRows = [
+    headers.join(','),
+    ...rows.map(d => ([
+      d.name,
+      d.type,
+      d.os,
+      d.location,
+      d.health,
+      d.defenderVer,
+      d.vulns,
+      d.caPolicies,
+      d.riskScore,
+      d.lastSeen
+    ]).map(value => `"${String(value).replace(/"/g, '""')}"`).join(','))
+  ];
+
+  const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const stamp = new Date().toISOString().slice(0, 10);
+  a.href = url;
+  a.download = `device-inventory-${deviceInventoryFilterMode}-${stamp}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 
 function renderCAPolicies() {
   const filteredPolicies = getFilteredPolicies();
+  if (!selectedPolicyName || !filteredPolicies.some(p => p.name === selectedPolicyName)) {
+    selectedPolicyName = filteredPolicies.length ? filteredPolicies[0].name : '';
+  }
   const container = document.getElementById('caPolicyList');
   container.innerHTML = filteredPolicies.map(p => {
     const stateClass = p.state === 'enabled' ? 'enabled' : p.state === 'report-only' ? 'report-only' : 'disabled';
     const coverageClass = p.coverage >= 90 ? 'high' : p.coverage >= 60 ? 'medium' : 'low';
-    return `<div class="ca-item" onclick="openCADetail('${p.name}')">
+    const escapedName = p.name.replace(/'/g, "\\'");
+    return `<div class="ca-item ${selectedPolicyName === p.name ? 'selected' : ''}" role="button" tabindex="0" onclick="selectPolicyFocus('${escapedName}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectPolicyFocus('${escapedName}')}">
       <div class="ca-item-header">
         <div class="ca-item-name">${p.name}</div>
         <span class="ca-status-badge ${stateClass}">${p.state === 'report-only' ? 'Report Only' : p.state.charAt(0).toUpperCase() + p.state.slice(1)}</span>
@@ -3221,17 +4233,17 @@ function renderPolicyGapInsights() {
   const summary = document.getElementById('policyGapSummary');
   if (summary) {
     summary.innerHTML = `
-      <article class="policy-gap-cell">
+      <article class="policy-gap-cell" role="button" tabindex="0" onclick="openPolicyGapBucketDetail('critical')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openPolicyGapBucketDetail('critical')}">
         <div class="k">Critical Gaps</div>
         <div class="v" style="color:var(--severity-critical);">${criticalCount}</div>
         <div class="s">Immediate policy hardening required</div>
       </article>
-      <article class="policy-gap-cell">
+      <article class="policy-gap-cell" role="button" tabindex="0" onclick="openPolicyGapBucketDetail('high')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openPolicyGapBucketDetail('high')}">
         <div class="k">High Gaps</div>
         <div class="v" style="color:var(--severity-high);">${highCount}</div>
         <div class="s">Address in current sprint</div>
       </article>
-      <article class="policy-gap-cell">
+      <article class="policy-gap-cell" role="button" tabindex="0" onclick="openPolicyGapBucketDetail('coverage')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openPolicyGapBucketDetail('coverage')}">
         <div class="k">Avg Coverage</div>
         <div class="v">${avgCoverage}%</div>
         <div class="s">${reportOnlyCount} policies still report-only</div>
@@ -3243,7 +4255,7 @@ function renderPolicyGapInsights() {
   if (gapList) {
     const top = assessed.sort((a, b) => b.score - a.score).slice(0, 5);
     gapList.innerHTML = top.length ? top.map(item => `
-      <article class="policy-gap-item" role="button" tabindex="0" onclick="openCADetail('${item.policy.name}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openCADetail('${item.policy.name}')}">
+      <article class="policy-gap-item ${selectedPolicyName === item.policy.name ? 'selected' : ''}" role="button" tabindex="0" onclick="selectPolicyFocus('${item.policy.name.replace(/'/g, "\\'")}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectPolicyFocus('${item.policy.name.replace(/'/g, "\\'")}')}">
         <div class="policy-gap-head">
           <div class="policy-gap-title">${item.policy.name}</div>
           <span class="policy-pill ${item.severity}">Gap ${item.score}</span>
@@ -3258,57 +4270,86 @@ function renderPolicyGapInsights() {
 }
 
 function renderPolicyMitreCoverage() {
-  const container = document.getElementById('policyMitreList');
+  const container = document.getElementById('policyFocusPanel');
   if (!container) return;
 
-  const rows = caPolicies
-    .filter(policy => getFilteredPolicies().some(fp => fp.name === policy.name))
-    .map(policy => ({ policy, ...assessPolicyGap(policy) }))
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 6);
+  const filteredPolicies = getFilteredPolicies();
+  const selected = caPolicies.find(p => p.name === selectedPolicyName && filteredPolicies.some(fp => fp.name === p.name))
+    || filteredPolicies[0]
+    || null;
 
-  container.innerHTML = rows.length ? rows.map(item => `
-    <article class="policy-mitre-item" role="button" tabindex="0" onclick="openCADetail('${item.policy.name}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openCADetail('${item.policy.name}')}">
-      <div class="policy-mitre-head">
-        <div class="policy-mitre-title">${item.policy.name}</div>
-        <span class="policy-pill ${item.severity}">${item.policy.coverage}%</span>
+  if (!selected) {
+    container.innerHTML = '<div style="font-size:12px;color:var(--text-muted);">No policy selected in the current filter context.</div>';
+    return;
+  }
+
+  const assessment = assessPolicyGap(selected);
+  const healthTone = assessment.severity === 'critical' ? 'var(--severity-critical)' : assessment.severity === 'high' ? 'var(--severity-high)' : assessment.severity === 'medium' ? 'var(--severity-medium)' : 'var(--status-compliant)';
+
+  container.innerHTML = `
+    <div class="detail-section" style="margin-bottom:14px;">
+      <div class="detail-section-title">Current Selection</div>
+      <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:8px;">${selected.name}</div>
+      <div class="detail-row"><span class="label">State</span><span class="value"><span class="ca-status-badge ${selected.state === 'enabled' ? 'enabled' : selected.state === 'report-only' ? 'report-only' : 'disabled'}">${selected.state === 'report-only' ? 'Report Only' : selected.state.charAt(0).toUpperCase() + selected.state.slice(1)}</span></span></div>
+      <div class="detail-row"><span class="label">Coverage</span><span class="value" style="font-family:JetBrains Mono;">${selected.coverage}%</span></div>
+      <div class="detail-row"><span class="label">Gap Score</span><span class="value" style="font-family:JetBrains Mono;color:${healthTone};">${assessment.score}</span></div>
+    </div>
+    <div class="detail-section" style="margin-bottom:14px;">
+      <div class="detail-section-title">Primary Gaps</div>
+      ${
+        assessment.gaps.length
+          ? assessment.gaps.slice(0, 3).map(gap => `<div style="font-size:11px;color:var(--text-secondary);line-height:1.6;margin-bottom:6px;">• ${gap}</div>`).join('')
+          : '<div style="font-size:11px;color:var(--text-muted);">No material gaps identified.</div>'
+      }
+    </div>
+    <div class="detail-section" style="margin-bottom:14px;">
+      <div class="detail-section-title">Mapped MITRE Coverage</div>
+      <div class="detail-row"><span class="label">Tactics</span><span class="value">${assessment.mitre.tactics.join(', ') || 'Not mapped'}</span></div>
+      <div class="detail-row"><span class="label">Techniques</span><span class="value">${assessment.mitre.techniques.join(', ') || 'Not mapped'}</span></div>
+      <div class="detail-row"><span class="label">Threat Patterns</span><span class="value">${assessment.mitre.threats.join(', ') || 'Not mapped'}</span></div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">Next Actions</div>
+      <div style="font-size:11px;color:var(--text-secondary);line-height:1.7;">
+        ${assessment.recommendations.map((action, idx) => `${idx + 1}. ${action}`).join('<br>')}
       </div>
-      <div class="policy-mitre-meta">
-        <strong>Tactics:</strong> ${item.mitre.tactics.join(', ') || 'Not mapped'}<br>
-        <strong>Threats reduced:</strong> ${item.mitre.threats.join(', ') || 'Not mapped'}<br>
-        <strong>Primary recommendation:</strong> ${item.recommendations[0]}
+      <div style="margin-top:10px;">
+        <button class="card-action-btn" type="button" onclick="openCADetail('${selected.name.replace(/'/g, "\\'")}')">Open Full Policy Detail</button>
       </div>
-    </article>
-  `).join('') : '<div style="font-size:12px;color:var(--text-muted);">No MITRE policy mappings match the selected filter.</div>';
+    </div>
+  `;
 }
 
-function renderLocations() {
-  const container = document.getElementById('locationGrid');
-  container.innerHTML = locations.map(loc => {
-    const total = loc.devices;
-    const bars = [];
-    for (let i = 0; i < Math.round(loc.healthy / total * 10); i++) bars.push(`<div class="loc-bar-seg" style="background:var(--status-compliant);"></div>`);
-    for (let i = 0; i < Math.round(loc.warning / total * 10); i++) bars.push(`<div class="loc-bar-seg" style="background:var(--status-warning);"></div>`);
-    for (let i = 0; i < Math.round(loc.critical / total * 10); i++) bars.push(`<div class="loc-bar-seg" style="background:var(--status-noncompliant);"></div>`);
-
-    return `<div class="location-item" onclick="openDetail('location-${loc.name}')">
-      <div class="location-info">
-        <div class="location-flag">${loc.flag}</div>
-        <div>
-          <div class="location-name">${loc.name}</div>
-          <div class="location-count">${loc.devices} devices</div>
-        </div>
-      </div>
-      <div class="location-health">
-        <div class="location-bar">${bars.join('')}</div>
-        <div style="font-size:9px;color:var(--text-muted);">${loc.critical} critical</div>
-      </div>
-    </div>`;
-  }).join('');
+function selectPolicyFocus(policyName) {
+  selectedPolicyName = policyName;
+  renderCAPolicies();
+  renderPolicyGapInsights();
+  renderPolicyMitreCoverage();
 }
 
 function renderAppGrid() {
   const container = document.getElementById('appGrid');
+  if (!container) return;
+
+  const isList = appInventoryViewMode === 'list';
+  container.style.gridTemplateColumns = isList ? '1fr' : '1fr 1fr';
+
+  if (isList) {
+    container.innerHTML = softwareInventory.map(app => `
+      <div class="app-item" onclick="openDetail('app-${app.name}')" style="display:flex;justify-content:space-between;gap:10px;align-items:center;">
+        <div style="min-width:0;">
+          <div class="app-name">${app.name}</div>
+          <div class="app-vendor">${app.vendor} · v${app.version}</div>
+        </div>
+        <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:flex-end;">
+          <div class="app-stat">💻 <span class="num">${app.devices}</span> devices</div>
+          <div class="app-stat" style="${app.vulns > 10 ? 'color:var(--severity-critical);' : app.vulns > 5 ? 'color:var(--severity-high);' : ''}">⚠ <span class="num">${app.vulns}</span> vulns</div>
+        </div>
+      </div>
+    `).join('');
+    return;
+  }
+
   container.innerHTML = softwareInventory.map(app => `
     <div class="app-item" onclick="openDetail('app-${app.name}')">
       <div class="app-name">${app.name}</div>
@@ -3319,6 +4360,90 @@ function renderAppGrid() {
       </div>
     </div>
   `).join('');
+}
+
+function setupSoftwareViewInteractions() {
+  const gridBtn = document.getElementById('appViewGridBtn');
+  const listBtn = document.getElementById('appViewListBtn');
+  if (!gridBtn || !listBtn || gridBtn.dataset.bound === 'true') return;
+
+  const setMode = (mode) => {
+    appInventoryViewMode = mode;
+    gridBtn.classList.toggle('active', mode === 'grid');
+    listBtn.classList.toggle('active', mode === 'list');
+    renderAppGrid();
+  };
+
+  gridBtn.addEventListener('click', () => setMode('grid'));
+  listBtn.addEventListener('click', () => setMode('list'));
+  gridBtn.dataset.bound = 'true';
+}
+
+function setupVulnerabilityViewInteractions() {
+  const summaryBtn = document.getElementById('vulnViewSummaryBtn');
+  const byOsBtn = document.getElementById('vulnViewByOsBtn');
+  if (!summaryBtn || !byOsBtn || summaryBtn.dataset.bound === 'true') return;
+
+  const setMode = (mode) => {
+    vulnSeverityViewMode = mode;
+    renderVulnSeverityPanel();
+    renderVulnList();
+  };
+
+  summaryBtn.addEventListener('click', () => setMode('summary'));
+  byOsBtn.addEventListener('click', () => setMode('os'));
+  summaryBtn.dataset.bound = 'true';
+}
+
+function setupRemediationViewInteractions() {
+  const actionableBtn = document.getElementById('remediationActionableBtn');
+  const reductionBtn = document.getElementById('remediationReductionBtn');
+  if (!actionableBtn || !reductionBtn || actionableBtn.dataset.bound === 'true') return;
+
+  const setMode = (mode) => {
+    remediationViewMode = mode;
+    renderRemediationQueue();
+  };
+
+  actionableBtn.addEventListener('click', () => setMode('actionable'));
+  reductionBtn.addEventListener('click', () => setMode('reduction'));
+  actionableBtn.dataset.bound = 'true';
+}
+
+function setupThreatWorkbenchInteractions() {
+  const riskBtn = document.getElementById('threatWorkbenchRiskBtn');
+  const remediationBtn = document.getElementById('threatWorkbenchRemediationBtn');
+  if (!riskBtn || !remediationBtn || riskBtn.dataset.bound === 'true') return;
+
+  const setMode = (mode) => {
+    threatWorkbenchMode = mode;
+    renderThreatWorkbench();
+  };
+
+  riskBtn.addEventListener('click', () => setMode('risk'));
+  remediationBtn.addEventListener('click', () => setMode('remediation'));
+  riskBtn.dataset.bound = 'true';
+}
+
+function setupDeviceInventoryInteractions() {
+  const allBtn = document.getElementById('deviceFilterAllBtn');
+  const nonCompliantBtn = document.getElementById('deviceFilterNonCompliantBtn');
+  const exportBtn = document.getElementById('deviceExportCsvBtn');
+  if (!allBtn || !nonCompliantBtn || !exportBtn || allBtn.dataset.bound === 'true') return;
+
+  allBtn.addEventListener('click', () => {
+    deviceInventoryFilterMode = 'all';
+    renderDeviceTable();
+  });
+  nonCompliantBtn.addEventListener('click', () => {
+    deviceInventoryFilterMode = 'non-compliant';
+    renderDeviceTable();
+  });
+  exportBtn.addEventListener('click', () => {
+    exportDeviceInventoryCsv();
+  });
+
+  allBtn.dataset.bound = 'true';
 }
 
 function renderDefenderVersionChart() {
@@ -3340,20 +4465,52 @@ function renderDefenderVersionChart() {
   `).join('');
 }
 
+function clampExposureScore(v) {
+  return Math.max(20, Math.min(95, v));
+}
+
+function buildExposureTrendSeries(anchorScore) {
+  const points = new Array(90);
+  points[89] = clampExposureScore(anchorScore);
+
+  for (let i = 88; i >= 0; i--) {
+    const seasonal = Math.sin(i * 0.29) * 0.35;
+    const cycle = ((i % 9) - 4) * 0.18;
+    const prev = points[i + 1];
+    points[i] = clampExposureScore(prev - seasonal - cycle);
+  }
+
+  // Keep the final point exactly tied to the current dashboard score.
+  points[89] = clampExposureScore(anchorScore);
+  return points;
+}
+
+function getExposureTrendPoints() {
+  const fallbackRisk = devices.length
+    ? devices.reduce((sum, d) => sum + Number(d.riskScore || 0), 0) / devices.length
+    : 65;
+  const anchor = Number.isFinite(liveExposureScore) ? liveExposureScore : fallbackRisk;
+
+  if (!exposureTrendPoints.length || exposureTrendAnchorScore === null || Math.abs(anchor - exposureTrendAnchorScore) > 0.05) {
+    exposureTrendPoints = buildExposureTrendSeries(anchor);
+    exposureTrendAnchorScore = anchor;
+  }
+
+  return exposureTrendPoints;
+}
+
 function renderTrendChart() {
   const svg = document.getElementById('trendChart');
-  // Generate 90 days of mock exposure score data
-  const points = [];
-  let score = 65;
-  for (let i = 0; i < 90; i++) {
-    score += (Math.random() - 0.45) * 3;
-    score = Math.max(40, Math.min(85, score));
-    points.push(score);
-  }
+  const points = getExposureTrendPoints();
+  if (!svg || !points.length) return;
 
   const w = 400, h = 180, padding = 20;
   const xStep = (w - padding * 2) / (points.length - 1);
-  const minY = 35, maxY = 90;
+  const minPoint = Math.min(...points);
+  const maxPoint = Math.max(...points);
+  const yPad = Math.max(4, (maxPoint - minPoint) * 0.2);
+  const minY = Math.max(10, Math.floor(minPoint - yPad));
+  const maxY = Math.min(100, Math.ceil(maxPoint + yPad));
   const scaleY = (v) => h - padding - ((v - minY) / (maxY - minY)) * (h - padding * 2);
 
   let pathD = '';
@@ -3368,17 +4525,23 @@ function renderTrendChart() {
 
   // Grid lines
   let grid = '';
-  for (let v = 40; v <= 85; v += 15) {
+  const yTicks = 4;
+  for (let t = 0; t <= yTicks; t++) {
+    const v = minY + ((maxY - minY) * t / yTicks);
     const y = scaleY(v);
     grid += `<line x1="${padding}" y1="${y}" x2="${w - padding}" y2="${y}" stroke="var(--border-subtle)" stroke-width="0.5"/>`;
-    grid += `<text x="${padding - 4}" y="${y + 3}" text-anchor="end" fill="var(--text-muted)" font-size="8" font-family="JetBrains Mono">${v}</text>`;
+    grid += `<text x="${padding - 4}" y="${y + 3}" text-anchor="end" fill="var(--text-muted)" font-size="8" font-family="JetBrains Mono">${Math.round(v)}</text>`;
   }
 
-  // Month labels
-  const months = ['Nov', 'Dec', 'Jan', 'Feb'];
-  months.forEach((m, i) => {
-    const x = padding + (i / (months.length - 1)) * (w - padding * 2);
-    grid += `<text x="${x}" y="${h - 4}" text-anchor="middle" fill="var(--text-muted)" font-size="8" font-family="JetBrains Mono">${m}</text>`;
+  // Month labels based on current date.
+  const now = new Date();
+  const monthOffsets = [89, 59, 29, 0];
+  monthOffsets.forEach((offset, i) => {
+    const d = new Date(now);
+    d.setDate(now.getDate() - offset);
+    const label = d.toLocaleString('en-US', { month: 'short' });
+    const x = padding + (i / (monthOffsets.length - 1)) * (w - padding * 2);
+    grid += `<text x="${x}" y="${h - 4}" text-anchor="middle" fill="var(--text-muted)" font-size="8" font-family="JetBrains Mono">${label}</text>`;
   });
 
   // Current value indicator
@@ -3398,6 +4561,493 @@ function renderTrendChart() {
     <circle cx="${lastX}" cy="${lastY}" r="4" fill="var(--severity-high)" stroke="var(--bg-card)" stroke-width="2"/>
     <text x="${lastX + 8}" y="${lastY + 4}" fill="var(--severity-high)" font-size="11" font-weight="700" font-family="JetBrains Mono">${points[points.length - 1].toFixed(1)}</text>
   `;
+}
+
+function getCurrentSecureScore() {
+  if (Number.isFinite(liveSecureScore)) {
+    return Math.max(0, Math.min(100, Math.round(liveSecureScore)));
+  }
+  const policyCoverage = caPolicies.length
+    ? caPolicies.reduce((sum, policy) => sum + Number(policy.coverage || 0), 0) / caPolicies.length
+    : 0;
+  const enabledRatio = caPolicies.length
+    ? (caPolicies.filter(policy => policy.state === 'enabled').length / caPolicies.length) * 100
+    : 0;
+  const deviceCompliance = devices.length
+    ? (devices.filter(device => String(device.health).toLowerCase() === 'healthy').length / devices.length) * 100
+    : 0;
+  const score = (policyCoverage * 0.45) + (enabledRatio * 0.25) + (deviceCompliance * 0.30);
+  return Math.max(0, Math.min(100, Math.round(score)));
+}
+
+function renderSecureScoreChart() {
+  const container = document.getElementById('secureScoreChart');
+  const currentEl = document.getElementById('secureScoreCurrentValue');
+  if (!container || !currentEl) return;
+
+  const current = getCurrentSecureScore();
+  currentEl.textContent = `${current}%`;
+
+  const labels = ['Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Now'];
+  const seed = [current - 12, current - 9, current - 7, current - 4, current - 2, current]
+    .map(v => Math.max(0, Math.min(100, v)));
+
+  container.innerHTML = seed.map((value, idx) => {
+    const intensity = value / 100;
+    const topLight = 94 - (intensity * 24);
+    const bottomLight = 84 - (intensity * 36);
+    const topColor = `hsl(49 95% ${topLight}%)`;
+    const bottomColor = `hsl(43 92% ${bottomLight}%)`;
+    return `
+    <div class="secure-score-col">
+      <div class="secure-score-val">${value}%</div>
+      <div class="secure-score-bar-wrap">
+        <div class="secure-score-bar" style="height:${value}%;--score-color-top:${topColor};--score-color-bottom:${bottomColor};"></div>
+      </div>
+      <div class="secure-score-label">${labels[idx]}</div>
+    </div>
+  `;
+  }).join('');
+}
+
+function renderStandardsView() {
+  const cisCoverageEl = document.getElementById('cisCoverageValue');
+  const cisCoverageSubEl = document.getElementById('cisCoverageSub');
+  const cisListEl = document.getElementById('cisControlList');
+  const nistCoverageEl = document.getElementById('nistCoverageValue');
+  const nistCoverageSubEl = document.getElementById('nistCoverageSub');
+  const nistListEl = document.getElementById('nistFunctionList');
+  const identityListEl = document.getElementById('identityBaselineList');
+  const nis2OverallEl = document.getElementById('nis2OverallValue');
+  const nis2ListEl = document.getElementById('nis2List');
+  if (!cisCoverageEl || !cisCoverageSubEl || !cisListEl || !nistCoverageEl || !nistCoverageSubEl || !nistListEl || !identityListEl || !nis2OverallEl || !nis2ListEl) return;
+
+  const clampPct = (value) => Math.max(0, Math.min(100, Math.round(value)));
+  const criticalCount = vulnerabilities.filter(v => getSeverityBucket(v) === 'critical').length;
+  const highCount = vulnerabilities.filter(v => getSeverityBucket(v) === 'high').length;
+  const mediumCount = vulnerabilities.filter(v => getSeverityBucket(v) === 'medium').length;
+  const enabledPolicies = caPolicies.filter(p => p.state === 'enabled').length;
+  const enabledRatio = caPolicies.length ? (enabledPolicies / caPolicies.length) * 100 : 0;
+  const avgPolicyCoverage = caPolicies.length ? (caPolicies.reduce((sum, p) => sum + Number(p.coverage || 0), 0) / caPolicies.length) : 0;
+  const defenderCoverage = devices.length
+    ? (devices.filter(d => String(d.defenderVer).includes('24110') || String(d.defenderVer).includes('24112')).length / devices.length) * 100
+    : 0;
+  const healthyRatio = devices.length
+    ? (devices.filter(d => String(d.health).toLowerCase() === 'healthy').length / devices.length) * 100
+    : 0;
+
+  const criticalSla = clampPct(100 - (criticalCount * 2.2));
+  const highSla = clampPct(100 - (highCount * 0.9));
+  const mediumSla = clampPct(100 - (mediumCount * 0.35));
+  const weightedPatchSla = clampPct((criticalSla * 0.5) + (highSla * 0.3) + (mediumSla * 0.2));
+
+  const cisRows = [
+    {
+      id: 'asset_inventory',
+      name: 'Asset Inventory',
+      score: clampPct((devices.length / 1400) * 100),
+      detail: `${devices.length.toLocaleString()} managed assets discovered`,
+      rationale: `Score is based on known managed assets (${devices.length.toLocaleString()}) against a demo baseline target of 1,400 assets.`,
+      subcontrols: [
+        { id: 'CIS 1.1', name: 'Establish and maintain detailed enterprise asset inventory', status: clampPct((devices.length / 1400) * 100), evidence: `${devices.length.toLocaleString()} assets currently inventoried.` },
+        { id: 'CIS 1.2', name: 'Address unauthorized assets', status: clampPct(100 - ((devices.filter(d => String(d.health).toLowerCase() !== 'healthy').length / Math.max(devices.length, 1)) * 100)), evidence: `${devices.filter(d => String(d.health).toLowerCase() !== 'healthy').length} assets flagged unhealthy or requiring review.` },
+        { id: 'CIS 1.3', name: 'Use active discovery mechanisms', status: clampPct((devices.filter(d => d.lastSeen).length / Math.max(devices.length, 1)) * 100), evidence: `${devices.filter(d => d.lastSeen).length} assets reporting recent telemetry.` }
+      ]
+    },
+    {
+      id: 'vuln_mgmt',
+      name: 'Vulnerability Management',
+      score: clampPct((criticalSla * 0.7) + (highSla * 0.3)),
+      detail: `${criticalCount} critical open findings`,
+      rationale: 'Weighted toward critical vulnerability SLA adherence and high-severity backlog control.',
+      subcontrols: [
+        { id: 'CIS 7.1', name: 'Establish and maintain vulnerability management process', status: criticalSla, evidence: `${criticalCount} critical vulnerabilities open.` },
+        { id: 'CIS 7.4', name: 'Remediate vulnerabilities', status: weightedPatchSla, evidence: `Weighted patch SLA is ${weightedPatchSla}%.` },
+        { id: 'CIS 7.7', name: 'Remediate detected vulnerabilities promptly', status: highSla, evidence: `${highCount} high-severity vulnerabilities open.` }
+      ]
+    },
+    {
+      id: 'identity_access',
+      name: 'Identity & Access',
+      score: clampPct((enabledRatio * 0.45) + (avgPolicyCoverage * 0.55)),
+      detail: `${enabledPolicies}/${caPolicies.length} CA policies enabled`,
+      rationale: 'Derived from Conditional Access enablement ratio and average policy coverage.',
+      subcontrols: [
+        { id: 'CIS 5.1', name: 'Establish identity and account lifecycle', status: enabledRatio, evidence: `${enabledPolicies}/${caPolicies.length} policies are actively enforced.` },
+        { id: 'CIS 6.3', name: 'Require MFA', status: avgPolicyCoverage, evidence: `Average CA policy coverage is ${clampPct(avgPolicyCoverage)}%.` },
+        { id: 'CIS 6.7', name: 'Establish role-based access control', status: clampPct((enabledRatio * 0.6) + (avgPolicyCoverage * 0.4)), evidence: 'Role-focused controls inferred from admin and directory-role policies.' }
+      ]
+    },
+    {
+      id: 'endpoint_protection',
+      name: 'Endpoint Protection',
+      score: clampPct((defenderCoverage * 0.6) + (healthyRatio * 0.4)),
+      detail: `${clampPct(defenderCoverage)}% current Defender coverage`,
+      rationale: 'Combines current Defender agent/version coverage and healthy endpoint ratio.',
+      subcontrols: [
+        { id: 'CIS 10.1', name: 'Deploy and maintain anti-malware protections', status: defenderCoverage, evidence: `${clampPct(defenderCoverage)}% of endpoints running current Defender builds.` },
+        { id: 'CIS 10.7', name: 'Use centrally managed endpoint security', status: healthyRatio, evidence: `${clampPct(healthyRatio)}% endpoints report healthy telemetry.` },
+        { id: 'CIS 12.2', name: 'Maintain and monitor endpoint configurations', status: clampPct((defenderCoverage + healthyRatio) / 2), evidence: 'Posture inferred from Defender health and telemetry completeness.' }
+      ]
+    },
+    {
+      id: 'monitoring_response',
+      name: 'Monitoring & Response',
+      score: clampPct(100 - (criticalCount * 1.4)),
+      detail: `${vulnerabilities.filter(v => v.exploited).length} actively exploited CVEs`,
+      rationale: 'Penalized by outstanding critical vulnerabilities and active exploitation signals.',
+      subcontrols: [
+        { id: 'CIS 8.2', name: 'Collect audit logs', status: clampPct(100 - (criticalCount * 1.1)), evidence: `${criticalCount} critical vulnerabilities drive elevated monitoring burden.` },
+        { id: 'CIS 17.3', name: 'Perform incident response', status: clampPct(100 - (vulnerabilities.filter(v => v.exploited).length * 8)), evidence: `${vulnerabilities.filter(v => v.exploited).length} vulnerabilities flagged as exploited.` },
+        { id: 'CIS 17.6', name: 'Define communication and escalation workflow', status: clampPct(100 - (criticalCount * 0.8)), evidence: 'Escalation pressure inferred from unresolved critical backlog.' }
+      ]
+    }
+  ];
+  const cisCoverage = clampPct(cisRows.reduce((sum, row) => sum + row.score, 0) / cisRows.length);
+
+  cisCoverageEl.textContent = `${cisCoverage}%`;
+  cisCoverageSubEl.textContent = `${cisRows.filter(row => row.score < 75).length} control domains need hardening focus.`;
+  standardsDetailModel.cis = Object.fromEntries(cisRows.map(row => [row.id, row]));
+  cisListEl.innerHTML = cisRows.map(row => `
+    <article class="standards-row" role="button" tabindex="0" onclick="openStandardsDetail('cis','${row.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openStandardsDetail('cis','${row.id}')}">
+      <div class="standards-row-top">
+        <div class="standards-row-name">${row.name}</div>
+        <div class="standards-row-meta">${row.score}%</div>
+      </div>
+      <div class="standards-bar"><div style="width:${row.score}%;"></div></div>
+      <div style="font-size:10px;color:var(--text-muted);margin-top:6px;">${row.detail}</div>
+    </article>
+  `).join('');
+
+  const nistItems = [
+    {
+      id: 'govern',
+      key: 'Govern',
+      value: clampPct((enabledRatio * 0.5) + (avgPolicyCoverage * 0.5)),
+      rationale: 'Governance score combines policy enablement and policy coverage breadth.',
+      subcontrols: [
+        { id: 'GV.OC', name: 'Organizational context and risk strategy', status: clampPct(enabledRatio), evidence: `${enabledPolicies}/${caPolicies.length} core security policies enabled.` },
+        { id: 'GV.RR', name: 'Roles, responsibilities, and authorities', status: clampPct((enabledRatio * 0.7) + (avgPolicyCoverage * 0.3)), evidence: 'Role-oriented controls inferred from admin policy posture.' },
+        { id: 'GV.PO', name: 'Policy and oversight mechanisms', status: clampPct(avgPolicyCoverage), evidence: `Average CA policy coverage at ${clampPct(avgPolicyCoverage)}%.` }
+      ]
+    },
+    {
+      id: 'identify',
+      key: 'Identify',
+      value: clampPct((devices.length / 14)),
+      rationale: 'Identify score reflects asset visibility and telemetry inventory coverage.',
+      subcontrols: [
+        { id: 'ID.AM', name: 'Asset management', status: clampPct((devices.length / 14)), evidence: `${devices.length.toLocaleString()} inventoried managed assets in telemetry.` },
+        { id: 'ID.RA', name: 'Risk assessment', status: clampPct(100 - (criticalCount * 1.5)), evidence: `${criticalCount} critical vulnerabilities impacting current risk baseline.` },
+        { id: 'ID.IM', name: 'Improvement from discovered context', status: clampPct((devices.filter(d => d.lastSeen).length / Math.max(devices.length, 1)) * 100), evidence: `${devices.filter(d => d.lastSeen).length} assets with recent signal updates.` }
+      ]
+    },
+    {
+      id: 'protect',
+      key: 'Protect',
+      value: clampPct((healthyRatio * 0.45) + (avgPolicyCoverage * 0.55)),
+      rationale: 'Protect score is driven by endpoint health and access policy enforcement.',
+      subcontrols: [
+        { id: 'PR.AA', name: 'Identity management and access control', status: clampPct(avgPolicyCoverage), evidence: `CA coverage ${clampPct(avgPolicyCoverage)}% across policy set.` },
+        { id: 'PR.PS', name: 'Platform security', status: clampPct(healthyRatio), evidence: `${clampPct(healthyRatio)}% endpoints currently healthy.` },
+        { id: 'PR.DS', name: 'Data and control safeguards', status: clampPct((enabledRatio * 0.45) + (avgPolicyCoverage * 0.55)), evidence: 'Control enforcement inferred from policy enablement and coverage breadth.' }
+      ]
+    },
+    {
+      id: 'detect',
+      key: 'Detect',
+      value: clampPct((defenderCoverage * 0.7) + ((100 - (criticalCount * 1.8)) * 0.3)),
+      rationale: 'Detect score combines Defender signal quality and unresolved critical risk pressure.',
+      subcontrols: [
+        { id: 'DE.CM', name: 'Continuous monitoring', status: clampPct(defenderCoverage), evidence: `${clampPct(defenderCoverage)}% Defender signal coverage from endpoint telemetry.` },
+        { id: 'DE.AE', name: 'Anomalies and events', status: clampPct(100 - (criticalCount * 1.8)), evidence: `${criticalCount} critical vulnerabilities reduce anomaly confidence baseline.` },
+        { id: 'DE.DP', name: 'Detection process maturity', status: clampPct((defenderCoverage * 0.6) + ((100 - (criticalCount * 1.4)) * 0.4)), evidence: 'Derived from signal quality and severe-risk backlog pressure.' }
+      ]
+    },
+    {
+      id: 'respond',
+      key: 'Respond',
+      value: clampPct((weightedPatchSla * 0.65) + ((100 - (vulnerabilities.filter(v => v.exploited).length * 5)) * 0.35)),
+      rationale: 'Respond score weights patch SLA execution and active exploit backlog.',
+      subcontrols: [
+        { id: 'RS.RP', name: 'Response planning', status: clampPct(weightedPatchSla), evidence: `Weighted remediation SLA currently ${weightedPatchSla}%.` },
+        { id: 'RS.AN', name: 'Incident analysis', status: clampPct(100 - (vulnerabilities.filter(v => v.exploited).length * 5)), evidence: `${vulnerabilities.filter(v => v.exploited).length} actively exploited CVEs require rapid triage.` },
+        { id: 'RS.MI', name: 'Mitigation execution', status: clampPct((weightedPatchSla * 0.7) + (highSla * 0.3)), evidence: `Critical/High SLA mix: ${criticalSla}% / ${highSla}%.` }
+      ]
+    },
+    {
+      id: 'recover',
+      key: 'Recover',
+      value: clampPct((getCurrentSecureScore() * 0.5) + (weightedPatchSla * 0.5)),
+      rationale: 'Recover score blends secure posture maturity and remediation consistency.',
+      subcontrols: [
+        { id: 'RC.RP', name: 'Recovery planning and readiness', status: clampPct(getCurrentSecureScore()), evidence: `Secure score posture currently ${getCurrentSecureScore()}%.` },
+        { id: 'RC.IM', name: 'Improvements from response outcomes', status: clampPct(weightedPatchSla), evidence: `Patch SLA consistency at ${weightedPatchSla}%.` },
+        { id: 'RC.CO', name: 'Recovery communications', status: clampPct((getCurrentSecureScore() * 0.4) + (weightedPatchSla * 0.6)), evidence: 'Recovery confidence inferred from posture + remediation consistency.' }
+      ]
+    }
+  ];
+  const nistRows = nistItems.map(item => ({
+    ...item,
+    name: item.key,
+    detail: `${(item.subcontrols || []).filter(sub => sub.status < 75).length} mapped sub-categories below 75%`
+  }));
+  const nistCoverage = clampPct(nistRows.reduce((sum, row) => sum + row.value, 0) / nistRows.length);
+  nistCoverageEl.textContent = `${nistCoverage}%`;
+  nistCoverageSubEl.textContent = `${nistRows.filter(row => row.value < 75).length} functions need additional hardening focus.`;
+  standardsDetailModel.nist = Object.fromEntries(nistRows.map(item => [item.id, item]));
+  nistListEl.innerHTML = nistRows.map(item => `
+    <article class="standards-row" role="button" tabindex="0" onclick="openStandardsDetail('nist','${item.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openStandardsDetail('nist','${item.id}')}">
+      <div class="standards-row-top">
+        <div class="standards-row-name">${item.name}</div>
+        <div class="standards-row-meta">${item.value}%</div>
+      </div>
+      <div class="standards-bar"><div style="width:${item.value}%;"></div></div>
+      <div style="font-size:10px;color:var(--text-muted);margin-top:6px;">${item.detail}</div>
+    </article>
+  `).join('');
+
+  const phishPolicy = caPolicies.find(p => /phishing-resistant/i.test(p.name));
+  const legacyPolicy = caPolicies.find(p => /legacy/i.test(p.name));
+  const adminPolicy = caPolicies.find(p => /admin mfa/i.test(p.name));
+  const identityChecks = [
+    { id: 'phish_mfa', label: 'Phishing-resistant MFA for admins', state: phishPolicy ? (phishPolicy.state === 'enabled' ? 'good' : 'warn') : 'bad', text: phishPolicy ? (phishPolicy.state === 'enabled' ? 'Enabled' : 'Report-only') : 'Not configured', rationale: 'Mapped from phishing-resistant MFA policy state and coverage.' },
+    { id: 'legacy_auth', label: 'Legacy authentication blocked', state: legacyPolicy ? (legacyPolicy.state === 'enabled' ? 'good' : 'warn') : 'bad', text: legacyPolicy ? (legacyPolicy.state === 'enabled' ? 'Enforced' : 'Partial') : 'Missing', rationale: 'Mapped from legacy authentication blocking policy effectiveness.' },
+    { id: 'privileged_access', label: 'Privileged access baseline', state: adminPolicy ? (adminPolicy.state === 'enabled' ? 'good' : 'warn') : 'bad', text: adminPolicy ? (adminPolicy.state === 'enabled' ? 'Protected' : 'Needs enforcement') : 'Gap', rationale: 'Derived from admin-focused policy posture and enforcement state.' },
+    { id: 'ca_coverage', label: 'Conditional Access coverage', state: avgPolicyCoverage >= 90 ? 'good' : avgPolicyCoverage >= 75 ? 'warn' : 'bad', text: `${clampPct(avgPolicyCoverage)}%`, rationale: 'Computed from average policy coverage across configured CA controls.' }
+  ];
+  standardsDetailModel.identity = Object.fromEntries(identityChecks.map(item => [item.id, item]));
+  identityListEl.innerHTML = identityChecks.map(item => `
+    <article class="identity-item" role="button" tabindex="0" onclick="openStandardsDetail('identity','${item.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openStandardsDetail('identity','${item.id}')}">
+      <div class="name">${item.label}</div>
+      <span class="identity-status ${item.state}">${item.text}</span>
+    </article>
+  `).join('');
+
+  const incidentExposure = vulnerabilities.filter(v => v.exploited).length;
+  const unhealthyCount = devices.filter(d => String(d.health).toLowerCase() !== 'healthy').length;
+  const policyReportOnlyCount = caPolicies.filter(p => p.state === 'report-only').length;
+  const nonCompliantPolicyCount = caPolicies.length - enabledPolicies;
+  const staleDefenderCount = devices.filter(d => !String(d.defenderVer).includes('24110') && !String(d.defenderVer).includes('24112')).length;
+  const businessContinuityScore = clampPct((getCurrentSecureScore() * 0.45) + (weightedPatchSla * 0.55));
+  const nis2Rows = [
+    {
+      id: 'risk_mgmt',
+      name: 'Risk Management Measures',
+      value: clampPct((criticalSla * 0.45) + (highSla * 0.25) + (avgPolicyCoverage * 0.3)),
+      note: `${criticalCount} critical + ${highCount} high open`,
+      rationale: 'Measures readiness against open severe vulnerabilities and preventive control coverage.',
+      requirements: [
+        { id: 'RM-1', name: 'Risk analysis and baseline controls', status: clampPct((criticalSla * 0.5) + (avgPolicyCoverage * 0.5)), evidence: `${criticalCount} critical findings and ${clampPct(avgPolicyCoverage)}% CA coverage influence risk baseline maturity.` },
+        { id: 'RM-2', name: 'Vulnerability handling discipline', status: weightedPatchSla, evidence: `Current weighted remediation performance is ${weightedPatchSla}%.` },
+        { id: 'RM-3', name: 'Security hygiene across managed assets', status: clampPct((defenderCoverage * 0.55) + (healthyRatio * 0.45)), evidence: `${staleDefenderCount} endpoints are not on current Defender builds and ${unhealthyCount} devices are not healthy.` }
+      ],
+      gaps: [
+        `${criticalCount} unresolved critical vulnerabilities continue to suppress this score.`,
+        `${policyReportOnlyCount} policies are still in report-only mode and reduce preventive control confidence.`
+      ],
+      actions: [
+        'Close critical findings first and enforce remediation SLAs for high severity.',
+        'Move report-only access controls to enforce mode after validation.',
+        'Raise endpoint baseline conformance by updating stale Defender versions.'
+      ]
+    },
+    {
+      id: 'incident_handling',
+      name: 'Incident Handling & Reporting',
+      value: clampPct((100 - (incidentExposure * 6)) * 0.6 + (defenderCoverage * 0.4)),
+      note: `${incidentExposure} actively exploited findings`,
+      rationale: 'Lower scores indicate active exploit pressure and weaker high-confidence detection/triage readiness.',
+      requirements: [
+        { id: 'IR-1', name: 'Detection and triage readiness', status: clampPct((defenderCoverage * 0.7) + ((100 - (criticalCount * 1.6)) * 0.3)), evidence: `Detection confidence is tied to ${clampPct(defenderCoverage)}% Defender coverage with ${criticalCount} critical findings.` },
+        { id: 'IR-2', name: 'Incident response execution', status: clampPct(100 - (incidentExposure * 6)), evidence: `${incidentExposure} actively exploited vulnerabilities require immediate containment.` },
+        { id: 'IR-3', name: 'Operational reporting posture', status: clampPct((enabledRatio * 0.6) + (avgPolicyCoverage * 0.4)), evidence: `${enabledPolicies}/${caPolicies.length} policies are enabled to provide stronger event attribution and control context.` }
+      ],
+      gaps: [
+        'Active exploit indicators remain open and increase incident response pressure.',
+        `${nonCompliantPolicyCount} access policies are not fully enforced, creating response blind spots.`
+      ],
+      actions: [
+        'Create a fast-track workflow for exploited vulnerabilities with same-day containment.',
+        'Validate incident reporting runbooks and assignment ownership per severity tier.',
+        'Increase telemetry confidence by resolving sensor and policy enforcement gaps.'
+      ]
+    },
+    {
+      id: 'supply_chain',
+      name: 'Supply Chain Security',
+      value: clampPct((mediumSla * 0.35) + (weightedPatchSla * 0.35) + (enabledRatio * 0.3)),
+      note: `${mediumCount} medium-risk exposures pending`,
+      rationale: 'Uses patch velocity and policy enforcement as a proxy for third-party and dependency risk governance.',
+      requirements: [
+        { id: 'SC-1', name: 'Third-party software risk visibility', status: clampPct(100 - (mediumCount * 0.4)), evidence: `${mediumCount} medium-severity findings imply supplier/dependency backlog risk.` },
+        { id: 'SC-2', name: 'Supplier patch and hardening assurance', status: weightedPatchSla, evidence: `Remediation execution is currently ${weightedPatchSla}% across severity tiers.` },
+        { id: 'SC-3', name: 'Supplier access governance', status: clampPct((enabledRatio * 0.65) + (avgPolicyCoverage * 0.35)), evidence: `${enabledPolicies}/${caPolicies.length} policy controls are active for external/internal access paths.` }
+      ],
+      gaps: [
+        'Medium-risk backlog suggests delayed closure of dependency-related weaknesses.',
+        'Partial policy enforcement limits assurance over third-party access pathways.'
+      ],
+      actions: [
+        'Track supplier-origin vulnerabilities separately and enforce closure deadlines.',
+        'Require patch/attestation evidence for critical software vendors.',
+        'Review all external access policies for MFA and conditional restrictions.'
+      ]
+    },
+    {
+      id: 'bcdr',
+      name: 'Business Continuity & Crisis',
+      value: businessContinuityScore,
+      note: `Secure posture ${getCurrentSecureScore()}%`,
+      rationale: 'Derived from overall secure posture and remediation consistency to estimate resilience maturity.',
+      requirements: [
+        { id: 'BC-1', name: 'Operational resilience baseline', status: clampPct(getCurrentSecureScore()), evidence: `Secure Score posture currently ${getCurrentSecureScore()}%.` },
+        { id: 'BC-2', name: 'Recovery preparedness through control maturity', status: clampPct((avgPolicyCoverage * 0.5) + (healthyRatio * 0.5)), evidence: `Policy coverage at ${clampPct(avgPolicyCoverage)}% with ${clampPct(healthyRatio)}% healthy endpoints.` },
+        { id: 'BC-3', name: 'Crisis recovery execution reliability', status: weightedPatchSla, evidence: `Recovery confidence is constrained by ${weightedPatchSla}% remediation consistency.` }
+      ],
+      gaps: [
+        'Control maturity is uneven between policy posture and endpoint hygiene.',
+        'Recovery confidence is reduced where critical remediation remains outstanding.'
+      ],
+      actions: [
+        'Define crisis playbooks with clear RTO/RPO and ownership handoffs.',
+        'Run tabletop exercises focused on exploited vulnerability scenarios.',
+        'Use post-incident lessons to update technical controls and recovery procedures.'
+      ]
+    }
+  ];
+  const nis2Overall = clampPct(nis2Rows.reduce((sum, row) => sum + row.value, 0) / nis2Rows.length);
+  nis2OverallEl.textContent = `${nis2Overall}%`;
+  standardsDetailModel.nis2 = Object.fromEntries(nis2Rows.map(row => [row.id, row]));
+  nis2ListEl.innerHTML = nis2Rows.map(row => `
+    <article class="standards-row" role="button" tabindex="0" onclick="openStandardsDetail('nis2','${row.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openStandardsDetail('nis2','${row.id}')}">
+      <div class="standards-row-top">
+        <div class="standards-row-name">${row.name}</div>
+        <div class="standards-row-meta">${row.value}%</div>
+      </div>
+      <div class="standards-bar"><div style="width:${row.value}%;"></div></div>
+      <div style="font-size:10px;color:var(--text-muted);margin-top:6px;">${row.note}</div>
+    </article>
+  `).join('');
+}
+
+function openStandardsDetail(group, id) {
+  const item = standardsDetailModel[group] ? standardsDetailModel[group][id] : null;
+  if (!item) return;
+
+  const overlay = document.getElementById('detailOverlay');
+  const title = document.getElementById('detailTitle');
+  const body = document.getElementById('detailBody');
+
+  if (group === 'cis') {
+    title.textContent = `CIS Controls — ${item.name}`;
+    body.innerHTML = `
+      <div class="detail-section">
+        <div class="detail-section-title">Score Summary</div>
+        <div style="font-size:44px;font-weight:800;color:${item.score >= 75 ? 'var(--status-compliant)' : item.score >= 50 ? 'var(--severity-medium)' : 'var(--severity-high)'};font-family:'JetBrains Mono';margin:6px 0;">${item.score}%</div>
+        <div style="font-size:12px;color:var(--text-secondary);line-height:1.7;">${item.rationale}</div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Mapped Sub-controls</div>
+        ${item.subcontrols.map(sub => `
+          <div style="padding:8px 10px;border:1px solid var(--border-subtle);border-radius:8px;background:var(--bg-elevated);margin-bottom:8px;">
+            <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:4px;">
+              <div style="font-size:11px;font-weight:700;color:var(--text-primary);">${sub.id} — ${sub.name}</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:${sub.status >= 75 ? 'var(--status-compliant)' : sub.status >= 50 ? 'var(--severity-medium)' : 'var(--severity-high)'};font-weight:700;">${sub.status}%</div>
+            </div>
+            <div style="font-size:11px;color:var(--text-secondary);line-height:1.55;">${sub.evidence}</div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  } else if (group === 'nist') {
+    const fnContext = NIST_FUNCTION_DETAILS[item.id] || {
+      focus: 'NIST function context.',
+      primaryGap: 'No specific gap mapped.',
+      priorityAction: 'No specific action mapped.'
+    };
+    title.textContent = `NIST CSF 2.0 — ${item.key}`;
+    body.innerHTML = `
+      <div class="detail-section">
+        <div class="detail-section-title">Function Score</div>
+        <div style="font-size:44px;font-weight:800;color:${item.value >= 75 ? 'var(--status-compliant)' : item.value >= 50 ? 'var(--severity-medium)' : 'var(--severity-high)'};font-family:'JetBrains Mono';margin:6px 0;">${item.value}%</div>
+        <div style="font-size:12px;color:var(--text-secondary);line-height:1.7;">${item.rationale}</div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Function Context</div>
+        <div class="detail-row"><span class="label">Control focus</span><span class="value">${fnContext.focus}</span></div>
+        <div class="detail-row"><span class="label">Primary gap</span><span class="value">${fnContext.primaryGap}</span></div>
+        <div class="detail-row"><span class="label">Priority action</span><span class="value">${fnContext.priorityAction}</span></div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Mapped Sub-categories</div>
+        ${(item.subcontrols || []).map(sub => `
+          ${(() => {
+            const controlMeta = NIST_CONTROL_DETAILS[sub.id] || {
+              owner: 'Security Team',
+              cadence: 'Monthly',
+              whyLow: 'No detailed rationale mapped.',
+              action: 'Review control evidence and define follow-up actions.'
+            };
+            return `
+          <div style="padding:8px 10px;border:1px solid var(--border-subtle);border-radius:8px;background:var(--bg-elevated);margin-bottom:8px;">
+            <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:4px;">
+              <div style="font-size:11px;font-weight:700;color:var(--text-primary);">${sub.id} — ${sub.name}</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:${sub.status >= 75 ? 'var(--status-compliant)' : sub.status >= 50 ? 'var(--severity-medium)' : 'var(--severity-high)'};font-weight:700;">${sub.status}%</div>
+            </div>
+            <div style="font-size:11px;color:var(--text-secondary);line-height:1.55;">${sub.evidence}</div>
+            <div class="detail-row" style="margin-top:6px;"><span class="label">Control owner</span><span class="value">${controlMeta.owner}</span></div>
+            <div class="detail-row"><span class="label">Review cadence</span><span class="value">${controlMeta.cadence}</span></div>
+            <div class="detail-row"><span class="label">Why score is low</span><span class="value">${controlMeta.whyLow}</span></div>
+            <div class="detail-row"><span class="label">Recommended action</span><span class="value">${controlMeta.action}</span></div>
+          </div>
+        `;
+          })()}
+        `).join('')}
+      </div>
+    `;
+  } else if (group === 'identity') {
+    title.textContent = `Identity Baseline — ${item.label}`;
+    body.innerHTML = `
+      <div class="detail-section">
+        <div class="detail-section-title">Control Status</div>
+        <div style="font-size:28px;font-weight:800;font-family:'JetBrains Mono';margin:6px 0;color:${item.state === 'good' ? 'var(--status-compliant)' : item.state === 'warn' ? 'var(--severity-medium)' : 'var(--severity-high)'};">${item.text}</div>
+        <div style="font-size:12px;color:var(--text-secondary);line-height:1.7;">${item.rationale}</div>
+      </div>
+    `;
+  } else if (group === 'nis2') {
+    title.textContent = `NIS2.0 — ${item.name}`;
+    body.innerHTML = `
+      <div class="detail-section">
+        <div class="detail-section-title">Alignment Estimate</div>
+        <div style="font-size:44px;font-weight:800;color:${item.value >= 75 ? 'var(--status-compliant)' : item.value >= 50 ? 'var(--severity-medium)' : 'var(--severity-high)'};font-family:'JetBrains Mono';margin:6px 0;">${item.value}%</div>
+        <div style="font-size:12px;color:var(--text-secondary);line-height:1.7;">${item.rationale}</div>
+        <div class="detail-row"><span class="label">Current evidence</span><span class="value" style="font-family:JetBrains Mono;">${item.note}</span></div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Mapped NIS2 Control Areas</div>
+        ${(item.requirements || []).map(req => `
+          <div style="padding:8px 10px;border:1px solid var(--border-subtle);border-radius:8px;background:var(--bg-elevated);margin-bottom:8px;">
+            <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:4px;">
+              <div style="font-size:11px;font-weight:700;color:var(--text-primary);">${req.id} — ${req.name}</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:${req.status >= 75 ? 'var(--status-compliant)' : req.status >= 50 ? 'var(--severity-medium)' : 'var(--severity-high)'};font-weight:700;">${req.status}%</div>
+            </div>
+            <div style="font-size:11px;color:var(--text-secondary);line-height:1.55;">${req.evidence}</div>
+          </div>
+        `).join('')}
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Why This Score Is Low</div>
+        ${(item.gaps || []).map(gap => `<div style="font-size:11px;color:var(--text-secondary);line-height:1.6;margin-bottom:6px;">• ${gap}</div>`).join('')}
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Priority Actions</div>
+        ${(item.actions || []).map((action, idx) => `<div style="font-size:11px;color:var(--text-secondary);line-height:1.6;margin-bottom:6px;">${idx + 1}. ${action}</div>`).join('')}
+      </div>
+    `;
+  }
+
+  overlay.classList.add('visible');
 }
 
 function renderDefenderStack() {
@@ -3431,18 +5081,7 @@ function renderDefenderStack() {
 }
 
 function renderMitreCoverage() {
-  const tactics = [
-    { name: 'Initial Access', coverage: 72, gaps: 5 },
-    { name: 'Execution', coverage: 81, gaps: 3 },
-    { name: 'Persistence', coverage: 68, gaps: 7 },
-    { name: 'Privilege Escalation', coverage: 61, gaps: 8 },
-    { name: 'Defense Evasion', coverage: 58, gaps: 10 },
-    { name: 'Credential Access', coverage: 66, gaps: 6 },
-    { name: 'Lateral Movement', coverage: 54, gaps: 9 },
-    { name: 'Command and Control', coverage: 79, gaps: 4 },
-    { name: 'Exfiltration', coverage: 63, gaps: 5 },
-    { name: 'Impact', coverage: 74, gaps: 4 },
-  ];
+  const tactics = MITRE_TACTICS;
 
   document.getElementById('mitreTacticList').innerHTML = tactics.map(t => `
     <article class="mitre-tactic-row" role="button" tabindex="0" onclick="openMitreTacticDetail('${t.name}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openMitreTacticDetail('${t.name}')}">
@@ -3455,47 +5094,31 @@ function renderMitreCoverage() {
   `).join('');
 
   const heatCells = tactics.slice(0, 6).concat(tactics.slice(6, 10)).map(t => {
-    const bg = t.coverage >= 80 ? '#bbf7d0' : t.coverage >= 65 ? '#fde68a' : '#fecaca';
-    const color = t.coverage >= 80 ? '#14532D' : t.coverage >= 65 ? '#854D0E' : '#7F1D1D';
-    return `<div class="mitre-cell" data-tactic="${t.name}" role="button" tabindex="0" style="background:${bg};color:${color};">${t.name}<br>${t.coverage}%</div>`;
+    const isHigh = t.coverage >= 80 && t.gaps <= 4;
+    const isMedium = t.coverage >= 65 && t.gaps <= 7;
+    const bg = isHigh
+      ? 'linear-gradient(135deg, #0b8a49 0%, #22d47a 100%)'
+      : isMedium
+        ? 'linear-gradient(135deg, #f39a00 0%, #ffd000 100%)'
+        : 'linear-gradient(135deg, #b3002d 0%, #ff2d55 100%)';
+    const color = isHigh ? '#ffffff' : isMedium ? '#2d2100' : '#ffffff';
+    const border = isHigh ? '#0a733e' : isMedium ? '#d48600' : '#970025';
+    const risk = isHigh ? 'Low Risk' : isMedium ? 'Medium Risk' : 'High Risk';
+    return `
+      <div class="mitre-cell" data-tactic="${t.name}" role="button" tabindex="0" style="background:${bg};color:${color};border-color:${border};">
+        <div class="tactic">${t.name}</div>
+        <div class="meta"><span class="k">Coverage</span><span class="v">${t.coverage}%</span></div>
+        <div class="meta"><span class="k">Gaps</span><span class="v">${t.gaps}</span></div>
+        <div class="risk">${risk}</div>
+      </div>
+    `;
   });
   document.getElementById('mitreHeatmap').innerHTML = heatCells.join('');
 }
 
-function setMitreMode(mode) {
-  const list = document.getElementById('mitreTacticList');
-  const heatmap = document.getElementById('mitreHeatmap');
-  const card = document.querySelector('.mitre-card');
-  if (!list || !heatmap || !card) return;
-
-  const buttons = card.querySelectorAll('.card-actions .card-action-btn');
-  const tacticsBtn = buttons[0];
-  const heatmapBtn = buttons[1];
-
-  if (mode === 'heatmap') {
-    list.classList.add('hidden');
-    heatmap.classList.remove('hidden');
-    tacticsBtn.classList.remove('active');
-    heatmapBtn.classList.add('active');
-  } else {
-    heatmap.classList.add('hidden');
-    list.classList.remove('hidden');
-    heatmapBtn.classList.remove('active');
-    tacticsBtn.classList.add('active');
-  }
-}
-
 function setupMitreInteractions() {
-  const card = document.querySelector('.mitre-card');
   const heatmap = document.getElementById('mitreHeatmap');
-  if (!card || !heatmap) return;
-
-  const buttons = card.querySelectorAll('.card-actions .card-action-btn');
-  const tacticsBtn = buttons[0];
-  const heatmapBtn = buttons[1];
-
-  tacticsBtn.onclick = () => setMitreMode('tactics');
-  heatmapBtn.onclick = () => setMitreMode('heatmap');
+  if (!heatmap) return;
 
   heatmap.addEventListener('click', (event) => {
     const cell = event.target.closest('.mitre-cell');
@@ -3512,8 +5135,6 @@ function setupMitreInteractions() {
     const tactic = cell.dataset.tactic;
     if (tactic) openMitreTacticDetail(tactic);
   });
-
-  setMitreMode('tactics');
 }
 
 function openMitreTacticDetail(tacticName) {
@@ -3675,6 +5296,76 @@ function openDetail(type) {
         </div>
       </div>
     `;
+  } else if (type === 'secureScore') {
+    const current = getCurrentSecureScore();
+    title.textContent = 'Microsoft Secure Score';
+    html = `
+      <div class="detail-section">
+        <div class="detail-section-title">Current Secure Score</div>
+        <div style="font-size:48px;font-weight:800;color:${current >= 75 ? 'var(--status-compliant)' : current >= 60 ? 'var(--severity-medium)' : 'var(--severity-high)'};font-family:'JetBrains Mono';margin:8px 0;">${current}%</div>
+        <div style="font-size:12px;color:var(--text-secondary);">This card trends your secure score posture and helps track hardening progress over time.</div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Recommended API Path</div>
+        <div style="font-size:12px;color:var(--text-secondary);line-height:1.7;">
+          1. <strong>Microsoft Graph Security secureScores</strong><br>
+          Endpoint: <span style="font-family:'JetBrains Mono',monospace;color:var(--text-primary);">GET graph.microsoft.com/v1.0/security/secureScores?$top=1</span><br>
+          Optional control detail: <span style="font-family:'JetBrains Mono',monospace;color:var(--text-primary);">GET graph.microsoft.com/v1.0/security/secureScoreControlProfiles</span>
+        </div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Permissions</div>
+        <div style="font-size:12px;color:var(--text-secondary);line-height:1.7;">
+          <strong>Graph (Application permission):</strong> <span style="font-family:'JetBrains Mono',monospace;color:var(--text-primary);">SecurityEvents.Read.All</span><br>
+          <strong>Graph (Delegated alternative):</strong> <span style="font-family:'JetBrains Mono',monospace;color:var(--text-primary);">SecurityEvents.Read.All</span><br>
+          Admin consent required for application permissions.
+        </div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Configuration Notes</div>
+        <div style="font-size:12px;color:var(--text-secondary);line-height:1.7;">
+          1. Add the Graph permission in Entra App Registration and grant admin consent.<br>
+          2. If using browser-only auth, ensure the app has SPA redirect URI configured exactly for this dashboard host.<br>
+          3. Add a new Graph fetch task for <span style="font-family:'JetBrains Mono',monospace;color:var(--text-primary);">/security/secureScores</span> and map the latest score into <span style="font-family:'JetBrains Mono',monospace;color:var(--text-primary);">liveSecureScore</span>.<br>
+          4. Keep fallback logic (currently used) so the chart still renders when API data is unavailable.
+        </div>
+      </div>
+    `;
+  } else if (type === 'mitreCompliance') {
+    const avgCoverage = MITRE_TACTICS.length
+      ? Math.round(MITRE_TACTICS.reduce((sum, tactic) => sum + tactic.coverage, 0) / MITRE_TACTICS.length)
+      : 0;
+    const lowCoverage = MITRE_TACTICS
+      .filter(tactic => tactic.coverage < 70)
+      .sort((a, b) => a.coverage - b.coverage)
+      .slice(0, 5);
+    const totalGaps = MITRE_TACTICS.reduce((sum, tactic) => sum + tactic.gaps, 0);
+    title.textContent = 'MITRE ATT&CK Compliance Snapshot';
+    html = `
+      <div class="detail-section">
+        <div class="detail-section-title">Overall Coverage</div>
+        <div style="font-size:48px;font-weight:800;color:${avgCoverage >= 75 ? 'var(--status-compliant)' : avgCoverage >= 65 ? 'var(--severity-medium)' : 'var(--severity-high)'};font-family:'JetBrains Mono';margin:8px 0;">${avgCoverage}%</div>
+        <div style="font-size:12px;color:var(--text-secondary);">Average ATT&amp;CK tactic coverage based on current control and detection posture.</div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Key Gaps</div>
+        <div class="detail-row"><span class="label">Total mapped tactic gaps</span><span class="value" style="font-family:JetBrains Mono;">${totalGaps}</span></div>
+        <div class="detail-row"><span class="label">Tactics below 70% coverage</span><span class="value" style="font-family:JetBrains Mono;color:var(--severity-high);">${MITRE_TACTICS.filter(tactic => tactic.coverage < 70).length}</span></div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Lowest Coverage Tactics</div>
+        ${
+          lowCoverage.length
+            ? lowCoverage.map(tactic => `
+                <div class="detail-row">
+                  <span class="label">${tactic.name}</span>
+                  <span class="value" style="font-family:JetBrains Mono;">${tactic.coverage}% · ${tactic.gaps} gaps</span>
+                </div>
+              `).join('')
+            : '<div style="font-size:12px;color:var(--text-muted);">No low-coverage tactics identified.</div>'
+        }
+      </div>
+    `;
   } else {
     title.textContent = type;
     html = `<div class="detail-section">
@@ -3693,6 +5384,8 @@ function openDetail(type) {
 function openVulnDetail(cveId) {
   const vuln = vulnerabilities.find(v => v.id === cveId);
   if (!vuln) return;
+  const sevClass = getSeverityBucket(vuln);
+  const sevLabel = getSeverityLabel(sevClass);
 
   const overlay = document.getElementById('detailOverlay');
   const title = document.getElementById('detailTitle');
@@ -3703,9 +5396,9 @@ function openVulnDetail(cveId) {
     <div class="detail-section">
       <div class="detail-section-title">Vulnerability Details</div>
       <div style="font-size:14px;font-weight:600;margin-bottom:8px;">${vuln.title}</div>
-      ${vuln.exploited ? '<div style="padding:6px 12px;background:rgba(255,59,92,0.12);border-radius:6px;color:var(--severity-critical);font-size:12px;font-weight:600;margin-bottom:12px;">⚡ Actively Exploited in the Wild</div>' : ''}
+      ${vuln.exploited ? '<div style="padding:6px 12px;background:linear-gradient(135deg,#ff2d55 0%,#b3002d 100%);border:1px solid #970025;border-radius:6px;color:#ffffff;font-size:12px;font-weight:600;margin-bottom:12px;">⚡ Actively Exploited in the Wild</div>' : ''}
       <div class="detail-row"><span class="label">CVE ID</span><span class="value" style="font-family:JetBrains Mono;">${vuln.id}</span></div>
-      <div class="detail-row"><span class="label">Severity</span><span class="value" style="color:var(--severity-${vuln.severity.toLowerCase()});">${vuln.severity}</span></div>
+      <div class="detail-row"><span class="label">Severity</span><span class="value" style="color:var(--severity-${sevClass});">${sevLabel}</span></div>
       <div class="detail-row"><span class="label">CVSS Score</span><span class="value" style="font-family:JetBrains Mono;">${vuln.cvss.toFixed(1)}</span></div>
       <div class="detail-row"><span class="label">Affected Software</span><span class="value">${vuln.software}</span></div>
       <div class="detail-row"><span class="label">Affected Devices</span><span class="value" style="font-family:JetBrains Mono;">${vuln.affectedDevices}</span></div>
@@ -3984,6 +5677,68 @@ function openCADetail(policyName) {
   overlay.classList.add('visible');
 }
 
+function openPolicyGapBucketDetail(bucket) {
+  const assessed = getFilteredPolicies()
+    .map(policy => ({ policy, ...assessPolicyGap(policy) }))
+    .sort((a, b) => b.score - a.score);
+
+  let titleText = '';
+  let subtitle = '';
+  let rows = [];
+
+  if (bucket === 'critical') {
+    titleText = 'Policy Gaps — Critical';
+    rows = assessed.filter(item => item.severity === 'critical');
+    subtitle = `${rows.length} policy gap${rows.length === 1 ? '' : 's'} requiring immediate hardening.`;
+  } else if (bucket === 'high') {
+    titleText = 'Policy Gaps — High';
+    rows = assessed.filter(item => item.severity === 'high');
+    subtitle = `${rows.length} high-priority policy gap${rows.length === 1 ? '' : 's'} to address in the current sprint.`;
+  } else {
+    titleText = 'Policy Coverage Details';
+    rows = assessed
+      .filter(item => item.policy.coverage < 95 || item.policy.state === 'report-only')
+      .sort((a, b) => a.policy.coverage - b.policy.coverage || b.score - a.score);
+    const avgCoverage = assessed.length ? Math.round(assessed.reduce((sum, item) => sum + item.policy.coverage, 0) / assessed.length) : 0;
+    const reportOnlyCount = assessed.filter(item => item.policy.state === 'report-only').length;
+    subtitle = `Average coverage is ${avgCoverage}% with ${reportOnlyCount} policy${reportOnlyCount === 1 ? '' : 'ies'} still report-only.`;
+  }
+
+  const overlay = document.getElementById('detailOverlay');
+  const title = document.getElementById('detailTitle');
+  const body = document.getElementById('detailBody');
+
+  title.textContent = titleText;
+  body.innerHTML = `
+    <div class="detail-section">
+      <div class="detail-section-title">Summary</div>
+      <div style="font-size:12px;color:var(--text-secondary);line-height:1.7;">${subtitle}</div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">Policies</div>
+      ${
+        rows.length
+          ? rows.map(item => `
+              <article class="policy-gap-item" role="button" tabindex="0" onclick="openCADetail('${item.policy.name.replace(/'/g, "\\'")}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openCADetail('${item.policy.name.replace(/'/g, "\\'")}')}">
+                <div class="policy-gap-head">
+                  <div class="policy-gap-title">${item.policy.name}</div>
+                  <span class="policy-pill ${item.severity}">Gap ${item.score}</span>
+                </div>
+                <div class="policy-gap-meta">
+                  State: ${item.policy.state === 'report-only' ? 'Report-only' : 'Enabled'} · Coverage: ${item.policy.coverage}%<br>
+                  ${item.gaps[0] || 'No material gaps identified.'}<br>
+                  Recommended: ${item.recommendations[0]}
+                </div>
+              </article>
+            `).join('')
+          : '<div style="font-size:12px;color:var(--text-muted);">No matching policy gaps for this bucket.</div>'
+      }
+    </div>
+  `;
+
+  overlay.classList.add('visible');
+}
+
 function closeDetail(event) {
   if (event && event.target !== event.currentTarget) return;
   document.getElementById('detailOverlay').classList.remove('visible');
@@ -3994,6 +5749,8 @@ document.querySelectorAll('.filter-chip[data-filter]').forEach(chip => {
   chip.addEventListener('click', () => {
     document.querySelectorAll('.filter-chip[data-filter]').forEach(c => c.classList.remove('active'));
     chip.classList.add('active');
+    activeDataFilter = chip.dataset.filter || 'all';
+    rerenderDashboard();
   });
 });
 
@@ -4001,6 +5758,8 @@ document.querySelectorAll('.filter-chip[data-sev]').forEach(chip => {
   chip.addEventListener('click', () => {
     document.querySelectorAll('.filter-chip[data-sev]').forEach(c => c.classList.remove('active'));
     chip.classList.add('active');
+    activeSeverityFilter = chip.dataset.sev || 'all';
+    rerenderDashboard();
   });
 });
 
@@ -4021,6 +5780,12 @@ function applyView(view) {
   if (grid) {
     if (view === 'overview') grid.classList.add('overview-layout');
     else grid.classList.remove('overview-layout');
+  }
+
+  const nextRiskMode = 'full';
+  if (riskMatrixMode !== nextRiskMode) {
+    riskMatrixMode = nextRiskMode;
+    renderRiskMatrix();
   }
 
   document.body.setAttribute('data-active-view', view);
@@ -4306,20 +6071,21 @@ document.addEventListener('keydown', (e) => {
 // ===== INIT =====
 function rerenderDashboard() {
   renderExecutiveSummary();
-  renderVulnSeveritySummary();
+  renderVulnSeverityPanel();
   renderVulnList();
   renderDeviceTypeSummary();
   renderDeviceOsSummary();
   renderDeviceTypeChart();
   renderDeviceOsChart();
-  renderThreatRelevance();
-  renderRemediationQueue();
+  renderThreatWorkbench();
+  renderMissingPatchesCard();
   renderRiskMatrix();
+  renderSecureScoreChart();
   renderDeviceTable();
   renderCAPolicies();
   renderPolicyGapInsights();
   renderPolicyMitreCoverage();
-  renderLocations();
+  renderStandardsView();
   renderAppGrid();
   renderDefenderVersionChart();
   renderDefenderStack();
@@ -4329,6 +6095,11 @@ function rerenderDashboard() {
 }
 
 function init() {
+  setupSoftwareViewInteractions();
+  setupVulnerabilityViewInteractions();
+  setupRemediationViewInteractions();
+  setupThreatWorkbenchInteractions();
+  setupDeviceInventoryInteractions();
   rerenderDashboard();
   applyView('overview');
 }
