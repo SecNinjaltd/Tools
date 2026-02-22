@@ -1,0 +1,28 @@
+{
+  "topics": [
+    {
+      "id": "getting-started",
+      "title": "Getting Started",
+      "summary": "How to navigate the dashboard, filters, and key cards.",
+      "file": "getting-started.md"
+    },
+    {
+      "id": "conditional-access-journey",
+      "title": "Conditional Access Journey Map",
+      "summary": "How stage scores and effective coverage are calculated.",
+      "file": "conditional-access-journey.md"
+    },
+    {
+      "id": "live-tenant-connection",
+      "title": "Live Tenant Connection",
+      "summary": "How to connect Graph and Defender safely for live data.",
+      "file": "live-tenant-connection.md"
+    },
+    {
+      "id": "policy-gap-intelligence",
+      "title": "Policy Gap Intelligence",
+      "summary": "How gap scores, overlap, and recommendations are produced.",
+      "file": "policy-gap-intelligence.md"
+    }
+  ]
+}
