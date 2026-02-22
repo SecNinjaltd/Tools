@@ -41,6 +41,56 @@
   --radius-sm: 6px;
   --shadow: 0 4px 24px rgba(0,0,0,0.3);
   --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --nav-title: #f0f7ff;
+  --nav-subtitle: #c6daee;
+  --nav-border: #21486d;
+  --btn-secondary-bg: rgba(255,255,255,0.14);
+  --btn-secondary-border: #c0d7ee;
+  --btn-secondary-text: #ffffff;
+  --theme-control-bg: rgba(255,255,255,0.08);
+  --theme-control-border: rgba(189, 213, 234, 0.35);
+  --theme-control-text: #d7e8f8;
+}
+
+body[data-theme="dark-mode"],
+body[data-theme="cyber-mode"] {
+  --bg-primary: #0b1320;
+  --bg-secondary: #101b2e;
+  --bg-card: #101b2e;
+  --bg-card-hover: #16253a;
+  --bg-elevated: #14243b;
+  --border: #274060;
+  --border-subtle: #2b4668;
+  --text-primary: #d8e7f8;
+  --text-secondary: #a5c0dc;
+  --text-muted: #7e9bb8;
+  --accent-ninja: #6aa7ff;
+  --accent-ninja-dim: rgba(106,167,255,0.12);
+  --accent-ninja-glow: rgba(106,167,255,0.35);
+  --cell-grad-main: linear-gradient(135deg, #0a101a 0%, #16253a 55%, #243a59 100%);
+  --cell-grad-sub: linear-gradient(135deg, #14243b 0%, #1a2f4a 100%);
+  --cell-grad-sub-hover: linear-gradient(135deg, #1a2c44 0%, #223751 100%);
+  --severity-critical: #ff4d6d;
+  --severity-high: #ff8b4d;
+  --severity-medium: #ffd166;
+  --severity-low: #4dc9f6;
+  --status-compliant: #6aa7ff;
+  --status-warning: #ffd166;
+  --status-noncompliant: #ff4d6d;
+  --chart-1: #6aa7ff;
+  --chart-2: #4dc9f6;
+  --chart-3: #a5c0dc;
+  --chart-4: #ff9f6e;
+  --chart-5: #ff5c7c;
+  --nav-title: #f2f7ff;
+  --nav-subtitle: #b8d1ee;
+  --nav-border: #35577f;
+  --btn-secondary-bg: rgba(106,167,255,0.14);
+  --btn-secondary-border: rgba(106,167,255,0.5);
+  --btn-secondary-text: #dceaff;
+  --theme-control-bg: rgba(106,167,255,0.14);
+  --theme-control-border: rgba(106,167,255,0.45);
+  --theme-control-text: #dceaff;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -65,40 +115,43 @@ body {
   height: 90px;
   background: var(--cell-grad-main);
   backdrop-filter: blur(20px);
-  border-bottom: 1px solid #21486d;
+  border-bottom: 1px solid var(--nav-border);
   display: flex; align-items: center; justify-content: space-between;
   padding: 0 24px;
 }
 
 .topnav-brand {
-  display: flex; align-items: center; gap: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
   font-weight: 700; font-size: 15px; letter-spacing: -0.3px;
 }
 
 .topnav-logo {
-  width: 180px;
-  height: 180px;
+  width: 150px;
+  height: 58px;
   object-fit: contain;
   display: block;
 }
 
-.topnav-brand span.ninja-text {
-  background: linear-gradient(135deg, #ffffff 0%, #cfe6fb 100%);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+.topnav-subtitle {
+  font-size: 12px;
+  color: var(--nav-subtitle);
+  font-weight: 500;
+  letter-spacing: 0.3px;
 }
 
 .topnav-center {
   display: flex; align-items: center; gap: 6px;
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(189, 213, 234, 0.35);
+  background: var(--theme-control-bg);
+  border: 1px solid var(--theme-control-border);
   border-radius: 8px; padding: 4px;
 }
 
 .topnav-tab {
   padding: 6px 16px; border-radius: 6px; font-size: 13px; font-weight: 500;
-  color: #c6daee; cursor: pointer; transition: var(--transition);
+  color: var(--nav-subtitle); cursor: pointer; transition: var(--transition);
   border: none; background: none; font-family: inherit;
 }
 
@@ -112,9 +165,84 @@ body {
   display: flex; align-items: center; gap: 16px;
 }
 
+.topnav-customize {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 4px 6px;
+  border: 1px solid var(--theme-control-border);
+  background: var(--theme-control-bg);
+  border-radius: 8px;
+}
+
+.customize-menu-btn {
+  border: 1px solid var(--theme-control-border);
+  background: transparent;
+  color: var(--theme-control-text);
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: var(--transition);
+}
+
+.customize-menu-btn:hover {
+  color: #ffffff;
+  border-color: #d5e7f8;
+}
+
+.customize-menu-btn.active {
+  color: #ffffff;
+  border-color: #d5e7f8;
+  background: rgba(255,255,255,0.15);
+}
+
+.customize-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 230px;
+  padding: 8px;
+  border: 1px solid var(--theme-control-border);
+  border-radius: 8px;
+  background: var(--cell-grad-main);
+  box-shadow: 0 10px 26px rgba(0,0,0,0.28);
+  z-index: 120;
+}
+
+.customize-dropdown.open {
+  display: grid;
+  gap: 5px;
+}
+
+.customize-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--theme-control-text);
+  font-size: 11px;
+  padding: 5px 6px;
+  border-radius: 6px;
+}
+
+.customize-option:hover {
+  background: rgba(255,255,255,0.08);
+}
+
+.customize-option input {
+  accent-color: #7ec5ff;
+}
+
+body.ui-hide-toprow .exec-strip {
+  display: none;
+}
+
 .topnav-status {
   display: flex; align-items: center; gap: 6px;
-  font-size: 12px; color: #c6daee;
+  font-size: 12px; color: var(--nav-subtitle);
   font-family: 'JetBrains Mono', monospace;
 }
 
@@ -133,19 +261,135 @@ body {
 .btn-connect {
   padding: 7px 16px; border-radius: 6px; font-size: 12px; font-weight: 600;
   font-family: inherit; cursor: pointer; transition: var(--transition);
-  border: 1px solid #c0d7ee;
-  background: rgba(255,255,255,0.14);
-  color: #ffffff;
+  border: 1px solid var(--btn-secondary-border);
+  background: var(--btn-secondary-bg);
+  color: var(--btn-secondary-text);
 }
 
 .btn-connect:hover {
-  background: rgba(255,255,255,0.24);
+  filter: brightness(1.08);
 }
+
+.btn-connect.active {
+  box-shadow: 0 0 0 1px var(--btn-secondary-border), 0 0 14px rgba(0,245,160,0.28);
+}
+
+.btn-help {
+  padding: 7px 14px;
+}
+
+.connect-tenant-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.portal-version {
+  font-size: 9px;
+  line-height: 1;
+  color: var(--nav-subtitle);
+  opacity: 0.85;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+body[data-theme="dark-mode"] ::-webkit-scrollbar-track,
+body[data-theme="cyber-mode"] ::-webkit-scrollbar-track { background: #101b2e; }
+body[data-theme="dark-mode"] .filter-chip,
+body[data-theme="cyber-mode"] .filter-chip {
+  background: #14243b;
+  border-color: #2b4668;
+  color: var(--text-secondary);
+}
+body[data-theme="dark-mode"] .device-table th,
+body[data-theme="cyber-mode"] .device-table th {
+  background: #14243b;
+  border-bottom-color: #2b4668;
+  color: var(--text-secondary);
+}
+body[data-theme="dark-mode"] .device-table td,
+body[data-theme="cyber-mode"] .device-table td {
+  border-bottom-color: #243a59;
+}
+body[data-theme="dark-mode"] .device-table tbody tr:hover,
+body[data-theme="cyber-mode"] .device-table tbody tr:hover {
+  background: #16253a;
+}
+
+.theme-toggle-btn {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid var(--btn-secondary-border);
+  background: var(--btn-secondary-bg);
+  color: var(--btn-secondary-text);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.theme-toggle-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+}
+
+.theme-toggle-btn.active {
+  box-shadow: 0 0 0 1px var(--btn-secondary-border), 0 0 14px rgba(106,167,255,0.28);
+}
+
+.theme-toggle-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.theme-toggle-btn .icon-sun { display: none; }
+body[data-theme="dark-mode"] .theme-toggle-btn .icon-sun { display: block; }
+body[data-theme="dark-mode"] .theme-toggle-btn .icon-moon { display: none; }
+body[data-theme="cyber-mode"] .theme-toggle-btn .icon-sun { display: block; }
+body[data-theme="cyber-mode"] .theme-toggle-btn .icon-moon { display: none; }
+body[data-theme="dark-mode"] .theme-toggle-btn { color: #f2f7ff; }
+body[data-theme="cyber-mode"] .theme-toggle-btn { color: #f2f7ff; }
 
 /* ===== MAIN LAYOUT ===== */
 .main-content {
   margin-top: 90px;
   padding: 20px 24px 40px;
+}
+
+.auth-banner {
+  display: none;
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  border: 1px solid #8a2b2b;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #5a1010 0%, #7a1717 100%);
+  color: #ffe5e5;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.auth-banner.visible {
+  display: flex;
+}
+
+.auth-banner-text {
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.auth-banner-btn {
+  flex-shrink: 0;
+  padding: 7px 12px;
+  border-radius: 6px;
+  border: 1px solid #f3b3b3;
+  background: #ffe6e6;
+  color: #6e0f0f;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 /* ===== EXECUTIVE SUMMARY STRIP ===== */
@@ -484,16 +728,21 @@ body {
 
 .mitre-tactic-list { display: grid; gap: 8px; }
 .mitre-tactic-row {
-  border: 1px solid var(--border-subtle); border-radius: 8px; background: #f6faff; padding: 8px 10px;
+  border: 1px solid var(--border-subtle); border-radius: 8px; background: var(--bg-elevated); padding: 8px 10px;
   cursor: pointer;
   transition: var(--transition);
 }
-.mitre-tactic-row:hover { border-color: var(--border); transform: translateY(-1px); background: #eef6ff; }
+.mitre-tactic-row:hover { border-color: var(--border); transform: translateY(-1px); background: var(--bg-card-hover); }
 .mitre-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; }
 .mitre-name { font-size: 12px; font-weight: 700; color: var(--text-primary); }
 .mitre-gap { font-size: 10px; font-family: 'JetBrains Mono', monospace; color: var(--text-muted); }
-.mitre-bar { height: 8px; border-radius: 999px; background: #deebf7; overflow: hidden; }
-.mitre-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #1e3a5a 0%, #2f6fa8 100%); }
+.mitre-bar { height: 8px; border-radius: 999px; background: var(--border-subtle); overflow: hidden; }
+.mitre-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #ff2d55 0%, #ff8f00 38%, #ffd000 64%, #22d47a 100%);
+  box-shadow: 0 0 10px rgba(255, 143, 0, 0.28);
+}
 .mitre-heatmap {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -510,12 +759,12 @@ body {
   font-weight: 700;
   cursor: pointer;
   transition: var(--transition);
-  border: 2px solid #c6d8e9;
+  border: 2px solid var(--border);
   display: grid;
   gap: 5px;
   box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12);
 }
-.mitre-cell:hover { transform: translateY(-1px); box-shadow: 0 0 0 1px #9cbddc inset; }
+.mitre-cell:hover { transform: translateY(-1px); box-shadow: 0 0 0 1px var(--border) inset; }
 .mitre-cell .tactic {
   font-size: 10px;
   font-weight: 800;
@@ -641,6 +890,360 @@ body {
   line-height: 1.5;
 }
 
+.policy-section-label {
+  font-size: 10px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  margin: 10px 0 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-subtle);
+  font-weight: 700;
+}
+
+.policy-journey-wrap {
+  display: grid;
+  gap: 12px;
+}
+
+.policy-journey-overview {
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 85% 10%, var(--accent-ninja-dim), transparent 40%),
+    radial-gradient(circle at 15% 100%, rgba(20, 60, 96, 0.12), transparent 45%),
+    linear-gradient(135deg, var(--bg-elevated) 0%, var(--bg-card-hover) 100%);
+  padding: 10px 12px;
+}
+
+.policy-journey-overview-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.policy-journey-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  width: 100%;
+}
+
+.policy-journey-select {
+  min-width: 300px;
+  max-width: 420px;
+  width: min(42vw, 420px);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  padding: 6px 10px;
+  font-size: 11px;
+  font-family: inherit;
+  outline: none;
+}
+
+.policy-journey-select:focus {
+  border-color: var(--accent-ninja);
+  box-shadow: 0 0 0 1px rgba(22, 107, 179, 0.18);
+}
+
+.policy-journey-score {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.policy-journey-lanes {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.policy-lane-chip {
+  border: 1px solid var(--border-subtle);
+  border-radius: 7px;
+  background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-elevated) 100%);
+  padding: 6px 7px;
+  font-size: 10px;
+  color: var(--text-secondary);
+  display: grid;
+  gap: 4px;
+  align-content: start;
+  min-height: 68px;
+}
+
+.policy-lane-head {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.policy-lane-chip .ic {
+  font-size: 12px;
+}
+
+.policy-lane-options {
+  font-size: 9px;
+  line-height: 1.35;
+  color: var(--text-muted);
+}
+
+.policy-lane-status {
+  font-size: 9px;
+  line-height: 1.3;
+  color: var(--text-secondary);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.policy-journey-stages {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(100%, var(--journey-track-width, 100%));
+}
+
+.policy-flow-link {
+  flex: 0 0 30px;
+  min-width: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.policy-flow-link svg {
+  width: 30px;
+  height: 16px;
+  overflow: visible;
+}
+
+.policy-flow-link path {
+  stroke: var(--accent-ninja);
+  stroke-width: 2.4;
+  fill: none;
+  stroke-linecap: round;
+  stroke-dasharray: 4 5;
+  animation: journeyFlow 1.2s linear infinite;
+}
+
+.policy-flow-link circle {
+  fill: var(--accent-ninja);
+  animation: journeyPulse 1.2s ease-in-out infinite;
+}
+
+.policy-flow-link.reverse path {
+  animation-direction: normal;
+}
+
+.policy-journey-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: fit-content;
+  max-width: 100%;
+  align-self: flex-start;
+}
+
+.policy-journey-row.reverse {
+  align-self: flex-end;
+}
+
+.policy-row-drop {
+  width: 18px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.policy-row-drop.right {
+  align-self: flex-end;
+  margin-right: 6px;
+}
+
+.policy-row-drop.left {
+  align-self: flex-start;
+  margin-left: 6px;
+}
+
+.policy-row-drop svg {
+  width: 18px;
+  height: 26px;
+  overflow: visible;
+}
+
+.policy-row-drop path {
+  stroke: var(--accent-ninja);
+  stroke-width: 2.4;
+  fill: none;
+  stroke-linecap: round;
+  stroke-dasharray: 4 5;
+  animation: journeyFlow 1.2s linear infinite;
+}
+
+.policy-row-drop circle {
+  fill: var(--accent-ninja);
+  animation: journeyPulse 1.2s ease-in-out infinite;
+}
+
+.policy-journey-stage {
+  flex: 0 0 auto;
+  min-width: 220px;
+  max-width: 320px;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.14);
+  padding: 11px 11px 10px;
+  cursor: pointer;
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.policy-journey-stage:hover {
+  transform: translateY(-1px);
+  filter: saturate(1.08);
+}
+
+.policy-journey-stage.good {
+  background: linear-gradient(135deg, #0b8a49 0%, #22d47a 100%);
+  border-color: #0a733e;
+  color: #ffffff;
+}
+
+.policy-journey-stage.warn {
+  background: linear-gradient(135deg, #f39a00 0%, #ffd000 100%);
+  border-color: #d48600;
+  color: #2d2100;
+}
+
+.policy-journey-stage.bad {
+  background: linear-gradient(135deg, #b3002d 0%, #ff2d55 100%);
+  border-color: #970025;
+  color: #ffffff;
+}
+
+.policy-journey-stage::after {
+  content: '';
+  position: absolute;
+  inset: -20% -40%;
+  background: linear-gradient(100deg, rgba(255,255,255,0) 38%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0) 62%);
+  transform: translateX(-120%);
+  pointer-events: none;
+}
+
+.policy-journey-stage:hover::after {
+  animation: journeySheen 0.9s ease;
+}
+
+.policy-journey-stage-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+
+.policy-journey-stage-name {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.policy-journey-stage-meta {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  opacity: 0.9;
+}
+
+.policy-journey-stage-desc {
+  font-size: 10px;
+  line-height: 1.45;
+  opacity: 0.95;
+  min-height: 32px;
+}
+
+.policy-stage-signals {
+  margin-top: 7px;
+  display: grid;
+  gap: 5px;
+}
+
+.policy-stage-signal {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 7px;
+  font-size: 10px;
+  border-radius: 6px;
+  padding: 4px 6px;
+  background: rgba(255,255,255,0.17);
+  border: 1px solid rgba(255,255,255,0.35);
+}
+
+.policy-stage-signal .k {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  opacity: 0.95;
+}
+
+.policy-stage-signal .v {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+}
+
+.policy-stage-signal.good .v {
+  color: #d8ffe9;
+}
+
+.policy-stage-signal.warn .v {
+  color: #4a3300;
+}
+
+.policy-stage-signal.bad .v {
+  color: #ffe3ec;
+}
+
+.policy-stage-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.policy-stage-icon {
+  width: 19px;
+  height: 19px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  border: 1px solid rgba(255,255,255,0.45);
+  background: rgba(255,255,255,0.14);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.12);
+}
+
+@keyframes journeyFlow {
+  to { stroke-dashoffset: -16; }
+}
+
+@keyframes journeyPulse {
+  0%, 100% { opacity: 0.45; r: 2.5; }
+  50% { opacity: 1; r: 3.4; }
+}
+
+@keyframes journeySheen {
+  from { transform: translateX(-120%); }
+  to { transform: translateX(120%); }
+}
+
 .policy-pill {
   font-size: 9px;
   font-family: 'JetBrains Mono', monospace;
@@ -761,18 +1364,35 @@ body {
 
 .ca-detail-row span { display: flex; align-items: center; gap: 4px; }
 
+.ca-coverage-key {
+  display: grid;
+  gap: 5px;
+  margin-bottom: 10px;
+}
+
+.ca-coverage-key-text {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.ca-coverage-key-bar {
+  height: 7px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #ff2d55 0%, #ff8f00 38%, #ffd000 64%, #22d47a 100%);
+  box-shadow: 0 0 10px rgba(255, 143, 0, 0.28);
+}
+
 .ca-coverage-bar {
-  margin-top: 8px; height: 4px; background: #d6e5f3;
+  margin-top: 8px; height: 6px; background: var(--border-subtle);
   border-radius: 2px; overflow: hidden;
 }
 
 .ca-coverage-fill {
   height: 100%; border-radius: 2px; transition: width 0.8s ease;
+  background: linear-gradient(90deg, #ff2d55 0%, #ff8f00 38%, #ffd000 64%, #22d47a 100%);
+  box-shadow: 0 0 10px rgba(255, 143, 0, 0.28);
 }
-
-.ca-coverage-fill.high { background: var(--status-compliant); }
-.ca-coverage-fill.medium { background: var(--status-warning); }
-.ca-coverage-fill.low { background: var(--status-noncompliant); }
 
 /* ===== RISK MATRIX ===== */
 .risk-matrix {
@@ -945,13 +1565,14 @@ body {
 .standards-bar {
   height: 7px;
   border-radius: 999px;
-  background: #deebf7;
+  background: var(--border-subtle);
   overflow: hidden;
 }
 .standards-bar > div {
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, #1e3a5a 0%, #2f6fa8 100%);
+  background: linear-gradient(90deg, #ff2d55 0%, #ff8f00 38%, #ffd000 64%, #22d47a 100%);
+  box-shadow: 0 0 10px rgba(255, 143, 0, 0.28);
 }
 .nist-grid {
   display: grid;
@@ -960,7 +1581,7 @@ body {
 .nist-item {
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
-  background: #f6faff;
+  background: var(--bg-elevated);
   padding: 8px 10px;
   cursor: pointer;
   transition: var(--transition);
@@ -989,7 +1610,7 @@ body {
 .identity-item {
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
-  background: #f7fbff;
+  background: var(--bg-elevated);
   padding: 8px 10px;
   display: flex;
   justify-content: space-between;
@@ -1076,7 +1697,7 @@ body {
 
 .detail-panel {
   width: 520px; max-width: 90vw;
-  background: #ffffff;
+  background: var(--bg-card);
   border-left: 1px solid var(--border);
   overflow-y: auto;
   animation: slideIn 0.3s ease;
@@ -1089,14 +1710,14 @@ body {
   padding: 20px 24px;
   border-bottom: 1px solid var(--border-subtle);
   display: flex; align-items: center; justify-content: space-between;
-  position: sticky; top: 0; background: #f8fbff; z-index: 3;
+  position: sticky; top: 0; background: var(--bg-card); z-index: 3;
 }
 
 .detail-title { font-size: 16px; font-weight: 700; }
 
 .detail-close {
   width: 32px; height: 32px; border-radius: 6px;
-  background: #edf5fc; border: 1px solid var(--border-subtle);
+  background: var(--bg-elevated); border: 1px solid var(--border-subtle);
   color: var(--text-muted); cursor: pointer; transition: var(--transition);
   display: flex; align-items: center; justify-content: center;
   font-size: 16px; font-family: inherit;
@@ -1147,6 +1768,141 @@ body {
   padding: 3px 10px; border-radius: 4px; font-size: 10px; font-weight: 500;
   background: #eaf3fb; color: var(--text-secondary);
   border: 1px solid var(--border-subtle);
+}
+
+/* ===== HELP PANEL ===== */
+.help-overlay {
+  position: fixed; inset: 0; background: rgba(11,23,38,0.35);
+  z-index: 210; display: none; align-items: stretch; justify-content: flex-end;
+  animation: fadeIn 0.2s ease;
+}
+
+.help-overlay.visible { display: flex; }
+
+.help-panel {
+  width: min(980px, 95vw);
+  background: var(--bg-card);
+  border-left: 1px solid var(--border);
+  display: grid;
+  grid-template-rows: auto 1fr;
+  animation: slideIn 0.3s ease;
+}
+
+.help-header {
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.help-title {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.help-layout {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+}
+
+.help-nav {
+  border-right: 1px solid var(--border-subtle);
+  padding: 12px;
+  overflow-y: auto;
+}
+
+.help-topic-list {
+  display: grid;
+  gap: 8px;
+}
+
+.help-topic-item {
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border-radius: 8px;
+  padding: 10px;
+  cursor: pointer;
+  transition: var(--transition);
+  font-family: inherit;
+}
+
+.help-topic-item:hover {
+  border-color: var(--border);
+  transform: translateY(-1px);
+}
+
+.help-topic-item.active {
+  border-color: var(--accent-ninja);
+  box-shadow: 0 0 0 1px var(--accent-ninja-dim) inset;
+}
+
+.help-topic-title {
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.help-topic-summary {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.help-content {
+  overflow-y: auto;
+  padding: 16px 20px 24px;
+}
+
+.help-content h1,
+.help-content h2,
+.help-content h3 {
+  color: var(--text-primary);
+  margin: 16px 0 8px;
+}
+
+.help-content h1 { font-size: 20px; }
+.help-content h2 { font-size: 16px; }
+.help-content h3 { font-size: 14px; }
+
+.help-content p,
+.help-content li {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+.help-content ul {
+  margin: 8px 0 10px 20px;
+}
+
+.help-content code {
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: 5px;
+  padding: 1px 5px;
+  color: var(--text-primary);
+}
+
+.help-content a {
+  color: var(--accent-ninja);
+}
+
+.help-loading {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.help-error {
+  font-size: 12px;
+  color: var(--severity-high);
+  line-height: 1.7;
 }
 
 /* ===== SPAN CARDS ===== */
@@ -1258,9 +2014,9 @@ body[data-active-view="defender"] .defender-stack-card {
   grid-row: auto;
 }
 body[data-active-view="policies"] .dashboard-grid {
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.05fr) minmax(0, 1fr);
-  grid-template-rows: 520px;
-  grid-auto-rows: 520px;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.1fr);
+  grid-template-rows: 430px 760px;
+  grid-auto-rows: 760px;
   align-items: start;
 }
 body[data-active-view="policies"] .ca-policy-card {
@@ -1278,8 +2034,8 @@ body[data-active-view="policies"] .policy-gaps-card {
   flex-direction: column;
 }
 body[data-active-view="policies"] .policy-mitre-card {
-  grid-column: 3;
-  grid-row: 1;
+  grid-column: 1 / span 2;
+  grid-row: 2;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -1290,6 +2046,9 @@ body[data-active-view="policies"] .policy-mitre-card .card-body {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+}
+body[data-active-view="policies"] .policy-mitre-card .card-body {
+  overflow-y: visible;
 }
 body[data-active-view="policies"] .ca-policy-card .ca-policy-list {
   max-height: none;
@@ -1303,8 +2062,7 @@ body[data-active-view="standards"] .standards-cis-card,
 body[data-active-view="standards"] .standards-nist-card,
 body[data-active-view="standards"] .standards-identity-card,
 body[data-active-view="standards"] .standards-nis2-card,
-body[data-active-view="standards"] .standards-mitre-tactic-card,
-body[data-active-view="standards"] .standards-mitre-heatmap-card {
+body[data-active-view="standards"] .standards-mitre-card {
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -1313,37 +2071,65 @@ body[data-active-view="standards"] .standards-cis-card .card-body,
 body[data-active-view="standards"] .standards-nist-card .card-body,
 body[data-active-view="standards"] .standards-identity-card .card-body,
 body[data-active-view="standards"] .standards-nis2-card .card-body,
-body[data-active-view="standards"] .standards-mitre-tactic-card .card-body,
-body[data-active-view="standards"] .standards-mitre-heatmap-card .card-body {
+body[data-active-view="standards"] .standards-mitre-card .card-body {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
 }
-body[data-active-view="standards"] .standards-cis-card {
-  grid-column: 1;
-  grid-row: 1;
+body[data-active-view="standards"] .standards-mitre-split {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.95fr) minmax(0, 1.05fr);
+  gap: 12px;
+  min-height: 0;
 }
-body[data-active-view="standards"] .standards-nist-card {
-  grid-column: 2;
-  grid-row: 1;
+body[data-active-view="standards"] .standards-mitre-split.single-view {
+  grid-template-columns: 1fr;
 }
-body[data-active-view="standards"] .standards-identity-card {
-  grid-column: 3;
-  grid-row: 1;
+body[data-active-view="standards"] .standards-mitre-section {
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--bg-elevated);
+  padding: 10px;
+  min-height: 0;
 }
-body[data-active-view="standards"] .standards-nis2-card {
-  grid-column: 1;
-  grid-row: 2;
+body[data-active-view="standards"] .standards-mitre-section-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
 }
-body[data-active-view="standards"] .standards-mitre-tactic-card {
-  grid-column: 2;
-  grid-row: 2;
+body[data-active-view="standards"] #mitreHeatmap {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
 }
-body[data-active-view="standards"] .standards-mitre-heatmap-card {
-  grid-column: 3;
-  grid-row: 2;
+body[data-active-view="standards"] #mitreHeatmap .mitre-cell {
+  min-height: 116px;
+  padding: 12px 12px;
+  gap: 7px;
+}
+body[data-active-view="standards"] #mitreHeatmap .mitre-cell .tactic {
+  font-size: 11px;
+  line-height: 1.35;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+body[data-active-view="standards"] #mitreHeatmap .mitre-cell .meta { font-size: 11px; }
+body[data-active-view="standards"] #mitreHeatmap .mitre-cell .risk { font-size: 10px; }
+body[data-active-view="standards"] .standards-cis-card { grid-column: 1; grid-row: 1; }
+body[data-active-view="standards"] .standards-nist-card { grid-column: 1; grid-row: 2; }
+body[data-active-view="standards"] .standards-identity-card { grid-column: 3; grid-row: 1; }
+body[data-active-view="standards"] .standards-nis2-card { grid-column: 2; grid-row: 1; }
+body[data-active-view="standards"] .standards-mitre-card { grid-column: 2 / span 2; grid-row: 2; }
+
+@media (max-width: 1520px) {
+  body[data-active-view="standards"] .standards-mitre-split { grid-template-columns: 1fr; }
 }
 
+@media (max-width: 1200px) {
+  body[data-active-view="standards"] .standards-mitre-card { grid-column: 1 / span 3; }
+}
 @media (min-width: 1201px) {
   :root { --vuln-stack-height: 720px; }
   .dashboard-grid.overview-layout {
@@ -1381,11 +2167,11 @@ body[data-active-view="standards"] .standards-mitre-heatmap-card {
     grid-row: 3;
   }
   .dashboard-grid.overview-layout .secure-score-card {
-    grid-column: 2;
+    grid-column: 3;
     grid-row: 3;
   }
   .dashboard-grid.overview-layout .ca-policy-card {
-    grid-column: 3;
+    grid-column: 2;
     grid-row: 3;
   }
   .dashboard-grid.overview-layout .vuln-main-card .card-body {
@@ -1521,14 +2307,17 @@ body[data-active-view="standards"] .standards-mitre-heatmap-card {
   body[data-active-view="standards"] .standards-nist-card,
   body[data-active-view="standards"] .standards-identity-card,
   body[data-active-view="standards"] .standards-nis2-card,
-  body[data-active-view="standards"] .standards-mitre-tactic-card,
-  body[data-active-view="standards"] .standards-mitre-heatmap-card { grid-column: 1 !important; grid-row: auto; }
+  body[data-active-view="standards"] .standards-mitre-card { grid-column: 1 !important; grid-row: auto; }
+  body[data-active-view="standards"] #mitreHeatmap { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 768px) {
   .exec-strip { grid-template-columns: repeat(2, 1fr); }
   .dashboard-grid { grid-template-columns: 1fr; }
   .span-2, .span-3 { grid-column: span 1; }
+  .help-panel { width: 100vw; }
+  .help-layout { grid-template-columns: 1fr; }
+  .help-nav { border-right: none; border-bottom: 1px solid var(--border-subtle); max-height: 180px; }
   body[data-active-view="threat"] .threat-workbench-card {
     grid-column: 1 !important;
     grid-row: auto;
@@ -1544,6 +2333,7 @@ body[data-active-view="standards"] .standards-mitre-heatmap-card {
   .os-card { grid-column: span 1; }
   .defender-grid { grid-template-columns: 1fr; }
   .mitre-heatmap { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  body[data-active-view="standards"] #mitreHeatmap { grid-template-columns: 1fr; }
   .threat-key-grid { grid-template-columns: 1fr; }
   .detail-row { grid-template-columns: 1fr; row-gap: 4px; }
   .topnav-center { display: none; }
@@ -1556,30 +2346,56 @@ body[data-active-view="standards"] .standards-mitre-heatmap-card {
 <nav class="topnav">
   <div class="topnav-brand">
     <img src="Website Logo 2.png" alt="Security Ninja logo" class="topnav-logo">
-    <span style="color: var(--text-muted); font-weight: 400;">XDR Compliance Centre</span>
+    <div class="topnav-subtitle">XDR Compliance Centre</div>
   </div>
 
   <div class="topnav-center">
-    <button class="topnav-tab active" onclick="switchView('overview', this)">Overview</button>
-    <button class="topnav-tab" onclick="switchView('devices', this)">Devices</button>
-    <button class="topnav-tab" onclick="switchView('policies', this)">Policies</button>
-    <button class="topnav-tab" onclick="switchView('defender', this)">Defender</button>
-    <button class="topnav-tab" onclick="switchView('threat', this)">Threat</button>
-    <button class="topnav-tab" onclick="switchView('standards', this)">Standards</button>
+    <button class="topnav-tab active" data-view="overview" onclick="switchView('overview', this)">Overview</button>
+    <button class="topnav-tab" data-view="devices" onclick="switchView('devices', this)">Devices</button>
+    <button class="topnav-tab" data-view="policies" onclick="switchView('policies', this)">Policies</button>
+    <button class="topnav-tab" data-view="threat" onclick="switchView('threat', this)">Vulnerabilities</button>
+    <button class="topnav-tab" data-view="standards" onclick="switchView('standards', this)">Standards</button>
   </div>
 
   <div class="topnav-right">
+    <div class="topnav-customize" aria-label="Layout controls">
+      <button class="customize-menu-btn" type="button" id="customizeMenuBtn" aria-haspopup="true" aria-expanded="false">Customize</button>
+      <div class="customize-dropdown" id="customizeDropdown">
+        <label class="customize-option"><input type="checkbox" data-ui-option="overview" checked>Overview Tab</label>
+        <label class="customize-option"><input type="checkbox" data-ui-option="devices" checked>Devices Tab</label>
+        <label class="customize-option"><input type="checkbox" data-ui-option="policies" checked>Policies Tab</label>
+        <label class="customize-option"><input type="checkbox" data-ui-option="threat" checked>Vulnerabilities Tab</label>
+        <label class="customize-option"><input type="checkbox" data-ui-option="standards" checked>Standards Tab</label>
+        <label class="customize-option"><input type="checkbox" data-ui-option="toprow" checked>Top Card Row</label>
+      </div>
+    </div>
+    <button class="theme-toggle-btn" type="button" id="nightModeBtn" aria-label="Enable dark mode" title="Toggle dark mode">
+      <svg class="icon-moon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M20 14.2A8 8 0 1 1 9.8 4a6.5 6.5 0 1 0 10.2 10.2Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <svg class="icon-sun" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.8"/>
+        <path d="M12 2v2.4M12 19.6V22M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M2 12h2.4M19.6 12H22M4.9 19.1l1.7-1.7M17.4 6.6l1.7-1.7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+    </button>
     <div class="topnav-status">
       <span class="status-dot"></span>
       <span id="dataModeLabel">MOCK DATA</span>
     </div>
-    <button class="btn-connect" onclick="refreshTenantData()">Refresh Data</button>
-    <button class="btn-connect" onclick="showConnectInfo()">Connect Tenant</button>
+    <button class="btn-connect btn-help" type="button" onclick="openHelpPanel()">Help</button>
+    <div class="connect-tenant-wrap">
+      <button class="btn-connect" onclick="showConnectInfo()">Connect Tenant</button>
+      <div class="portal-version">Portal ver 1.0</div>
+    </div>
   </div>
 </nav>
 
 <!-- ===== MAIN CONTENT ===== -->
 <main class="main-content">
+  <div class="auth-banner" id="authBanner" role="alert" aria-live="polite">
+    <div class="auth-banner-text" id="authBannerText">Session expired. Reconnect tenant to resume live updates.</div>
+    <button class="auth-banner-btn" type="button" onclick="showConnectInfo()">Reconnect Tenant</button>
+  </div>
 
   <!-- Filter Bar -->
   <div class="filter-bar">
@@ -1755,7 +2571,7 @@ body[data-active-view="standards"] .standards-mitre-heatmap-card {
     </div>
 
     <!-- Microsoft Secure Score Trend -->
-    <div class="card secure-score-card" data-views="overview">
+    <div class="card secure-score-card" data-views="overview" onclick="openDetail('secureScore')" style="cursor:pointer;">
       <div class="card-header">
         <div class="card-title">
           <span class="icon">
@@ -1923,39 +2739,37 @@ body[data-active-view="standards"] .standards-mitre-heatmap-card {
       </div>
     </div>
 
-    <!-- MITRE ATT&CK Tactic Coverage -->
-    <div class="card standards-mitre-tactic-card" data-views="standards">
+    <!-- MITRE ATT&CK Coverage + Heatmap -->
+    <div class="card standards-mitre-card" data-views="standards">
       <div class="card-header">
         <div class="card-title">
           <span class="icon">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 2H14V14H2V2Z" stroke="currentColor" stroke-width="1.5"/><path d="M2 6H14M2 10H14M6 2V14M10 2V14" stroke="currentColor" stroke-width="1" opacity="0.6"/></svg>
           </span>
-          MITRE ATT&CK Tactic Coverage
+          MITRE ATT&CK Coverage + Heatmap
+        </div>
+        <div class="card-actions">
+          <button class="card-action-btn active" id="mitreViewCoverageBtn" type="button">Coverage</button>
+          <button class="card-action-btn" id="mitreViewHeatmapBtn" type="button">Heatmap</button>
         </div>
       </div>
       <div class="card-body">
-        <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">
-          Coverage bars by ATT&CK tactic with mapped gap counts.
+        <div class="standards-mitre-split">
+          <section class="standards-mitre-section" id="mitreCoverageSection">
+            <div class="standards-mitre-section-title">Tactic Coverage</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">
+              Coverage bars by ATT&CK tactic with mapped gap counts.
+            </div>
+            <div class="mitre-tactic-list" id="mitreTacticList"></div>
+          </section>
+          <section class="standards-mitre-section" id="mitreHeatmapSection">
+            <div class="standards-mitre-section-title">Heatmap</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">
+              Hotspot matrix for rapid detection of lower-coverage tactics.
+            </div>
+            <div class="mitre-heatmap" id="mitreHeatmap"></div>
+          </section>
         </div>
-        <div class="mitre-tactic-list" id="mitreTacticList"></div>
-      </div>
-    </div>
-
-    <!-- MITRE ATT&CK Heatmap -->
-    <div class="card standards-mitre-heatmap-card" data-views="standards">
-      <div class="card-header">
-        <div class="card-title">
-          <span class="icon">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 2H14V14H2V2Z" stroke="currentColor" stroke-width="1.5"/><path d="M2 6H14M2 10H14M6 2V14M10 2V14" stroke="currentColor" stroke-width="1" opacity="0.6"/></svg>
-          </span>
-          MITRE ATT&CK Heatmap
-        </div>
-      </div>
-      <div class="card-body">
-        <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">
-          Hotspot matrix for rapid detection of lower-coverage tactics.
-        </div>
-        <div class="mitre-heatmap" id="mitreHeatmap"></div>
       </div>
     </div>
 
@@ -2056,7 +2870,6 @@ body[data-active-view="standards"] .standards-mitre-heatmap-card {
                 <th>Device Name</th>
                 <th>Type</th>
                 <th>OS</th>
-                <th>Location</th>
                 <th>Health</th>
                 <th>Defender Ver.</th>
                 <th>Vulns</th>
@@ -2080,6 +2893,10 @@ body[data-active-view="standards"] .standards-mitre-heatmap-card {
         </div>
       </div>
       <div class="card-body">
+        <div class="ca-coverage-key">
+          <div class="ca-coverage-key-text">Compliance scale: 0% Low (Red) -> 100% High (Green)</div>
+          <div class="ca-coverage-key-bar" aria-hidden="true"></div>
+        </div>
         <div class="ca-policy-list" id="caPolicyList"></div>
       </div>
     </div>
@@ -2101,10 +2918,23 @@ body[data-active-view="standards"] .standards-mitre-heatmap-card {
           <button class="filter-chip" data-policy-filter="report-only">Report-only</button>
           <button class="filter-chip" data-policy-filter="low-coverage">Low Coverage</button>
         </div>
+        <div class="policy-filter-row" style="margin-top:-2px;">
+          <span class="filter-label">Compensation</span>
+          <button class="filter-chip" data-comp-strictness="lenient">Lenient</button>
+          <button class="filter-chip active" data-comp-strictness="standard">Standard</button>
+          <button class="filter-chip" data-comp-strictness="strict">Strict</button>
+        </div>
         <div class="policy-gap-grid" id="policyGapSummary"></div>
         <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;">
           Priority policy gaps based on state, coverage, and missing controls that increase attack-path exposure.
         </div>
+        <div class="policy-section-label">Policy Overlap &amp; Duplication</div>
+        <div class="policy-gap-grid" id="policyOverlapSummary"></div>
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;">
+          Detects exact duplicates, high overlap, and conflicting controls to reduce policy sprawl and simplify CA design.
+        </div>
+        <div class="policy-gap-list" id="policyOverlapList"></div>
+        <div class="policy-section-label">Priority Gap Queue</div>
         <div class="policy-gap-list" id="policyGapList"></div>
       </div>
     </div>
@@ -2116,12 +2946,12 @@ body[data-active-view="standards"] .standards-mitre-heatmap-card {
           <span class="icon">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 2H14V14H2V2Z" stroke="currentColor" stroke-width="1.5"/><path d="M2 6H14M2 10H14M6 2V14M10 2V14" stroke="currentColor" stroke-width="1" opacity="0.6"/></svg>
           </span>
-          Selected Policy Context
+          Conditional Access Journey Map
         </div>
       </div>
       <div class="card-body">
         <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;">
-          Select a policy or gap on the left to view its current risk posture, mapped ATT&amp;CK coverage, and next actions.
+          End-to-end policy journey from identity to enforcement, with misconfiguration hotspots, best-practice validation, and ATT&amp;CK mapping.
         </div>
         <div id="policyFocusPanel"></div>
       </div>
@@ -2148,7 +2978,7 @@ body[data-active-view="standards"] .standards-mitre-heatmap-card {
     </div>
 
     <!-- Defender Version Distribution -->
-    <div class="card defender-version-card" data-views="devices">
+    <div class="card defender-version-card" data-views="devices" onclick="openDetail('defenderVersionHealth')" style="cursor:pointer;">
       <div class="card-header">
         <div class="card-title">
           <span class="icon">
@@ -2173,6 +3003,23 @@ body[data-active-view="standards"] .standards-mitre-heatmap-card {
     </div>
   </div>
 </main>
+
+<div class="help-overlay" id="helpOverlay" onclick="closeHelpPanel(event)">
+  <aside class="help-panel" role="dialog" aria-modal="true" aria-labelledby="helpPanelTitle">
+    <div class="help-header">
+      <div class="help-title" id="helpPanelTitle">Help Centre</div>
+      <button class="detail-close" type="button" onclick="closeHelpPanel()" aria-label="Close help">&times;</button>
+    </div>
+    <div class="help-layout">
+      <nav class="help-nav" aria-label="Help topics">
+        <div class="help-topic-list" id="helpTopicList"></div>
+      </nav>
+      <section class="help-content" id="helpContentBody">
+        <div class="help-loading">Select a help topic to get started.</div>
+      </section>
+    </div>
+  </aside>
+</div>
 
 <!-- ===== DETAIL FLYOUT PANEL ===== -->
 <div class="detail-overlay" id="detailOverlay" onclick="closeDetail(event)">
@@ -2449,6 +3296,10 @@ let liveSecureScore = null;
 let standardsDetailModel = { cis: {}, nist: {}, identity: {}, nis2: {} };
 let exposureTrendPoints = [];
 let exposureTrendAnchorScore = null;
+let exposureTrendSignature = '';
+let autoRefreshTimer = null;
+const AUTO_REFRESH_MS = 5 * 60 * 1000;
+let authInProgress = false;
 
 const GRAPH_CONNECT_SCOPE_CANDIDATES = [
   [
@@ -2598,38 +3449,256 @@ function setDataModeLabel(text) {
   if (el) el.textContent = text;
 }
 
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function decodeUriComponentSafe(value) {
+  try {
+    return decodeURIComponent(String(value ?? ''));
+  } catch (_err) {
+    return String(value ?? '');
+  }
+}
+
+function setAuthBanner(message = '', visible = false) {
+  const banner = document.getElementById('authBanner');
+  const text = document.getElementById('authBannerText');
+  if (!banner || !text) return;
+  text.textContent = message || 'Session expired. Reconnect tenant to resume live updates.';
+  banner.classList.toggle('visible', Boolean(visible));
+}
+
+function closeHelpPanel(event) {
+  if (event && event.target !== event.currentTarget) return;
+  const overlay = document.getElementById('helpOverlay');
+  if (!overlay) return;
+  overlay.classList.remove('visible');
+}
+
+function openHelpPanel() {
+  const overlay = document.getElementById('helpOverlay');
+  if (!overlay) return;
+  overlay.classList.add('visible');
+  if (!helpLoaded) {
+    loadHelpIndex();
+  }
+}
+
+function renderHelpTopicList() {
+  const list = document.getElementById('helpTopicList');
+  if (!list) return;
+  if (!helpTopics.length) {
+    list.innerHTML = '<div class="help-error">No help topics are configured.</div>';
+    return;
+  }
+  list.innerHTML = helpTopics.map(topic => `
+    <button class="help-topic-item ${helpActiveTopicId === topic.id ? 'active' : ''}" type="button" onclick="openHelpTopic('${topic.id}')">
+      <div class="help-topic-title">${escapeHtml(topic.title || topic.id)}</div>
+      <div class="help-topic-summary">${escapeHtml(topic.summary || '')}</div>
+    </button>
+  `).join('');
+}
+
+function formatHelpInline(text) {
+  let out = escapeHtml(text || '');
+  out = out.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+  out = out.replace(/`([^`]+)`/g, '<code>$1</code>');
+  out = out.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  out = out.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+  return out;
+}
+
+function renderHelpMarkdown(markdown) {
+  const lines = String(markdown || '').replace(/\r\n/g, '\n').split('\n');
+  const html = [];
+  let listOpen = false;
+
+  const closeList = () => {
+    if (listOpen) {
+      html.push('</ul>');
+      listOpen = false;
+    }
+  };
+
+  lines.forEach(line => {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      closeList();
+      return;
+    }
+    if (trimmed.startsWith('### ')) {
+      closeList();
+      html.push(`<h3>${formatHelpInline(trimmed.slice(4))}</h3>`);
+      return;
+    }
+    if (trimmed.startsWith('## ')) {
+      closeList();
+      html.push(`<h2>${formatHelpInline(trimmed.slice(3))}</h2>`);
+      return;
+    }
+    if (trimmed.startsWith('# ')) {
+      closeList();
+      html.push(`<h1>${formatHelpInline(trimmed.slice(2))}</h1>`);
+      return;
+    }
+    if (/^[-*]\s+/.test(trimmed)) {
+      if (!listOpen) {
+        html.push('<ul>');
+        listOpen = true;
+      }
+      html.push(`<li>${formatHelpInline(trimmed.replace(/^[-*]\s+/, ''))}</li>`);
+      return;
+    }
+    closeList();
+    html.push(`<p>${formatHelpInline(trimmed)}</p>`);
+  });
+
+  closeList();
+  return html.join('');
+}
+
+async function loadHelpIndex() {
+  const body = document.getElementById('helpContentBody');
+  if (body) body.innerHTML = '<div class="help-loading">Loading help topics...</div>';
+  try {
+    const res = await fetch(HELP_INDEX_URL, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const payload = await res.json();
+    helpTopics = Array.isArray(payload?.topics) ? payload.topics : [];
+    helpLoaded = true;
+    renderHelpTopicList();
+    if (!helpTopics.length) {
+      if (body) body.innerHTML = '<div class="help-error">No help topics found in help/index.json.</div>';
+      return;
+    }
+    await openHelpTopic(helpTopics[0].id);
+  } catch (err) {
+    if (body) {
+      body.innerHTML = `<div class="help-error">Unable to load help topics (${escapeHtml(err?.message || 'unknown error')}). Ensure the app is served over HTTP(S) and the <code>help/</code> folder is accessible.</div>`;
+    }
+  }
+}
+
+async function openHelpTopic(topicId) {
+  const topic = helpTopics.find(item => item.id === topicId);
+  const body = document.getElementById('helpContentBody');
+  if (!topic || !body) return;
+  helpActiveTopicId = topic.id;
+  renderHelpTopicList();
+  body.innerHTML = '<div class="help-loading">Loading topic...</div>';
+
+  try {
+    const cacheKey = topic.file;
+    let markdown = helpContentCache.get(cacheKey);
+    if (!markdown) {
+      const res = await fetch(`help/${topic.file}`, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      markdown = await res.text();
+      helpContentCache.set(cacheKey, markdown);
+    }
+    body.innerHTML = renderHelpMarkdown(markdown);
+  } catch (err) {
+    body.innerHTML = `<div class="help-error">Unable to load topic <code>${escapeHtml(topic.file)}</code> (${escapeHtml(err?.message || 'unknown error')}).</div>`;
+  }
+}
+
 async function acquireTokenWithFallback(app, account, scopes) {
   try {
     return await app.acquireTokenSilent({ scopes, account });
-  } catch (_silentErr) {
-    return app.acquireTokenPopup({ scopes, account, prompt: 'consent' });
+  } catch (silentErr) {
+    const msg = String((silentErr && silentErr.message) || '').toLowerCase();
+    const code = String((silentErr && silentErr.errorCode) || '').toLowerCase();
+    const interactionRequired =
+      msg.includes('interaction_required') ||
+      msg.includes('login_required') ||
+      msg.includes('consent_required') ||
+      code.includes('interaction_required') ||
+      code.includes('login_required') ||
+      code.includes('consent_required');
+    if (!interactionRequired) throw silentErr;
+    return app.acquireTokenPopup({ scopes, account });
   }
+}
+
+async function acquireTokenSilentOnly(app, account, scopes) {
+  return app.acquireTokenSilent({ scopes, account });
 }
 
 async function acquireDefenderToken(app, account) {
-  let lastErr = null;
+  let lastSilentErr = null;
   for (const scopes of DEFENDER_CONNECT_SCOPE_CANDIDATES) {
     try {
-      const token = await acquireTokenWithFallback(app, account, scopes);
+      const token = await app.acquireTokenSilent({ scopes, account });
       return { token, scopes };
     } catch (err) {
-      lastErr = err;
+      lastSilentErr = err;
     }
   }
-  throw lastErr || new Error('Unable to acquire Defender API token for configured scopes.');
+  const primaryScopes = DEFENDER_CONNECT_SCOPE_CANDIDATES[0];
+  try {
+    const token = await acquireTokenWithFallback(app, account, primaryScopes);
+    return { token, scopes: primaryScopes };
+  } catch (interactiveErr) {
+    throw interactiveErr || lastSilentErr || new Error('Unable to acquire Defender API token for configured scopes.');
+  }
 }
 
 async function acquireGraphToken(app, account) {
+  let lastSilentErr = null;
+  for (const scopes of GRAPH_CONNECT_SCOPE_CANDIDATES) {
+    try {
+      const token = await app.acquireTokenSilent({ scopes, account });
+      return { token, scopes };
+    } catch (err) {
+      lastSilentErr = err;
+    }
+  }
+  const primaryScopes = GRAPH_CONNECT_SCOPE_CANDIDATES[0];
+  try {
+    const token = await acquireTokenWithFallback(app, account, primaryScopes);
+    return { token, scopes: primaryScopes };
+  } catch (interactiveErr) {
+    throw interactiveErr || lastSilentErr || new Error('Unable to acquire Graph token for configured scopes.');
+  }
+}
+
+async function acquireGraphTokenSilent(app, account) {
   let lastErr = null;
   for (const scopes of GRAPH_CONNECT_SCOPE_CANDIDATES) {
     try {
-      const token = await acquireTokenWithFallback(app, account, scopes);
+      const token = await acquireTokenSilentOnly(app, account, scopes);
       return { token, scopes };
     } catch (err) {
       lastErr = err;
     }
   }
-  throw lastErr || new Error('Unable to acquire Graph token for configured scopes.');
+  throw lastErr || new Error('Silent Graph token refresh failed.');
+}
+
+async function acquireDefenderTokenSilent(app, account) {
+  let lastErr = null;
+  for (const scopes of DEFENDER_CONNECT_SCOPE_CANDIDATES) {
+    try {
+      const token = await acquireTokenSilentOnly(app, account, scopes);
+      return { token, scopes };
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  throw lastErr || new Error('Silent Defender token refresh failed.');
+}
+
+function startAutoRefresh() {
+  if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+  autoRefreshTimer = setInterval(() => {
+    refreshTenantData({ silentOnly: true, suppressNoConnectionHint: true, suppressStatusUpdates: true });
+  }, AUTO_REFRESH_MS);
 }
 
 async function graphGetAll(url, accessToken, maxPages = 10) {
@@ -3134,6 +4203,7 @@ async function loadLiveTenantData(graphAccessToken, defenderAccessToken) {
   return { sources, errors, noRows: false };
 }
 let activePolicyFilter = 'all';
+let compensationStrictness = 'standard';
 let activeDataFilter = 'all';
 let activeSeverityFilter = 'all';
 let appInventoryViewMode = 'grid';
@@ -3142,6 +4212,99 @@ let remediationViewMode = 'actionable';
 let threatWorkbenchMode = 'risk';
 let deviceInventoryFilterMode = 'all';
 let selectedPolicyName = '';
+let policyJourneyModel = null;
+let uiShowTopRow = true;
+const uiHiddenViews = new Set();
+let uiTheme = 'light';
+let standardsMitreView = 'coverage';
+const HELP_INDEX_URL = 'help/index.json';
+let helpLoaded = false;
+let helpTopics = [];
+let helpActiveTopicId = '';
+const helpContentCache = new Map();
+
+function applyUiTheme() {
+  const dark = uiTheme === 'dark-mode';
+  document.body.setAttribute('data-theme', dark ? 'dark-mode' : 'light');
+  const btn = document.getElementById('nightModeBtn');
+  if (btn) {
+    btn.classList.toggle('active', dark);
+    btn.setAttribute('aria-label', dark ? 'Enable light mode' : 'Enable dark mode');
+    btn.setAttribute('title', dark ? 'Switch to light mode' : 'Switch to dark mode');
+  }
+}
+
+function applyStandardsMitreView() {
+  const split = document.querySelector('.standards-mitre-split');
+  const coverageSection = document.getElementById('mitreCoverageSection');
+  const heatmapSection = document.getElementById('mitreHeatmapSection');
+  const coverageBtn = document.getElementById('mitreViewCoverageBtn');
+  const heatmapBtn = document.getElementById('mitreViewHeatmapBtn');
+  if (!split || !coverageSection || !heatmapSection || !coverageBtn || !heatmapBtn) return;
+
+  const showCoverage = standardsMitreView !== 'heatmap';
+  coverageSection.classList.toggle('view-hidden', !showCoverage);
+  heatmapSection.classList.toggle('view-hidden', showCoverage);
+  split.classList.add('single-view');
+
+  coverageBtn.classList.toggle('active', showCoverage);
+  heatmapBtn.classList.toggle('active', !showCoverage);
+}
+
+function applyUiPreferences() {
+  document.body.classList.toggle('ui-hide-toprow', !uiShowTopRow);
+  document.querySelectorAll('.topnav-tab[data-view]').forEach(btn => {
+    const view = btn.dataset.view;
+    const visible = !uiHiddenViews.has(view);
+    btn.style.display = visible ? '' : 'none';
+  });
+  document.querySelectorAll('.customize-option input[data-ui-option]').forEach(input => {
+    const option = input.dataset.uiOption;
+    input.checked = option === 'toprow' ? uiShowTopRow : !uiHiddenViews.has(option);
+  });
+
+  const currentView = document.body.getAttribute('data-active-view') || 'overview';
+  if (uiHiddenViews.has(currentView)) {
+    const fallback = document.querySelector('.topnav-tab[data-view]:not([style*="display: none"])');
+    if (fallback) switchView(fallback.dataset.view, fallback);
+  }
+}
+
+function loadUiPreferences() {
+  try {
+    const raw = localStorage.getItem('xdr_ui_prefs');
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    if (typeof parsed.showTopRow === 'boolean') uiShowTopRow = parsed.showTopRow;
+    if (typeof parsed.theme === 'string' && parsed.theme) {
+      uiTheme = parsed.theme === 'cyber-mode' ? 'dark-mode' : parsed.theme;
+    }
+    if (parsed.mitreView === 'coverage' || parsed.mitreView === 'heatmap') {
+      standardsMitreView = parsed.mitreView;
+    }
+    if (Array.isArray(parsed.hiddenViews)) {
+      uiHiddenViews.clear();
+      parsed.hiddenViews.forEach(v => {
+        if (typeof v === 'string' && v) uiHiddenViews.add(v);
+      });
+    }
+  } catch (_err) {
+    // Ignore malformed local preferences.
+  }
+}
+
+function saveUiPreferences() {
+  try {
+    localStorage.setItem('xdr_ui_prefs', JSON.stringify({
+      showTopRow: uiShowTopRow,
+      hiddenViews: Array.from(uiHiddenViews),
+      theme: uiTheme,
+      mitreView: standardsMitreView
+    }));
+  } catch (_err) {
+    // Ignore storage write issues.
+  }
+}
 
 function toDateSafe(value) {
   const d = new Date(value);
@@ -3326,6 +4489,11 @@ function renderExecutiveSummary() {
   if (policiesSub) policiesSub.textContent = `${reportOnlyPolicies.toLocaleString()} in report-only`;
   if (defenderValue) defenderValue.textContent = `${defenderCoverage}%`;
   if (defenderSub) defenderSub.textContent = `${outdatedDefender.toLocaleString()} devices outdated`;
+  if (devicesSub) {
+    const serverCount = devices.filter(d => d.type === 'Server').length;
+    const workstationCount = devices.filter(d => d.type === 'Workstation').length;
+    devicesSub.textContent = `${workstationCount.toLocaleString()} workstations · ${serverCount.toLocaleString()} servers`;
+  }
 }
 
 function renderVulnList() {
@@ -3375,7 +4543,7 @@ function renderVulnList() {
 
   container.innerHTML = filteredVulns.slice(0, 8).map(v => {
     const sevClass = getSeverityBucket(v);
-    return `<div class="vuln-item" onclick="openVulnDetail('${v.id}')">
+    return `<div class="vuln-item" onclick="openVulnDetail('${encodeURIComponent(v.id)}')">
       <div class="vuln-sev-badge ${sevClass}"></div>
       <div class="vuln-info">
         <div class="vuln-cve">${v.id}${v.exploited ? ' <span style="color:var(--severity-critical);font-size:10px;">⚡ EXPLOITED</span>' : ''}</div>
@@ -3447,6 +4615,23 @@ function openDeviceTypeDetail(typeLabel) {
     topOs[device.os] = (topOs[device.os] || 0) + 1;
   });
   const topOsList = Object.entries(topOs).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  const typeVulnMap = new Map();
+  matchingDevices.forEach(device => {
+    mapVulnerabilitiesForDevice(device).forEach(v => {
+      const existing = typeVulnMap.get(v.id);
+      if (!existing) {
+        typeVulnMap.set(v.id, { ...v, mappedCount: 1 });
+      } else {
+        existing.mappedCount += 1;
+      }
+    });
+  });
+  const topTypeVulns = Array.from(typeVulnMap.values())
+    .sort((a, b) => {
+      if (a.exploited !== b.exploited) return a.exploited ? -1 : 1;
+      return Number(b.cvss || 0) - Number(a.cvss || 0) || Number(b.mappedCount || 0) - Number(a.mappedCount || 0);
+    })
+    .slice(0, 8);
 
   const impactedDevices = matchingDevices
     .filter(device => device.vulns > 0)
@@ -3483,6 +4668,22 @@ function openDeviceTypeDetail(typeLabel) {
     <div class="detail-section">
       <div class="detail-section-title">Top Operating Systems (Sample)</div>
       ${topOsList.length ? topOsList.map(([os, count]) => `<div class="detail-row"><span class="label">${os}</span><span class="value">${count}</span></div>`).join('') : '<div style="font-size:12px;color:var(--text-muted);">No sample devices mapped for this type in prototype data.</div>'}
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">${typeLabel === 'Workstations' ? 'PC Vulnerability List' : `${typeLabel} Vulnerability List`}</div>
+      ${
+        topTypeVulns.length
+          ? topTypeVulns.map(v => `
+              <div style="padding:9px 11px;border:1px solid var(--border-subtle);border-radius:7px;background:var(--bg-elevated);margin-bottom:7px;">
+                <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:4px;">
+                  <span style="font-family:'JetBrains Mono',monospace;color:var(--text-primary);font-size:11px;font-weight:700;">${v.id}</span>
+                  <span style="font-family:'JetBrains Mono',monospace;color:${v.exploited ? 'var(--severity-critical)' : 'var(--text-muted)'};font-size:10px;font-weight:700;">CVSS ${Number(v.cvss || 0).toFixed(1)}${v.exploited ? ' · Exploited' : ''}</span>
+                </div>
+                <div style="font-size:11px;color:var(--text-secondary);line-height:1.5;">${v.title}</div>
+              </div>
+            `).join('')
+          : '<div style="font-size:12px;color:var(--text-muted);">No mapped vulnerabilities for this device type in current sample data.</div>'
+      }
     </div>
     <div class="detail-section">
       <div class="detail-section-title">Recommended Action Focus</div>
@@ -4083,11 +5284,10 @@ function renderDeviceTable() {
     if (d.defenderVer.includes('2309') || d.defenderVer.includes('2305') || d.defenderVer.includes('2308')) verClass = 'critical';
     else if (!d.defenderVer.includes('24110') && !d.defenderVer.includes('24112')) verClass = 'outdated';
 
-    return `<tr onclick="openDeviceDetail('${d.name}')">
+    return `<tr onclick="openDeviceDetail('${encodeURIComponent(d.name)}')">
       <td><span class="device-name">${d.name}</span></td>
       <td><span class="device-type-badge">${d.type === 'Server' ? '🖥' : d.type === 'Mobile' ? '📱' : '💻'} ${d.type}</span></td>
       <td style="font-size:11px;">${d.os}</td>
-      <td style="font-size:11px;">${d.location}</td>
       <td><span class="health-indicator"><span class="health-dot ${healthClass}"></span>${d.health}</span></td>
       <td><span class="version-badge ${verClass}">${d.defenderVer}</span></td>
       <td style="font-family:'JetBrains Mono';font-size:11px;${d.vulns > 10 ? 'color:var(--severity-critical);font-weight:600;' : ''}">${d.vulns}</td>
@@ -4096,7 +5296,7 @@ function renderDeviceTable() {
   }).join('');
 
   if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="8" style="font-size:12px;color:var(--text-muted);padding:14px 12px;">No devices match the selected inventory filter.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" style="font-size:12px;color:var(--text-muted);padding:14px 12px;">No devices match the selected inventory filter.</td></tr>`;
   }
 }
 
@@ -4116,14 +5316,13 @@ function getFilteredDevicesForInventory() {
 
 function exportDeviceInventoryCsv() {
   const rows = getFilteredDevicesForInventory();
-  const headers = ['Device Name', 'Type', 'OS', 'Location', 'Health', 'Defender Version', 'Vulnerabilities', 'CA Policies', 'Risk Score', 'Last Seen'];
+  const headers = ['Device Name', 'Type', 'OS', 'Health', 'Defender Version', 'Vulnerabilities', 'CA Policies', 'Risk Score', 'Last Seen'];
   const csvRows = [
     headers.join(','),
     ...rows.map(d => ([
       d.name,
       d.type,
       d.os,
-      d.location,
       d.health,
       d.defenderVer,
       d.vulns,
@@ -4153,9 +5352,9 @@ function renderCAPolicies() {
   const container = document.getElementById('caPolicyList');
   container.innerHTML = filteredPolicies.map(p => {
     const stateClass = p.state === 'enabled' ? 'enabled' : p.state === 'report-only' ? 'report-only' : 'disabled';
-    const coverageClass = p.coverage >= 90 ? 'high' : p.coverage >= 60 ? 'medium' : 'low';
+    const coverageBand = p.coverage >= 90 ? 'High' : p.coverage >= 60 ? 'Medium' : 'Low';
     const escapedName = p.name.replace(/'/g, "\\'");
-    return `<div class="ca-item ${selectedPolicyName === p.name ? 'selected' : ''}" role="button" tabindex="0" onclick="selectPolicyFocus('${escapedName}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectPolicyFocus('${escapedName}')}">
+    return `<div class="ca-item ${selectedPolicyName === p.name ? 'selected' : ''}" role="button" tabindex="0" onclick="openPolicyDetailFromList('${escapedName}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openPolicyDetailFromList('${escapedName}')}">
       <div class="ca-item-header">
         <div class="ca-item-name">${p.name}</div>
         <span class="ca-status-badge ${stateClass}">${p.state === 'report-only' ? 'Report Only' : p.state.charAt(0).toUpperCase() + p.state.slice(1)}</span>
@@ -4165,9 +5364,9 @@ function renderCAPolicies() {
         <span>📱 ${p.apps.length > 25 ? p.apps.substring(0,25)+'...' : p.apps}</span>
       </div>
       <div class="ca-coverage-bar">
-        <div class="ca-coverage-fill ${coverageClass}" style="width:${p.coverage}%"></div>
+        <div class="ca-coverage-fill" style="width:${p.coverage}%"></div>
       </div>
-      <div style="font-size:10px;color:var(--text-muted);margin-top:4px;">${p.coverage}% coverage</div>
+      <div style="font-size:10px;color:var(--text-muted);margin-top:4px;">${p.coverage}% coverage (${coverageBand})</div>
     </div>`;
   }).join('');
 
@@ -4223,6 +5422,304 @@ function assessPolicyGap(policy) {
   return { score, severity, gaps, mitre, recommendations };
 }
 
+function normalizePolicyTextSet(value) {
+  const text = String(value || '').toLowerCase();
+  if (!text || text === 'none') return [];
+  return Array.from(new Set(
+    text
+      .split(',')
+      .map(part => part.trim())
+      .filter(Boolean)
+  )).sort();
+}
+
+function jaccardSimilarity(setA, setB) {
+  const a = Array.isArray(setA) ? setA : [];
+  const b = Array.isArray(setB) ? setB : [];
+  if (!a.length && !b.length) return 1;
+  const aa = new Set(a);
+  const bb = new Set(b);
+  const intersection = Array.from(aa).filter(x => bb.has(x)).length;
+  const union = new Set([...a, ...b]).size;
+  if (!union) return 0;
+  return intersection / union;
+}
+
+function tokenizeConditions(value) {
+  const text = String(value || '').toLowerCase();
+  if (!text || text === 'none') return [];
+  return Array.from(new Set(
+    text
+      .split(/[,/()·]+/)
+      .map(part => part.trim())
+      .filter(Boolean)
+  )).sort();
+}
+
+function getCompensationStrictnessConfig() {
+  if (compensationStrictness === 'lenient') {
+    return {
+      evidenceMinOverlap: 40,
+      strongMinOverlap: 60
+    };
+  }
+  if (compensationStrictness === 'strict') {
+    return {
+      evidenceMinOverlap: 55,
+      strongMinOverlap: 80
+    };
+  }
+  return {
+    evidenceMinOverlap: 45,
+    strongMinOverlap: 70
+  };
+}
+
+function policyHasControl(policy, controlKey) {
+  const name = String(policy?.name || '').toLowerCase();
+  const apps = String(policy?.apps || '').toLowerCase();
+  const cond = String(policy?.conditions || '').toLowerCase();
+  const grant = String(policy?.grantControls || '').toLowerCase();
+  const session = String(policy?.sessionControls || '').toLowerCase();
+  const combined = `${name} ${apps} ${cond} ${grant} ${session}`;
+
+  if (controlKey === 'guestExternal') return /guest|external|b2b/i.test(combined);
+  if (controlKey === 'authStrength') return /mfa|authentication strength|phishing-resistant/i.test(grant);
+  if (controlKey === 'deviceCompliance') return /compliant|hybrid/i.test(grant);
+  if (controlKey === 'sessionToken') return session !== 'none' && session.trim() !== '';
+  if (controlKey === 'riskSignals') return /risk|token protection|phishing-resistant/i.test(combined);
+  if (controlKey === 'enforcementState') return String(policy?.state || '').toLowerCase() === 'enabled';
+  return false;
+}
+
+function policyScopeOverlapScore(policyA, policyB) {
+  const appsA = normalizePolicyTextSet(policyA?.apps);
+  const appsB = normalizePolicyTextSet(policyB?.apps);
+  const condA = tokenizeConditions(policyA?.conditions);
+  const condB = tokenizeConditions(policyB?.conditions);
+  const coverageA = Number(policyA?.coverage || 0);
+  const coverageB = Number(policyB?.coverage || 0);
+
+  const appsSim = jaccardSimilarity(appsA, appsB);
+  const condSim = jaccardSimilarity(condA, condB);
+  const coverageSim = 1 - Math.min(1, Math.abs(coverageA - coverageB) / 100);
+
+  return {
+    appsSim,
+    condSim,
+    coverageSim,
+    score: Math.round((appsSim * 45) + (condSim * 45) + (coverageSim * 10))
+  };
+}
+
+function evaluateControlCompensation(primaryPolicy, controlKey, controlPresent) {
+  const cfg = getCompensationStrictnessConfig();
+  const primaryEnabled = String(primaryPolicy?.state || '').toLowerCase() === 'enabled';
+  if (controlPresent && primaryEnabled) {
+    return {
+      status: 'covered',
+      tone: 'good',
+      label: 'Covered',
+      residual: 'Control is directly enforced in this policy.',
+      evidence: []
+    };
+  }
+
+  const candidates = (Array.isArray(caPolicies) ? caPolicies : [])
+    .filter(p => p && p.name !== primaryPolicy?.name)
+    .map(p => {
+      if (!policyHasControl(p, controlKey)) return null;
+      const overlap = policyScopeOverlapScore(primaryPolicy, p);
+      const state = String(p.state || '').toLowerCase();
+      const stateWeight = state === 'enabled' ? 1 : state === 'report-only' ? 0.45 : 0;
+      const coverageWeight = Math.max(0, Math.min(1, Number(p.coverage || 0) / 100));
+      const overlapWeight = Math.max(0, Math.min(1, overlap.score / 100));
+      const contribution = overlapWeight * coverageWeight * stateWeight;
+      return {
+        name: p.name,
+        state: p.state || 'unknown',
+        overlap: overlap.score,
+        contribution: Math.round(contribution * 100),
+        appsOverlap: Math.round(overlap.appsSim * 100),
+        condOverlap: Math.round(overlap.condSim * 100)
+      };
+    })
+    .filter(Boolean)
+    .filter(item => item.overlap >= cfg.evidenceMinOverlap)
+    .sort((a, b) => b.contribution - a.contribution || b.overlap - a.overlap);
+
+  const combinedCoverage = candidates.length
+    ? (1 - candidates.reduce((product, item) => product * (1 - Math.max(0, Math.min(1, item.contribution / 100))), 1))
+    : 0;
+  const combinedPct = Math.round(combinedCoverage * 100);
+  if (combinedPct >= cfg.strongMinOverlap) {
+    return {
+      status: 'compensated',
+      tone: 'warn',
+      label: 'Compensated',
+      residual: `Aggregate overlap-weighted coverage from ${candidates.length} policy${candidates.length === 1 ? '' : 'ies'} is ${combinedPct}%. Residual risk remains for uncovered segments outside overlap scope.`,
+      evidence: candidates.slice(0, 3)
+    };
+  }
+
+  return {
+    status: 'unmitigated',
+    tone: 'bad',
+    label: 'Unmitigated Gap',
+    residual: candidates.length
+      ? `Aggregate overlap-weighted coverage across matching policies is ${combinedPct}%, below the ${cfg.strongMinOverlap}% threshold.`
+      : 'No overlapping enforced policy was found for this control path.',
+    evidence: candidates.slice(0, 3)
+  };
+}
+
+function buildPolicyOverlapInsights(policies) {
+  const list = Array.isArray(policies) ? policies : [];
+  const pairs = [];
+  for (let i = 0; i < list.length; i += 1) {
+    for (let j = i + 1; j < list.length; j += 1) {
+      const a = list[i];
+      const b = list[j];
+      const appsA = normalizePolicyTextSet(a.apps);
+      const appsB = normalizePolicyTextSet(b.apps);
+      const grantA = normalizePolicyTextSet(a.grantControls);
+      const grantB = normalizePolicyTextSet(b.grantControls);
+      const sessionA = normalizePolicyTextSet(a.sessionControls);
+      const sessionB = normalizePolicyTextSet(b.sessionControls);
+      const condA = tokenizeConditions(a.conditions);
+      const condB = tokenizeConditions(b.conditions);
+
+      const appsSim = jaccardSimilarity(appsA, appsB);
+      const grantSim = jaccardSimilarity(grantA, grantB);
+      const sessionSim = jaccardSimilarity(sessionA, sessionB);
+      const conditionSim = jaccardSimilarity(condA, condB);
+      const stateSim = String(a.state || '') === String(b.state || '') ? 1 : 0;
+      const coverageSim = 1 - Math.min(1, Math.abs(Number(a.coverage || 0) - Number(b.coverage || 0)) / 100);
+
+      const overlapScore = Math.round(
+        (appsSim * 24)
+        + (conditionSim * 24)
+        + (grantSim * 22)
+        + (sessionSim * 15)
+        + (stateSim * 10)
+        + (coverageSim * 5)
+      );
+
+      const sameScope = appsSim >= 0.75 && conditionSim >= 0.75;
+      const differentOutcome = grantSim < 0.45 || sessionSim < 0.45 || stateSim === 0;
+      const exactDuplicate = overlapScore >= 95 && grantSim >= 0.95 && sessionSim >= 0.95 && stateSim === 1;
+      const conflict = sameScope && differentOutcome;
+      const highOverlap = overlapScore >= 80 && !exactDuplicate;
+      const classification = exactDuplicate ? 'exact' : conflict ? 'conflict' : highOverlap ? 'high' : 'low';
+      if (classification === 'low') continue;
+
+      const reasons = [];
+      if (appsSim >= 0.8) reasons.push('Cloud app scope substantially overlaps.');
+      if (conditionSim >= 0.8) reasons.push('Condition targeting is near-identical.');
+      if (grantSim < 0.45) reasons.push('Grant controls diverge for similar scope (potential conflict).');
+      if (sessionSim < 0.45) reasons.push('Session control behavior differs for overlapping scope.');
+      if (stateSim === 0) reasons.push('Policy states differ (enabled/report-only/disabled).');
+
+      const actions = [];
+      if (exactDuplicate) {
+        actions.push(`Retire one duplicate policy after confirming there are no hidden exclusions in ${a.name} or ${b.name}.`);
+        actions.push('Keep a single owner-assigned baseline policy and document the retained policy as source of truth.');
+      } else if (conflict) {
+        actions.push('Split baseline and exception intent clearly: one baseline policy, one narrowly scoped exception policy.');
+        actions.push('Align grant/session outcomes for common scope or reduce overlap by narrowing assignments/conditions.');
+      } else {
+        actions.push('Merge overlapping controls into one policy where outcomes are materially the same.');
+        actions.push('Convert one candidate policy to report-only temporarily, validate no impact, then remove.');
+      }
+      actions.push('Validate with Conditional Access insights and sign-in logs before final retirement.');
+
+      pairs.push({
+        id: `${encodeURIComponent(a.name)}::${encodeURIComponent(b.name)}`,
+        a,
+        b,
+        overlapScore,
+        classification,
+        reasons,
+        actions,
+        metrics: {
+          appsSim: Math.round(appsSim * 100),
+          conditionSim: Math.round(conditionSim * 100),
+          grantSim: Math.round(grantSim * 100),
+          sessionSim: Math.round(sessionSim * 100),
+          coverageSim: Math.round(coverageSim * 100)
+        }
+      });
+    }
+  }
+
+  pairs.sort((x, y) => y.overlapScore - x.overlapScore);
+
+  const summary = {
+    exact: pairs.filter(item => item.classification === 'exact').length,
+    high: pairs.filter(item => item.classification === 'high').length,
+    conflict: pairs.filter(item => item.classification === 'conflict').length
+  };
+
+  return { summary, pairs };
+}
+
+function overlapClassLabel(classification) {
+  if (classification === 'exact') return 'Exact Duplicate';
+  if (classification === 'conflict') return 'Conflicting Overlap';
+  return 'High Overlap';
+}
+
+function overlapPillClass(classification) {
+  if (classification === 'exact') return 'critical';
+  if (classification === 'conflict') return 'high';
+  return 'medium';
+}
+
+function renderPolicyOverlapInsights() {
+  const filteredPolicies = getFilteredPolicies();
+  const overlap = buildPolicyOverlapInsights(filteredPolicies);
+  const summaryEl = document.getElementById('policyOverlapSummary');
+  const listEl = document.getElementById('policyOverlapList');
+
+  if (summaryEl) {
+    summaryEl.innerHTML = `
+      <article class="policy-gap-cell">
+        <div class="k">Exact Duplicates</div>
+        <div class="v" style="color:var(--severity-critical);">${overlap.summary.exact}</div>
+        <div class="s">Same control path and same outcome</div>
+      </article>
+      <article class="policy-gap-cell">
+        <div class="k">High Overlap</div>
+        <div class="v" style="color:var(--severity-high);">${overlap.summary.high}</div>
+        <div class="s">Likely merge candidates</div>
+      </article>
+      <article class="policy-gap-cell">
+        <div class="k">Conflicting Overlap</div>
+        <div class="v" style="color:var(--severity-medium);">${overlap.summary.conflict}</div>
+        <div class="s">Same scope with different control outcomes</div>
+      </article>
+    `;
+  }
+
+  if (listEl) {
+    const top = overlap.pairs.slice(0, 6);
+    listEl.innerHTML = top.length
+      ? top.map(item => `
+          <article class="policy-gap-item" role="button" tabindex="0" onclick="openPolicyOverlapDetail('${item.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openPolicyOverlapDetail('${item.id}')}">
+            <div class="policy-gap-head">
+              <div class="policy-gap-title">${item.a.name} <span style="color:var(--text-muted);">vs</span> ${item.b.name}</div>
+              <span class="policy-pill ${overlapPillClass(item.classification)}">${overlapClassLabel(item.classification)} · ${item.overlapScore}%</span>
+            </div>
+            <div class="policy-gap-meta">
+              App overlap ${item.metrics.appsSim}% · Conditions ${item.metrics.conditionSim}% · Grant ${item.metrics.grantSim}% · Session ${item.metrics.sessionSim}%<br>
+              ${item.reasons[0] || 'Review for consolidation opportunity.'}
+            </div>
+          </article>
+        `).join('')
+      : '<div style="font-size:12px;color:var(--text-muted);">No overlap or duplication risks detected in the current policy filter.</div>';
+  }
+}
+
 function renderPolicyGapInsights() {
   const assessed = getFilteredPolicies().map(policy => ({ policy, ...assessPolicyGap(policy) }));
   const criticalCount = assessed.filter(x => x.severity === 'critical').length;
@@ -4255,18 +5752,20 @@ function renderPolicyGapInsights() {
   if (gapList) {
     const top = assessed.sort((a, b) => b.score - a.score).slice(0, 5);
     gapList.innerHTML = top.length ? top.map(item => `
-      <article class="policy-gap-item ${selectedPolicyName === item.policy.name ? 'selected' : ''}" role="button" tabindex="0" onclick="selectPolicyFocus('${item.policy.name.replace(/'/g, "\\'")}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectPolicyFocus('${item.policy.name.replace(/'/g, "\\'")}')}">
+      <article class="policy-gap-item ${selectedPolicyName === item.policy.name ? 'selected' : ''}" role="button" tabindex="0" onclick="openPolicyDetailFromList('${item.policy.name.replace(/'/g, "\\'")}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openPolicyDetailFromList('${item.policy.name.replace(/'/g, "\\'")}')}">
         <div class="policy-gap-head">
           <div class="policy-gap-title">${item.policy.name}</div>
           <span class="policy-pill ${item.severity}">Gap ${item.score}</span>
         </div>
         <div class="policy-gap-meta">
           ${item.gaps[0] || 'No material gaps identified.'}<br>
-          Recommended: ${item.recommendations[0]}
+      Recommended: ${item.recommendations[0]}
         </div>
       </article>
     `).join('') : '<div style="font-size:12px;color:var(--text-muted);">No policy gaps match the selected filter.</div>';
   }
+
+  renderPolicyOverlapInsights();
 }
 
 function renderPolicyMitreCoverage() {
@@ -4280,44 +5779,579 @@ function renderPolicyMitreCoverage() {
 
   if (!selected) {
     container.innerHTML = '<div style="font-size:12px;color:var(--text-muted);">No policy selected in the current filter context.</div>';
+    policyJourneyModel = null;
     return;
   }
+  if (selectedPolicyName !== selected.name) selectedPolicyName = selected.name;
 
   const assessment = assessPolicyGap(selected);
-  const healthTone = assessment.severity === 'critical' ? 'var(--severity-critical)' : assessment.severity === 'high' ? 'var(--severity-high)' : assessment.severity === 'medium' ? 'var(--severity-medium)' : 'var(--status-compliant)';
+  const hasMfa = String(selected.grantControls || '').toLowerCase().includes('mfa')
+    || String(selected.grantControls || '').toLowerCase().includes('authentication strength');
+  const hasCompliant = String(selected.grantControls || '').toLowerCase().includes('compliant');
+  const hasSession = String(selected.sessionControls || '').toLowerCase() !== 'none';
+  const hasRiskSignals = /risk|token protection|phishing-resistant/i.test(selected.name)
+    || /risk|token/i.test(selected.conditions || '');
+  const enabledState = selected.state === 'enabled';
+  const allApps = /all cloud apps/i.test(selected.apps || '');
+  const platformScoped = !/all platforms/i.test(selected.conditions || '');
+  const hasSignInFrequency = /sign-in frequency/i.test(selected.sessionControls || '');
+  const hasTokenProtection = /token/i.test(`${selected.name} ${selected.grantControls} ${selected.sessionControls}`);
+  const hasAuthStrength = /authentication strength|phishing-resistant|mfa/i.test(selected.grantControls || '');
+  const guestOrExternalScope = /guest|external|b2b/i.test(`${selected.name} ${selected.conditions}`);
+  const signalTone = (ok, warn = false) => (ok ? 'good' : warn ? 'warn' : 'bad');
+  const compensationLabel = comp => (comp?.status === 'covered' ? 'Covered' : comp?.status === 'compensated' ? 'Compensated' : 'Unmitigated');
+  const compensationTone = comp => (comp?.status === 'covered' ? 'good' : comp?.status === 'compensated' ? 'warn' : 'bad');
+  const scoreWithComp = (score, comp, cap = 84) => (comp?.status === 'compensated' ? Math.min(cap, score + 18) : score);
+
+  const scopeComp = evaluateControlCompensation(selected, 'guestExternal', guestOrExternalScope);
+  const authComp = evaluateControlCompensation(selected, 'authStrength', hasAuthStrength);
+  const deviceComp = evaluateControlCompensation(selected, 'deviceCompliance', hasCompliant);
+  const sessionComp = evaluateControlCompensation(selected, 'sessionToken', hasSession);
+  const riskComp = evaluateControlCompensation(selected, 'riskSignals', hasRiskSignals);
+  const enforcementComp = enabledState
+    ? { status: 'covered', tone: 'good', label: 'Covered', residual: 'Policy is directly enforcing outcomes.', evidence: [] }
+    : evaluateControlCompensation(selected, 'enforcementState', false);
+
+  const stageTone = score => (score >= 80 ? 'good' : score >= 55 ? 'warn' : 'bad');
+  const laneDetails = [
+    {
+      icon: '👤',
+      name: 'Identity',
+      options: 'Users/Groups, Roles, Guests/External, Workload IDs',
+      status: `Guest scope: ${guestOrExternalScope ? 'Explicit' : 'Not explicit'} · ${compensationLabel(scopeComp)}`
+    },
+    {
+      icon: '🔑',
+      name: 'MFA / Auth',
+      options: 'MFA, Auth Strength, Phishing-resistant, Passwordless',
+      status: `Auth requirement: ${hasAuthStrength ? 'Present' : 'Missing'} · ${compensationLabel(authComp)}`
+    },
+    {
+      icon: '💻',
+      name: 'OS / Device',
+      options: 'Compliant Device, Hybrid Join, Platforms, Device Filters',
+      status: `Device trust: ${hasCompliant ? 'Required' : 'Not required'} · ${compensationLabel(deviceComp)}`
+    },
+    {
+      icon: '🧩',
+      name: 'Application',
+      options: 'All Apps, Selected Apps, User Actions, Exclusions',
+      status: `App scope: ${allApps ? 'All cloud apps' : 'Targeted'}`
+    },
+    {
+      icon: '🔐',
+      name: 'Session',
+      options: 'Sign-in Frequency, Persistent Browser, Token Controls',
+      status: `Session controls: ${hasSession ? 'Enabled' : 'None'} · ${compensationLabel(sessionComp)}`
+    },
+    {
+      icon: '🌐',
+      name: 'Context',
+      options: 'Locations, Sign-in Risk, User Risk, Client App Types',
+      status: `Risk signals: ${hasRiskSignals ? 'Integrated' : 'Limited'} · ${compensationLabel(riskComp)}`
+    },
+    {
+      icon: '🛡️',
+      name: 'Decision + Outcome',
+      options: 'Grant Logic, Block/Allow, Report-only/Enabled, Monitoring',
+      status: `Policy state: ${selected.state} · ${compensationLabel(enforcementComp)}`
+    }
+  ];
+  const stagePlaybooks = {
+    scopeTargeting: {
+      controlArea: 'Assignments > Users / Workload identities',
+      status: guestOrExternalScope
+        ? 'Guest/external users appear to be explicitly included.'
+        : 'Guest/external users are not explicitly included.',
+      targetConfig: 'Include all users plus guest/external users. Keep exclusions to emergency access accounts only.',
+      steps: [
+        'Open the policy and go to Assignments > Users.',
+        'Set Include to All users and enable Guest or external users.',
+        'Review Exclude and keep only approved break-glass identities.',
+        'Document scope rationale for privileged, workforce, and guest cohorts.'
+      ],
+      validation: 'Check sign-in logs for guest users and confirm this policy is evaluated and enforced.',
+      apiField: 'conditions.users (includeUsers, excludeUsers, includeGuestsOrExternalUsers)'
+    },
+    identityProofing: {
+      controlArea: 'Access controls > Grant',
+      status: hasAuthStrength
+        ? 'Strong authentication requirement is present.'
+        : 'No explicit MFA/authentication strength requirement found.',
+      targetConfig: 'Require MFA or phishing-resistant authentication strength for targeted users and high-risk roles.',
+      steps: [
+        'Open Access controls > Grant for this policy.',
+        'Enable Require authentication strength or Require multifactor authentication.',
+        'For admin scope, prefer phishing-resistant methods where possible.',
+        'Test with pilot users before broad enforcement.'
+      ],
+      validation: 'Run test sign-ins and confirm MFA/auth strength challenge is consistently applied.',
+      apiField: 'grantControls (builtInControls, authenticationStrength)'
+    },
+    devicePlatform: {
+      controlArea: 'Conditions > Device platforms + Filter for devices; Access controls > Grant',
+      status: hasCompliant
+        ? 'Compliant-device enforcement is present.'
+        : 'Compliant-device requirement is missing.',
+      targetConfig: 'Require compliant or hybrid-joined devices and apply explicit platform targeting for sensitive apps.',
+      steps: [
+        'In Conditions > Device platforms, explicitly scope supported OS sets.',
+        'Add device filters for high-risk scenarios where needed.',
+        'In Grant controls, require device to be marked as compliant (or hybrid joined).',
+        'Review exceptions for BYOD and document compensating controls.'
+      ],
+      validation: 'Confirm unmanaged test devices are blocked and compliant devices succeed for intended apps.',
+      apiField: 'conditions.platforms, conditions.devices, grantControls'
+    },
+    appScope: {
+      controlArea: 'Assignments > Cloud apps or actions',
+      status: allApps
+        ? 'All cloud apps are in scope.'
+        : 'Policy covers a targeted app set only.',
+      targetConfig: 'Protect all high-value cloud apps and admin entry points; avoid unmanaged app blind spots.',
+      steps: [
+        'Review Cloud apps assignment against critical business and admin services.',
+        'Expand scope to all cloud apps where policy objective is baseline protection.',
+        'Where targeted scope is required, add companion policies to cover adjacent services.',
+        'Track app onboarding so new SaaS services inherit baseline controls.'
+      ],
+      validation: 'Cross-check app sign-in logs and confirm each critical app is covered by at least one enforced policy.',
+      apiField: 'conditions.applications (includeApplications, excludeApplications)'
+    },
+    sessionToken: {
+      controlArea: 'Access controls > Session',
+      status: hasSession
+        ? 'Session controls are configured.'
+        : 'Session controls are not configured.',
+      targetConfig: 'Set sign-in frequency and token/session restrictions appropriate to risk and data sensitivity.',
+      steps: [
+        'Open Access controls > Session.',
+        'Set sign-in frequency for privileged and high-risk sessions.',
+        'Enable available token protection/session restrictions for token theft reduction.',
+        'Align browser/session controls with data protection requirements.'
+      ],
+      validation: 'Verify token replay and long-lived session scenarios are reduced in sign-in and session telemetry.',
+      apiField: 'sessionControls (signInFrequency, persistentBrowser, tokenProtection where available)'
+    },
+    riskDecision: {
+      controlArea: 'Conditions > Sign-in risk and User risk',
+      status: hasRiskSignals
+        ? 'Risk-based controls are in use.'
+        : 'Risk-based conditions are limited or absent.',
+      targetConfig: 'Use sign-in risk and user risk to drive adaptive MFA/block/password-reset decisions.',
+      steps: [
+        'Enable sign-in risk and/or user risk conditions in policy assignments.',
+        'Bind high risk outcomes to stronger controls (block, password change, stronger auth).',
+        'Ensure risk-based policy does not remain indefinitely in report-only mode.',
+        'Tune thresholds using observed false positive rates.'
+      ],
+      validation: 'Review risky sign-in events and confirm policy response matches intended risk thresholds.',
+      apiField: 'conditions.signInRiskLevels, conditions.userRiskLevels, grantControls'
+    },
+    enforcementOutcome: {
+      controlArea: 'Policy state + Monitoring',
+      status: enabledState
+        ? 'Policy is enforcing outcomes.'
+        : 'Policy is not fully enforced.',
+      targetConfig: 'Run report-only briefly for validation, then move to enabled and monitor drift continuously.',
+      steps: [
+        'Set policy state to Enabled after pilot validation.',
+        'Track policy impact and failures in sign-in logs and Conditional Access insights.',
+        'Review exclusions monthly and remove stale exceptions.',
+        'Define rollback criteria and owner accountability for each policy.'
+      ],
+      validation: 'Confirm policy state is enabled and enforcement outcomes match expected business controls.',
+      apiField: 'state, templateId/id, modifiedDateTime, conditionalAccessStatus in sign-in logs'
+    }
+  };
+
+  const stages = [
+    {
+      id: 'scope-targeting',
+      icon: '🎯',
+      name: 'Scope & Targeting',
+      actor: 'Identities',
+      score: scoreWithComp(selected.coverage >= 90 ? 88 : selected.coverage >= 70 ? 66 : 38, scopeComp, 80),
+      summary: `Users and workload targeting are ${selected.coverage >= 90 ? 'well-covered' : 'partially scoped'} (${selected.coverage}% coverage).`,
+      config: `Users: ${Number(selected.users || 0).toLocaleString()} · Conditions: ${selected.conditions || 'None'}`,
+      bestPractice: 'Target all applicable identities with minimal exclusion sets and explicit segmentation for admin/guest cohorts.',
+      gap: guestOrExternalScope
+        ? (selected.coverage >= 90 ? 'Scope is close to best-practice baseline.' : `Coverage gap detected (${selected.coverage}%) indicating potential bypass segments.`)
+        : (scopeComp.status === 'compensated'
+          ? `Guest/external scope is not explicit in this policy, but overlapping policy coverage is compensating. ${scopeComp.residual}`
+          : 'Guest/external scope is not explicit and no reliable compensating policy was found.'),
+      signals: [
+        { icon: '👤', key: 'Identities', value: `${Number(selected.users || 0).toLocaleString()} in scope`, tone: signalTone(selected.coverage >= 90, selected.coverage >= 70) },
+        { icon: '👥', key: 'Guest / External', value: guestOrExternalScope ? 'Explicitly addressed' : 'Not explicit', tone: signalTone(guestOrExternalScope, true) },
+        { icon: '🧭', key: 'Coverage', value: `${selected.coverage}%`, tone: signalTone(selected.coverage >= 90, selected.coverage >= 70) },
+        { icon: '🧩', key: 'Effective Coverage', value: compensationLabel(scopeComp), tone: compensationTone(scopeComp) }
+      ],
+      compensation: scopeComp,
+      playbook: stagePlaybooks.scopeTargeting,
+      mitre: {
+        tactics: ['Initial Access', 'Credential Access'],
+        techniques: ['T1078 Valid Accounts', 'T1110 Brute Force'],
+        threats: ['Credential stuffing', 'Password spray']
+      }
+    },
+    {
+      id: 'identity-auth',
+      icon: '🔑',
+      name: 'Identity Proofing',
+      actor: 'Authentication',
+      score: scoreWithComp(hasAuthStrength ? 93 : 34, authComp, 82),
+      summary: hasAuthStrength ? 'MFA / auth strength controls are enforced at sign-in.' : 'Identity assurance is weak due to missing MFA/auth-strength requirements.',
+      config: `Grant controls: ${selected.grantControls || 'None'}`,
+      bestPractice: 'Enforce MFA or phishing-resistant authentication strength for privileged and high-risk identity paths.',
+      gap: hasAuthStrength
+        ? 'Authentication controls align with baseline requirements.'
+        : (authComp.status === 'compensated'
+          ? `No strong identity proofing gate in this policy, but compensating policy coverage exists. ${authComp.residual}`
+          : 'No strong identity proofing gate detected in grant controls.'),
+      signals: [
+        { icon: '🔐', key: 'MFA / Auth Strength', value: hasAuthStrength ? 'Required' : 'Missing', tone: signalTone(hasAuthStrength) },
+        { icon: '⚠️', key: 'Policy State', value: selected.state === 'report-only' ? 'Report-only' : selected.state, tone: signalTone(selected.state === 'enabled', selected.state === 'report-only') },
+        { icon: '🧪', key: 'Risk-Aware Auth', value: hasRiskSignals ? 'Present' : 'Limited', tone: signalTone(hasRiskSignals, true) },
+        { icon: '🧩', key: 'Effective Coverage', value: compensationLabel(authComp), tone: compensationTone(authComp) }
+      ],
+      compensation: authComp,
+      playbook: stagePlaybooks.identityProofing,
+      mitre: {
+        tactics: ['Credential Access', 'Initial Access'],
+        techniques: ['T1110 Brute Force', 'T1556 Modify Authentication Process'],
+        threats: ['Password spray', 'Auth bypass attempts']
+      }
+    },
+    {
+      id: 'device-platform',
+      icon: '💻',
+      name: 'Device, OS & Platform',
+      actor: 'Endpoint Context',
+      score: scoreWithComp(hasCompliant && platformScoped ? 86 : hasCompliant || platformScoped ? 62 : 36, deviceComp, 80),
+      summary: `Device trust ${hasCompliant ? 'is' : 'is not'} enforced; platform conditions are ${platformScoped ? 'scoped' : 'broad/all-platform'}.`,
+      config: `Conditions: ${selected.conditions || 'All platforms'} · Grant controls: ${selected.grantControls || 'None'}`,
+      bestPractice: 'Bind access to compliant/hybrid-joined endpoints and explicit OS/platform conditions for sensitive app access.',
+      gap: hasCompliant
+        ? (platformScoped ? 'Device and platform controls are in place.' : 'Device trust is present but platform segmentation can be tighter.')
+        : (deviceComp.status === 'compensated'
+          ? `Compliant-device requirement is missing here but compensated by overlapping policy coverage. ${deviceComp.residual}`
+          : 'Compliant-device requirement is missing.'),
+      signals: [
+        { icon: '🖥️', key: 'Compliant Device', value: hasCompliant ? 'Required' : 'Not required', tone: signalTone(hasCompliant) },
+        { icon: '🧬', key: 'OS / Platform Scope', value: platformScoped ? selected.conditions : 'All platforms', tone: signalTone(platformScoped, true) },
+        { icon: '📱', key: 'Endpoint Path', value: hasCompliant ? 'Managed-first' : 'Mixed / unmanaged', tone: signalTone(hasCompliant, true) },
+        { icon: '🧩', key: 'Effective Coverage', value: compensationLabel(deviceComp), tone: compensationTone(deviceComp) }
+      ],
+      compensation: deviceComp,
+      playbook: stagePlaybooks.devicePlatform,
+      mitre: {
+        tactics: ['Execution', 'Persistence'],
+        techniques: ['T1204 User Execution', 'T1547 Boot or Logon Autostart'],
+        threats: ['Unmanaged endpoint access', 'Persistence on non-compliant hosts']
+      }
+    },
+    {
+      id: 'app-targeting',
+      icon: '🧩',
+      name: 'Application Scope',
+      actor: 'Cloud Apps',
+      score: allApps || String(selected.apps || '').split(',').length >= 2 ? 82 : 55,
+      summary: allApps ? 'All cloud apps are covered by this policy.' : `Application scope is targeted: ${selected.apps}`,
+      config: `Applications: ${selected.apps || 'All cloud apps'}`,
+      bestPractice: 'Protect all critical SaaS entry points and remove blind spots across high-value cloud apps.',
+      gap: allApps ? 'Coverage is broad across apps.' : 'Targeted app scope may leave adjacent cloud workflows uncovered.',
+      signals: [
+        { icon: '🧩', key: 'App Coverage', value: selected.apps || 'All cloud apps', tone: signalTone(allApps, true) },
+        { icon: '📦', key: 'Scope Type', value: allApps ? 'Global app scope' : 'Targeted app list', tone: signalTone(allApps, true) },
+        { icon: '🔗', key: 'Cross-App Consistency', value: allApps ? 'High' : 'Medium', tone: signalTone(allApps, true) }
+      ],
+      playbook: stagePlaybooks.appScope,
+      mitre: {
+        tactics: ['Lateral Movement', 'Command and Control'],
+        techniques: ['T1021 Remote Services', 'T1133 External Remote Services'],
+        threats: ['Cloud app pivoting', 'Service-to-service abuse']
+      }
+    },
+    {
+      id: 'session-controls',
+      icon: '🔐',
+      name: 'Session & Token Controls',
+      actor: 'Session Security',
+      score: scoreWithComp(hasSession && hasTokenProtection ? 88 : hasSession ? 68 : 33, sessionComp, 80),
+      summary: hasSession ? `Session controls active (${selected.sessionControls}).` : 'No session controls configured for token/session hardening.',
+      config: `Session controls: ${selected.sessionControls || 'None'}`,
+      bestPractice: 'Use sign-in frequency, token protection, and session restrictions to reduce replay and long-lived token abuse.',
+      gap: hasSession
+        ? (hasTokenProtection ? 'Session and token controls both present.' : 'Session controls active but token-specific controls are limited.')
+        : (sessionComp.status === 'compensated'
+          ? `Session controls are missing in this policy, but overlapping enforced policy coverage is compensating. ${sessionComp.residual}`
+          : 'Session controls missing.'),
+      signals: [
+        { icon: '⏱️', key: 'Sign-in Frequency', value: hasSignInFrequency ? 'Configured' : 'Not explicit', tone: signalTone(hasSignInFrequency, true) },
+        { icon: '🪪', key: 'Token Protection', value: hasTokenProtection ? 'Present' : 'Absent', tone: signalTone(hasTokenProtection, true) },
+        { icon: '🔒', key: 'Session Restriction', value: hasSession ? 'Enabled' : 'Disabled', tone: signalTone(hasSession) },
+        { icon: '🧩', key: 'Effective Coverage', value: compensationLabel(sessionComp), tone: compensationTone(sessionComp) }
+      ],
+      compensation: sessionComp,
+      playbook: stagePlaybooks.sessionToken,
+      mitre: {
+        tactics: ['Defense Evasion', 'Credential Access'],
+        techniques: ['T1528 Steal Application Access Token', 'T1550 Use Alternate Authentication Material'],
+        threats: ['Token replay', 'Session theft']
+      }
+    },
+    {
+      id: 'risk-decision',
+      icon: '🛡️',
+      name: 'Risk Decision Engine',
+      actor: 'Adaptive Decision',
+      score: scoreWithComp(hasRiskSignals ? 84 : 52, riskComp, 82),
+      summary: hasRiskSignals ? 'Risk-aware policy signals detected in current control design.' : 'Limited explicit risk signal usage.',
+      config: `State: ${selected.state} · Conditions: ${selected.conditions || 'None'}`,
+      bestPractice: 'Blend static controls (MFA/device) with adaptive risk decisioning for sign-in and token risk.',
+      gap: hasRiskSignals
+        ? 'Risk signal integration present.'
+        : (riskComp.status === 'compensated'
+          ? `Risk-adaptive logic is not explicit in this policy, but another enforced policy is compensating. ${riskComp.residual}`
+          : 'Risk-adaptive decision controls should be expanded.'),
+      signals: [
+        { icon: '📊', key: 'Risk Signals', value: hasRiskSignals ? 'Integrated' : 'Minimal', tone: signalTone(hasRiskSignals, true) },
+        { icon: '⚡', key: 'Response Mode', value: enabledState ? 'Enforced' : selected.state, tone: signalTone(enabledState, selected.state === 'report-only') },
+        { icon: '🎚️', key: 'Decision Quality', value: hasRiskSignals ? 'Adaptive' : 'Static', tone: signalTone(hasRiskSignals, true) },
+        { icon: '🧩', key: 'Effective Coverage', value: compensationLabel(riskComp), tone: compensationTone(riskComp) }
+      ],
+      compensation: riskComp,
+      playbook: stagePlaybooks.riskDecision,
+      mitre: {
+        tactics: assessment.mitre.tactics,
+        techniques: assessment.mitre.techniques,
+        threats: assessment.mitre.threats
+      }
+    },
+    {
+      id: 'enforcement-outcome',
+      icon: '✅',
+      name: 'Enforcement & Monitoring',
+      actor: 'Control Outcome',
+      score: scoreWithComp(enabledState ? (selected.coverage >= 90 ? 92 : 72) : selected.state === 'report-only' ? 44 : 18, enforcementComp, 78),
+      summary: enabledState ? 'Policy actively blocks/challenges traffic according to control path.' : (selected.state === 'report-only' ? 'Policy is monitor-only (report-only).' : 'Policy disabled.'),
+      config: `Policy state: ${selected.state} · Gap score: ${assessment.score}`,
+      bestPractice: 'Move report-only controls to enforced mode after pilot validation; avoid long-lived disabled controls.',
+      gap: enabledState
+        ? 'Enforcement active.'
+        : (enforcementComp.status === 'compensated'
+          ? `This policy is not fully enforced, but overlapping enabled policies currently compensate. ${enforcementComp.residual}`
+          : 'Control is not fully enforced; outcome relies on monitoring only.'),
+      signals: [
+        { icon: '🚦', key: 'Enforcement State', value: selected.state, tone: signalTone(enabledState, selected.state === 'report-only') },
+        { icon: '📈', key: 'Coverage', value: `${selected.coverage}%`, tone: signalTone(selected.coverage >= 90, selected.coverage >= 70) },
+        { icon: '🧠', key: 'Gap Score', value: String(assessment.score), tone: signalTone(assessment.score < 25, assessment.score < 45) },
+        { icon: '🧩', key: 'Effective Coverage', value: compensationLabel(enforcementComp), tone: compensationTone(enforcementComp) }
+      ],
+      compensation: enforcementComp,
+      playbook: stagePlaybooks.enforcementOutcome,
+      mitre: {
+        tactics: ['Impact', 'Defense Evasion'],
+        techniques: ['T1562 Impair Defenses', 'T1070 Indicator Removal on Host'],
+        threats: ['Control bypass due to non-enforced policy state']
+      }
+    }
+  ];
+
+  const overall = Math.round(stages.reduce((sum, stage) => sum + stage.score, 0) / stages.length);
+  const policyOptions = filteredPolicies.map(p => `
+    <option value="${encodeURIComponent(p.name)}" ${p.name === selected.name ? 'selected' : ''}>${p.name}</option>
+  `).join('');
+  const stageWidthPx = 240;
+  const journeyWidth = container.clientWidth || window.innerWidth || 1200;
+  const connectorWidth = 30;
+  const itemGap = 10;
+  const perStageFootprint = stageWidthPx + connectorWidth + (itemGap * 2);
+  let stagesPerRow = Math.floor((journeyWidth + connectorWidth + (itemGap * 2)) / perStageFootprint);
+  if (!Number.isFinite(stagesPerRow) || stagesPerRow < 1) stagesPerRow = 1;
+  stagesPerRow = Math.min(stagesPerRow, stages.length);
+  const fullRowWidth = (stagesPerRow * stageWidthPx)
+    + (Math.max(0, stagesPerRow - 1) * connectorWidth)
+    + (Math.max(0, (stagesPerRow * 2) - 2) * itemGap);
+  const stageRows = [];
+  for (let i = 0; i < stages.length; i += stagesPerRow) {
+    stageRows.push(stages.slice(i, i + stagesPerRow));
+  }
+  policyJourneyModel = {
+    policyName: selected.name,
+    state: selected.state,
+    coverage: selected.coverage,
+    gapScore: assessment.score,
+    mitre: assessment.mitre,
+    recommendations: assessment.recommendations,
+    stages
+  };
 
   container.innerHTML = `
-    <div class="detail-section" style="margin-bottom:14px;">
-      <div class="detail-section-title">Current Selection</div>
-      <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:8px;">${selected.name}</div>
-      <div class="detail-row"><span class="label">State</span><span class="value"><span class="ca-status-badge ${selected.state === 'enabled' ? 'enabled' : selected.state === 'report-only' ? 'report-only' : 'disabled'}">${selected.state === 'report-only' ? 'Report Only' : selected.state.charAt(0).toUpperCase() + selected.state.slice(1)}</span></span></div>
-      <div class="detail-row"><span class="label">Coverage</span><span class="value" style="font-family:JetBrains Mono;">${selected.coverage}%</span></div>
-      <div class="detail-row"><span class="label">Gap Score</span><span class="value" style="font-family:JetBrains Mono;color:${healthTone};">${assessment.score}</span></div>
-    </div>
-    <div class="detail-section" style="margin-bottom:14px;">
-      <div class="detail-section-title">Primary Gaps</div>
-      ${
-        assessment.gaps.length
-          ? assessment.gaps.slice(0, 3).map(gap => `<div style="font-size:11px;color:var(--text-secondary);line-height:1.6;margin-bottom:6px;">• ${gap}</div>`).join('')
-          : '<div style="font-size:11px;color:var(--text-muted);">No material gaps identified.</div>'
-      }
-    </div>
-    <div class="detail-section" style="margin-bottom:14px;">
-      <div class="detail-section-title">Mapped MITRE Coverage</div>
-      <div class="detail-row"><span class="label">Tactics</span><span class="value">${assessment.mitre.tactics.join(', ') || 'Not mapped'}</span></div>
-      <div class="detail-row"><span class="label">Techniques</span><span class="value">${assessment.mitre.techniques.join(', ') || 'Not mapped'}</span></div>
-      <div class="detail-row"><span class="label">Threat Patterns</span><span class="value">${assessment.mitre.threats.join(', ') || 'Not mapped'}</span></div>
-    </div>
-    <div class="detail-section">
-      <div class="detail-section-title">Next Actions</div>
-      <div style="font-size:11px;color:var(--text-secondary);line-height:1.7;">
-        ${assessment.recommendations.map((action, idx) => `${idx + 1}. ${action}`).join('<br>')}
+    <div class="policy-journey-wrap">
+      <div class="policy-journey-overview">
+        <div class="policy-journey-overview-head">
+          <div class="policy-journey-controls">
+            <select class="policy-journey-select" onchange="selectPolicyFromJourney(this.value)" aria-label="Select policy for journey map">
+              ${policyOptions}
+            </select>
+            <div class="policy-journey-score">Journey Score ${overall} · Gap ${assessment.score}</div>
+          </div>
+        </div>
+        <div class="policy-journey-lanes">
+          ${laneDetails.map(lane => `
+            <div class="policy-lane-chip">
+              <div class="policy-lane-head"><span class="ic">${lane.icon}</span><span>${lane.name}</span></div>
+              <div class="policy-lane-options">${lane.options}</div>
+              <div class="policy-lane-status">${lane.status}</div>
+            </div>
+          `).join('')}
+        </div>
       </div>
-      <div style="margin-top:10px;">
+      <div class="policy-journey-stages" style="--journey-track-width:${fullRowWidth}px;">
+        ${stageRows.map((row, rowIdx) => {
+          const reverse = rowIdx % 2 === 1;
+          const displayRow = reverse ? [...row].reverse() : row;
+          const connectorClass = reverse ? 'policy-flow-link reverse' : 'policy-flow-link';
+          const connectorSvg = reverse
+            ? '<svg viewBox="0 0 30 16"><path d="M24 8 L2 8"/><circle cx="2" cy="8" r="2.5"/></svg>'
+            : '<svg viewBox="0 0 30 16"><path d="M2 8 L24 8"/><circle cx="24" cy="8" r="2.5"/></svg>';
+          const hasNextRow = rowIdx < stageRows.length - 1;
+          const rowDropClass = reverse ? 'policy-row-drop left' : 'policy-row-drop right';
+          const rowDropSvg = reverse
+            ? '<svg viewBox="0 0 18 26"><path d="M9 2 L9 22"/><circle cx="9" cy="22" r="2.5"/></svg>'
+            : '<svg viewBox="0 0 18 26"><path d="M9 2 L9 22"/><circle cx="9" cy="22" r="2.5"/></svg>';
+          return `
+            <div class="policy-journey-row ${reverse ? 'reverse' : ''}">
+              ${displayRow.map((stage, idx) => `
+                <div class="policy-journey-stage ${stageTone(stage.score)}" style="width:${stageWidthPx}px;min-width:${stageWidthPx}px;max-width:${stageWidthPx}px;" role="button" tabindex="0" onclick="openPolicyJourneyStageDetail('${stage.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openPolicyJourneyStageDetail('${stage.id}')}">
+                  <div class="policy-journey-stage-head">
+                    <div class="policy-journey-stage-name"><span class="policy-stage-title"><span class="policy-stage-icon">${stage.icon}</span><span>${stage.name}</span></span></div>
+                    <div class="policy-journey-stage-meta">${stage.score}/100 · ${stage.actor}</div>
+                  </div>
+                  <div class="policy-journey-stage-desc">${stage.summary}</div>
+                  <div class="policy-stage-signals">
+                    ${(stage.signals || []).map(s => `<div class="policy-stage-signal ${s.tone || ''}"><span class="k">${s.icon || '•'} ${s.key}</span><span class="v">${s.value}</span></div>`).join('')}
+                  </div>
+                </div>
+                ${idx < displayRow.length - 1 ? `<div class="${connectorClass}" aria-hidden="true">${connectorSvg}</div>` : ''}
+              `).join('')}
+            </div>
+            ${hasNextRow ? `<div class="${rowDropClass}" aria-hidden="true">${rowDropSvg}</div>` : ''}
+          `;
+        }).join('')}
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+        <div style="font-size:10px;color:var(--text-muted);">Click any stage for full control-path detail, best-practice checks, and ATT&amp;CK references.</div>
         <button class="card-action-btn" type="button" onclick="openCADetail('${selected.name.replace(/'/g, "\\'")}')">Open Full Policy Detail</button>
       </div>
     </div>
   `;
+}
+
+function openPolicyJourneyStageDetail(stageId) {
+  if (!policyJourneyModel || !Array.isArray(policyJourneyModel.stages)) return;
+  const stage = policyJourneyModel.stages.find(item => item.id === stageId);
+  if (!stage) return;
+  const fmtRefs = items => (Array.isArray(items) && items.length ? items.join(', ') : 'Not mapped');
+  const policyPath = `Entra admin center > Protection > Conditional Access > Policies > ${policyJourneyModel.policyName}`;
+
+  const overlay = document.getElementById('detailOverlay');
+  const title = document.getElementById('detailTitle');
+  const body = document.getElementById('detailBody');
+
+  const stageTone = stage.score >= 80 ? 'var(--status-compliant)' : stage.score >= 55 ? 'var(--severity-medium)' : 'var(--severity-critical)';
+  const refs = stage.mitre || { tactics: [], techniques: [], threats: [] };
+  const playbook = stage.playbook || null;
+  const comp = stage.compensation || { status: 'covered', label: 'Covered', residual: 'Control is directly enforced in this policy.', evidence: [] };
+  const compColor = comp.status === 'covered'
+    ? 'var(--status-compliant)'
+    : comp.status === 'compensated'
+      ? 'var(--severity-medium)'
+      : 'var(--severity-critical)';
+
+  title.textContent = `${policyJourneyModel.policyName} — ${stage.name}`;
+  body.innerHTML = `
+    <div class="detail-section">
+      <div class="detail-section-title">Journey Stage Score</div>
+      <div style="font-size:42px;font-weight:800;color:${stageTone};font-family:'JetBrains Mono';margin:6px 0;">${stage.score}</div>
+      <div style="font-size:12px;color:var(--text-secondary);">${stage.actor} validation point in the conditional access journey.</div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">Current Configuration Signal</div>
+      <div style="font-size:12px;color:var(--text-secondary);line-height:1.7;">${stage.config}</div>
+      <div style="margin-top:8px;font-size:12px;color:var(--text-secondary);line-height:1.7;">${stage.summary}</div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">Stage Elements</div>
+      ${
+        Array.isArray(stage.signals) && stage.signals.length
+          ? stage.signals.map(s => `<div class="detail-row"><span class="label">${s.icon || '•'} ${s.key}</span><span class="value" style="font-family:JetBrains Mono;">${s.value}</span></div>`).join('')
+          : '<div style="font-size:12px;color:var(--text-muted);">No stage element details available.</div>'
+      }
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">Best-Practice Reference</div>
+      <div style="font-size:12px;color:var(--text-secondary);line-height:1.7;">${stage.bestPractice}</div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">Detected Misconfiguration / Gap</div>
+      <div style="font-size:12px;color:var(--text-secondary);line-height:1.7;">${stage.gap}</div>
+    </div>
+    ${
+      playbook
+        ? `
+          <div class="detail-section">
+            <div class="detail-section-title">Stage Remediation Playbook</div>
+            <div class="detail-row"><span class="label">Where to Change</span><span class="value">${policyPath}</span></div>
+            <div class="detail-row"><span class="label">Control Area</span><span class="value">${playbook.controlArea}</span></div>
+            <div class="detail-row"><span class="label">Current Finding</span><span class="value">${playbook.status}</span></div>
+            <div class="detail-row"><span class="label">Target Configuration</span><span class="value">${playbook.targetConfig}</span></div>
+            <div style="margin-top:8px;font-size:12px;color:var(--text-secondary);line-height:1.7;">
+              <strong style="color:var(--text-primary);">Exact Change Steps</strong><br>
+              ${playbook.steps.map((step, idx) => `${idx + 1}. ${step}`).join('<br>')}
+            </div>
+            <div style="margin-top:8px;font-size:12px;color:var(--text-secondary);line-height:1.7;"><strong style="color:var(--text-primary);">Validation</strong>: ${playbook.validation}</div>
+            <div style="margin-top:8px;font-size:11px;color:var(--text-muted);font-family:'JetBrains Mono',monospace;background:var(--bg-elevated);padding:8px 10px;border-radius:6px;word-break:break-word;">API field check: ${playbook.apiField}</div>
+          </div>
+        `
+        : ''
+    }
+    <div class="detail-section">
+      <div class="detail-section-title">Effective Control Coverage</div>
+      <div style="font-size:22px;font-weight:800;color:${compColor};font-family:'JetBrains Mono';margin:4px 0 8px;">
+        ${comp.label || (comp.status === 'covered' ? 'Covered' : comp.status === 'compensated' ? 'Compensated' : 'Unmitigated Gap')}
+      </div>
+      <div style="font-size:12px;color:var(--text-secondary);line-height:1.7;">${comp.residual || 'No additional residual risk detail available.'}</div>
+      ${
+        Array.isArray(comp.evidence) && comp.evidence.length
+          ? `
+            <div style="margin-top:8px;font-size:12px;color:var(--text-secondary);line-height:1.7;"><strong style="color:var(--text-primary);">Compensating Policies</strong></div>
+            ${comp.evidence.map(item => `
+              <div class="detail-row">
+                <span class="label">${item.name}</span>
+                <span class="value">${item.state} · overlap ${item.overlap}%${Number.isFinite(item.contribution) ? ` · contribution ${item.contribution}%` : ''}</span>
+              </div>
+            `).join('')}
+          `
+          : '<div style="margin-top:8px;font-size:12px;color:var(--text-muted);">No compensating policy evidence found for this stage.</div>'
+      }
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">MITRE ATT&amp;CK References</div>
+      <div class="detail-row"><span class="label">Tactics</span><span class="value">${fmtRefs(refs.tactics)}</span></div>
+      <div class="detail-row"><span class="label">Techniques</span><span class="value">${fmtRefs(refs.techniques)}</span></div>
+      <div class="detail-row"><span class="label">Threat Patterns</span><span class="value">${fmtRefs(refs.threats)}</span></div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">Recommended Next Actions</div>
+      <div style="font-size:12px;color:var(--text-secondary);line-height:1.7;">
+        ${policyJourneyModel.recommendations.map((action, idx) => `${idx + 1}. ${action}`).join('<br>')}
+      </div>
+    </div>
+  `;
+
+  overlay.classList.add('visible');
 }
 
 function selectPolicyFocus(policyName) {
@@ -4325,6 +6359,17 @@ function selectPolicyFocus(policyName) {
   renderCAPolicies();
   renderPolicyGapInsights();
   renderPolicyMitreCoverage();
+}
+
+function selectPolicyFromJourney(encodedPolicyName) {
+  if (!encodedPolicyName) return;
+  const policyName = decodeURIComponent(encodedPolicyName);
+  selectPolicyFocus(policyName);
+}
+
+function openPolicyDetailFromList(policyName) {
+  selectPolicyFocus(policyName);
+  openCADetail(policyName);
 }
 
 function renderAppGrid() {
@@ -4336,7 +6381,7 @@ function renderAppGrid() {
 
   if (isList) {
     container.innerHTML = softwareInventory.map(app => `
-      <div class="app-item" onclick="openDetail('app-${app.name}')" style="display:flex;justify-content:space-between;gap:10px;align-items:center;">
+      <div class="app-item" onclick="openDetail('app:${encodeURIComponent(app.name)}')" style="display:flex;justify-content:space-between;gap:10px;align-items:center;">
         <div style="min-width:0;">
           <div class="app-name">${app.name}</div>
           <div class="app-vendor">${app.vendor} · v${app.version}</div>
@@ -4351,7 +6396,7 @@ function renderAppGrid() {
   }
 
   container.innerHTML = softwareInventory.map(app => `
-    <div class="app-item" onclick="openDetail('app-${app.name}')">
+    <div class="app-item" onclick="openDetail('app:${encodeURIComponent(app.name)}')">
       <div class="app-name">${app.name}</div>
       <div class="app-vendor">${app.vendor} · v${app.version}</div>
       <div class="app-stats">
@@ -4486,14 +6531,46 @@ function buildExposureTrendSeries(anchorScore) {
 }
 
 function getExposureTrendPoints() {
-  const fallbackRisk = devices.length
+  const filtered = getFilteredVulnerabilities();
+  const criticalCount = filtered.filter(v => getSeverityBucket(v) === 'critical').length;
+  const highCount = filtered.filter(v => getSeverityBucket(v) === 'high').length;
+  const exploitedCount = filtered.filter(v => v.exploited).length;
+  const avgCvss = filtered.length
+    ? filtered.reduce((sum, v) => sum + Number(v.cvss || 0), 0) / filtered.length
+    : 0;
+  const avgDeviceRisk = devices.length
     ? devices.reduce((sum, d) => sum + Number(d.riskScore || 0), 0) / devices.length
-    : 65;
-  const anchor = Number.isFinite(liveExposureScore) ? liveExposureScore : fallbackRisk;
+    : 45;
+  const modeledExposure = clampExposureScore(
+    24 +
+    (criticalCount * 2.1) +
+    (highCount * 1.2) +
+    (exploitedCount * 1.7) +
+    (avgCvss * 0.85) +
+    (avgDeviceRisk * 0.28)
+  );
+  const anchor = Number.isFinite(liveExposureScore) ? liveExposureScore : modeledExposure;
+  const signature = [
+    activeDataFilter,
+    activeSeverityFilter,
+    filtered.length,
+    criticalCount,
+    highCount,
+    exploitedCount,
+    Number(avgCvss).toFixed(2),
+    Number(avgDeviceRisk).toFixed(2),
+    Number(anchor).toFixed(2)
+  ].join('|');
 
-  if (!exposureTrendPoints.length || exposureTrendAnchorScore === null || Math.abs(anchor - exposureTrendAnchorScore) > 0.05) {
+  if (
+    !exposureTrendPoints.length ||
+    exposureTrendAnchorScore === null ||
+    Math.abs(anchor - exposureTrendAnchorScore) > 0.05 ||
+    signature !== exposureTrendSignature
+  ) {
     exposureTrendPoints = buildExposureTrendSeries(anchor);
     exposureTrendAnchorScore = anchor;
+    exposureTrendSignature = signature;
   }
 
   return exposureTrendPoints;
@@ -5269,6 +7346,23 @@ function openDetail(type) {
   const body = document.getElementById('detailBody');
 
   let html = '';
+  const filteredVulns = getFilteredVulnerabilities();
+  const criticalVulns = filteredVulns.filter(v => getSeverityBucket(v) === 'critical');
+  const highVulns = filteredVulns.filter(v => getSeverityBucket(v) === 'high');
+  const exploitedVulns = filteredVulns.filter(v => v.exploited);
+  const totalDevices = devices.length;
+  const healthyDevices = devices.filter(d => String(d.health).toLowerCase() === 'healthy').length;
+  const warningDevices = devices.filter(d => String(d.health).toLowerCase() === 'warning').length;
+  const criticalDevices = devices.filter(d => String(d.health).toLowerCase() === 'critical').length;
+  const compliancePct = totalDevices ? Math.round((healthyDevices / totalDevices) * 100) : 0;
+  const enabledPolicies = caPolicies.filter(p => p.state === 'enabled');
+  const reportOnlyPolicies = caPolicies.filter(p => p.state === 'report-only');
+  const lowCoveragePolicies = caPolicies.filter(p => Number(p.coverage || 0) < 80);
+  const likelyCurrentDefender = devices.filter(d => String(d.defenderVer).includes('24110') || String(d.defenderVer).includes('24112')).length;
+  const defenderCoverage = totalDevices ? Math.round((likelyCurrentDefender / totalDevices) * 100) : 0;
+  const outdatedDefenderDevices = devices
+    .filter(d => !String(d.defenderVer).includes('24110') && !String(d.defenderVer).includes('24112'))
+    .sort((a, b) => Number(b.riskScore || 0) - Number(a.riskScore || 0));
 
   if (type === 'exposure') {
     title.textContent = 'Exposure Score Breakdown';
@@ -5366,6 +7460,378 @@ function openDetail(type) {
         }
       </div>
     `;
+  } else if (type === 'vulnCritical' || type === 'vulnHigh' || type === 'vulnMedium' || type === 'vulnLow') {
+    const bucketMap = {
+      vulnCritical: 'critical',
+      vulnHigh: 'high',
+      vulnMedium: 'medium',
+      vulnLow: 'low'
+    };
+    const labelMap = {
+      critical: 'Critical',
+      high: 'High',
+      medium: 'Medium',
+      low: 'Low'
+    };
+    const colorMap = {
+      critical: 'var(--severity-critical)',
+      high: 'var(--severity-high)',
+      medium: 'var(--severity-medium)',
+      low: 'var(--severity-low)'
+    };
+
+    const bucket = bucketMap[type];
+    const severityLabel = labelMap[bucket];
+    const severityColor = colorMap[bucket];
+    const matching = filteredVulns
+      .filter(v => getSeverityBucket(v) === bucket)
+      .sort((a, b) => Number(b.cvss || 0) - Number(a.cvss || 0) || Number(b.affectedDevices || 0) - Number(a.affectedDevices || 0));
+    const exploited = matching.filter(v => v.exploited).length;
+    const totalAffected = matching.reduce((sum, v) => sum + Number(v.affectedDevices || 0), 0);
+    const avgCvss = matching.length
+      ? (matching.reduce((sum, v) => sum + Number(v.cvss || 0), 0) / matching.length).toFixed(1)
+      : '0.0';
+
+    title.textContent = `${severityLabel} Vulnerability Detail`;
+    html = `
+      <div class="detail-section">
+        <div class="detail-section-title">Current Snapshot</div>
+        <div style="font-size:42px;font-weight:800;color:${severityColor};font-family:'JetBrains Mono';margin:6px 0;">${matching.length}</div>
+        <div style="font-size:12px;color:var(--text-secondary);">Count in current filter scope (${activeDataFilter.toUpperCase()} · ${activeSeverityFilter.toUpperCase()})</div>
+        <div class="detail-row"><span class="label">Actively exploited</span><span class="value" style="font-family:JetBrains Mono;color:var(--severity-critical);">${exploited}</span></div>
+        <div class="detail-row"><span class="label">Total affected devices</span><span class="value" style="font-family:JetBrains Mono;">${totalAffected.toLocaleString()}</span></div>
+        <div class="detail-row"><span class="label">Average CVSS</span><span class="value" style="font-family:JetBrains Mono;">${avgCvss}</span></div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Top ${severityLabel} Findings</div>
+        ${
+          matching.length
+            ? matching.slice(0, 8).map(v => `
+                <div style="padding:10px 12px;border:1px solid var(--border-subtle);border-radius:8px;margin-bottom:8px;background:var(--bg-elevated);cursor:pointer;" onclick="openVulnDetail('${encodeURIComponent(v.id)}')">
+                  <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:5px;">
+                    <div style="font-size:12px;font-weight:700;color:var(--text-primary);font-family:'JetBrains Mono',monospace;">${v.id}</div>
+                    <div style="font-size:10px;color:${v.exploited ? 'var(--severity-critical)' : 'var(--text-muted)'};font-family:'JetBrains Mono',monospace;font-weight:700;">CVSS ${Number(v.cvss || 0).toFixed(1)}${v.exploited ? ' · Exploited' : ''}</div>
+                  </div>
+                  <div style="font-size:11px;color:var(--text-secondary);margin-bottom:4px;">${v.title}</div>
+                  <div style="font-size:10px;color:var(--text-muted);">${Number(v.affectedDevices || 0).toLocaleString()} affected devices · ${v.software || 'Software not specified'}</div>
+                </div>
+              `).join('')
+            : `<div style="font-size:12px;color:var(--text-muted);">No ${severityLabel.toLowerCase()} vulnerabilities match the current filters.</div>`
+        }
+      </div>
+    `;
+  } else if (type === 'criticalVulns') {
+    title.textContent = 'Critical Vulnerability Detail';
+    html = `
+      <div class="detail-section">
+        <div class="detail-section-title">Current Snapshot</div>
+        <div class="detail-row"><span class="label">Critical</span><span class="value" style="font-family:JetBrains Mono;color:var(--severity-critical);">${criticalVulns.length}</span></div>
+        <div class="detail-row"><span class="label">High</span><span class="value" style="font-family:JetBrains Mono;color:var(--severity-high);">${highVulns.length}</span></div>
+        <div class="detail-row"><span class="label">Actively exploited</span><span class="value" style="font-family:JetBrains Mono;color:var(--severity-critical);">${exploitedVulns.length}</span></div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Top Critical CVEs</div>
+        ${
+          criticalVulns.length
+            ? criticalVulns
+                .sort((a, b) => Number(b.cvss || 0) - Number(a.cvss || 0))
+                .slice(0, 6)
+                .map(v => `<div class="detail-row"><span class="label">${v.id}</span><span class="value" style="font-family:JetBrains Mono;">CVSS ${Number(v.cvss || 0).toFixed(1)} · ${Number(v.affectedDevices || 0)} affected</span></div>`)
+                .join('')
+            : '<div style="font-size:12px;color:var(--text-muted);">No critical vulnerabilities in the current filter view.</div>'
+        }
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Priority Actions</div>
+        <div style="font-size:12px;color:var(--text-secondary);line-height:1.7;">
+          1. Patch exploited critical CVEs first and validate closure with rescans.<br>
+          2. Prioritize critical CVEs affecting internet-facing and privileged devices.<br>
+          3. Track exception approvals and SLA breaches for overdue critical items.
+        </div>
+      </div>
+    `;
+  } else if (type === 'deviceCompliance') {
+    title.textContent = 'Device Compliance Detail';
+    html = `
+      <div class="detail-section">
+        <div class="detail-section-title">Compliance Snapshot</div>
+        <div style="font-size:48px;font-weight:800;color:${compliancePct >= 90 ? 'var(--status-compliant)' : compliancePct >= 75 ? 'var(--severity-medium)' : 'var(--severity-high)'};font-family:'JetBrains Mono';margin:8px 0;">${compliancePct}%</div>
+        <div class="detail-row"><span class="label">Healthy</span><span class="value" style="font-family:JetBrains Mono;color:var(--status-compliant);">${healthyDevices}</span></div>
+        <div class="detail-row"><span class="label">Warning</span><span class="value" style="font-family:JetBrains Mono;color:var(--severity-medium);">${warningDevices}</span></div>
+        <div class="detail-row"><span class="label">Critical</span><span class="value" style="font-family:JetBrains Mono;color:var(--severity-critical);">${criticalDevices}</span></div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Top Non-compliant Devices</div>
+        ${
+          devices
+            .filter(d => String(d.health).toLowerCase() !== 'healthy')
+            .sort((a, b) => Number(b.riskScore || 0) - Number(a.riskScore || 0))
+            .slice(0, 6)
+            .map(d => `<div class="detail-row"><span class="label">${d.name}</span><span class="value" style="font-family:JetBrains Mono;">${d.health} · Risk ${d.riskScore}</span></div>`)
+            .join('') || '<div style="font-size:12px;color:var(--text-muted);">No non-compliant devices in current sample.</div>'
+        }
+      </div>
+    `;
+  } else if (type === 'totalDevices') {
+    title.textContent = 'Managed Device Estate';
+    const byType = devices.reduce((acc, d) => {
+      const key = d.type || 'Other';
+      acc[key] = (acc[key] || 0) + 1;
+      return acc;
+    }, {});
+    const byOs = devices.reduce((acc, d) => {
+      const key = d.os || 'Unknown';
+      acc[key] = (acc[key] || 0) + 1;
+      return acc;
+    }, {});
+    html = `
+      <div class="detail-section">
+        <div class="detail-section-title">Estate Summary</div>
+        <div class="detail-row"><span class="label">Total managed devices</span><span class="value" style="font-family:JetBrains Mono;">${totalDevices}</span></div>
+        ${Object.entries(byType)
+          .sort((a, b) => b[1] - a[1])
+          .map(([k, v]) => `<div class="detail-row"><span class="label">${k}</span><span class="value" style="font-family:JetBrains Mono;">${v}</span></div>`)
+          .join('')}
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Top Operating Systems</div>
+        ${Object.entries(byOs)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 8)
+          .map(([k, v]) => `<div class="detail-row"><span class="label">${k}</span><span class="value" style="font-family:JetBrains Mono;">${v}</span></div>`)
+          .join('')}
+      </div>
+    `;
+  } else if (type === 'caPolicies') {
+    title.textContent = 'Conditional Access Policy Coverage';
+    html = `
+      <div class="detail-section">
+        <div class="detail-section-title">Policy State Summary</div>
+        <div class="detail-row"><span class="label">Enabled</span><span class="value" style="font-family:JetBrains Mono;color:var(--status-compliant);">${enabledPolicies.length}</span></div>
+        <div class="detail-row"><span class="label">Report-only</span><span class="value" style="font-family:JetBrains Mono;color:var(--severity-medium);">${reportOnlyPolicies.length}</span></div>
+        <div class="detail-row"><span class="label">Low coverage (&lt;80%)</span><span class="value" style="font-family:JetBrains Mono;color:var(--severity-high);">${lowCoveragePolicies.length}</span></div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Policies Requiring Attention</div>
+        ${
+          caPolicies
+            .map(policy => ({ policy, assessment: assessPolicyGap(policy) }))
+            .sort((a, b) => b.assessment.score - a.assessment.score)
+            .slice(0, 6)
+            .map(item => `<div class="detail-row"><span class="label">${item.policy.name}</span><span class="value" style="font-family:JetBrains Mono;">${item.policy.coverage}% · Gap ${item.assessment.score}</span></div>`)
+            .join('')
+        }
+      </div>
+    `;
+  } else if (type === 'defenderCoverage') {
+    title.textContent = 'Defender Coverage Detail';
+    html = `
+      <div class="detail-section">
+        <div class="detail-section-title">Coverage Snapshot</div>
+        <div style="font-size:48px;font-weight:800;color:${defenderCoverage >= 90 ? 'var(--status-compliant)' : defenderCoverage >= 75 ? 'var(--severity-medium)' : 'var(--severity-high)'};font-family:'JetBrains Mono';margin:8px 0;">${defenderCoverage}%</div>
+        <div class="detail-row"><span class="label">Current build coverage</span><span class="value" style="font-family:JetBrains Mono;">${likelyCurrentDefender}/${totalDevices}</span></div>
+        <div class="detail-row"><span class="label">Outdated endpoints</span><span class="value" style="font-family:JetBrains Mono;color:var(--severity-high);">${outdatedDefenderDevices.length}</span></div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Highest-Risk Outdated Endpoints</div>
+        ${
+          outdatedDefenderDevices.length
+            ? outdatedDefenderDevices
+                .slice(0, 6)
+                .map(d => `<div class="detail-row"><span class="label">${d.name}</span><span class="value" style="font-family:JetBrains Mono;">${d.defenderVer} · Risk ${d.riskScore}</span></div>`)
+                .join('')
+            : '<div style="font-size:12px;color:var(--text-muted);">No outdated endpoints detected.</div>'
+        }
+      </div>
+    `;
+  } else if (type === 'defenderVersionHealth') {
+    const versionCounts = {};
+    devices.forEach(d => {
+      const key = String(d.defenderVer || 'Unknown');
+      versionCounts[key] = (versionCounts[key] || 0) + 1;
+    });
+    const rows = Object.entries(versionCounts)
+      .map(([version, count]) => ({ version, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 8);
+    const outdated = devices
+      .filter(d => !String(d.defenderVer).includes('24110') && !String(d.defenderVer).includes('24112'))
+      .sort((a, b) => Number(b.riskScore || 0) - Number(a.riskScore || 0))
+      .slice(0, 8);
+    title.textContent = 'Defender Version Health';
+    html = `
+      <div class="detail-section">
+        <div class="detail-section-title">Current Build Coverage</div>
+        <div style="font-size:42px;font-weight:800;color:${defenderCoverage >= 90 ? 'var(--status-compliant)' : defenderCoverage >= 75 ? 'var(--severity-medium)' : 'var(--severity-high)'};font-family:'JetBrains Mono';margin:6px 0;">${defenderCoverage}%</div>
+        <div class="detail-row"><span class="label">Current build devices</span><span class="value" style="font-family:JetBrains Mono;">${likelyCurrentDefender}/${totalDevices}</span></div>
+        <div class="detail-row"><span class="label">Outdated devices</span><span class="value" style="font-family:JetBrains Mono;color:var(--severity-high);">${Math.max(0, totalDevices - likelyCurrentDefender)}</span></div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Version Distribution</div>
+        ${
+          rows.length
+            ? rows.map(item => `<div class="detail-row"><span class="label">${item.version}</span><span class="value" style="font-family:JetBrains Mono;">${item.count}</span></div>`).join('')
+            : '<div style="font-size:12px;color:var(--text-muted);">No version data available.</div>'
+        }
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Highest-Risk Outdated Devices</div>
+        ${
+          outdated.length
+            ? outdated.map(d => `<div class="detail-row"><span class="label">${d.name}</span><span class="value" style="font-family:JetBrains Mono;">${d.defenderVer} · Risk ${d.riskScore}</span></div>`).join('')
+            : '<div style="font-size:12px;color:var(--text-muted);">All devices are on current builds.</div>'
+        }
+      </div>
+    `;
+  } else if (type.startsWith('os-')) {
+    const osLabel = type.slice(3);
+    const norm = value => String(value || '').toLowerCase().replace(/\s+/g, ' ').trim();
+    const osNorm = norm(osLabel);
+    const matchingDevices = devices.filter(device => norm(device.os) === osNorm || norm(device.os).includes(osNorm) || osNorm.includes(norm(device.os)));
+    const osDeviceCount = matchingDevices.length;
+    const health = { healthy: 0, warning: 0, critical: 0 };
+    matchingDevices.forEach(device => {
+      const key = String(device.health || '').toLowerCase();
+      if (health[key] !== undefined) health[key] += 1;
+    });
+    const avgRisk = osDeviceCount
+      ? (matchingDevices.reduce((sum, device) => sum + Number(device.riskScore || 0), 0) / osDeviceCount).toFixed(1)
+      : '0.0';
+    const totalVulns = matchingDevices.reduce((sum, device) => sum + Number(device.vulns || 0), 0);
+    const staleTelemetry = matchingDevices.filter(device => {
+      const seen = new Date(device.lastSeen).getTime();
+      return Number.isFinite(seen) ? (Date.now() - seen) > (24 * 60 * 60 * 1000) : false;
+    }).length;
+    const outdatedDefender = matchingDevices.filter(device => {
+      const ver = String(device.defenderVer || '');
+      return !ver.includes('24110') && !ver.includes('24112');
+    }).length;
+
+    const mappedVulnMap = new Map();
+    matchingDevices.forEach(device => {
+      mapVulnerabilitiesForDevice(device).forEach(vuln => {
+        if (!mappedVulnMap.has(vuln.id)) mappedVulnMap.set(vuln.id, vuln);
+      });
+    });
+    const relatedVulns = Array.from(mappedVulnMap.values())
+      .sort((a, b) => {
+        if (a.exploited !== b.exploited) return a.exploited ? -1 : 1;
+        return Number(b.cvss || 0) - Number(a.cvss || 0);
+      })
+      .slice(0, 8);
+
+    const topImpactedDevices = matchingDevices
+      .filter(device => Number(device.vulns || 0) > 0)
+      .sort((a, b) => Number(b.riskScore || 0) - Number(a.riskScore || 0) || Number(b.vulns || 0) - Number(a.vulns || 0))
+      .slice(0, 10);
+
+    title.textContent = `${osLabel} — OS Risk & Exposure`;
+    html = `
+      <div class="detail-section">
+        <div class="detail-section-title">Coverage</div>
+        <div style="font-size:40px;font-weight:800;color:var(--chart-3);font-family:'JetBrains Mono';margin:6px 0;">${osDeviceCount}</div>
+        <div style="font-size:12px;color:var(--text-secondary);">${totalDevices ? ((osDeviceCount / totalDevices) * 100).toFixed(1) : '0.0'}% of managed devices · ${totalVulns} total open vulnerabilities</div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Security Posture</div>
+        <div class="detail-row"><span class="label">Healthy</span><span class="value" style="font-family:JetBrains Mono;color:var(--status-compliant);">${health.healthy}</span></div>
+        <div class="detail-row"><span class="label">Warning</span><span class="value" style="font-family:JetBrains Mono;color:var(--severity-medium);">${health.warning}</span></div>
+        <div class="detail-row"><span class="label">Critical</span><span class="value" style="font-family:JetBrains Mono;color:var(--severity-critical);">${health.critical}</span></div>
+        <div class="detail-row"><span class="label">Average Risk Score</span><span class="value" style="font-family:JetBrains Mono;">${avgRisk}</span></div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Telemetry & Agent Health</div>
+        <div class="detail-row"><span class="label">Outdated Defender versions</span><span class="value" style="font-family:JetBrains Mono;${outdatedDefender ? 'color:var(--severity-high);' : 'color:var(--status-compliant);'}">${outdatedDefender}</span></div>
+        <div class="detail-row"><span class="label">Stale telemetry &gt;24h</span><span class="value" style="font-family:JetBrains Mono;${staleTelemetry ? 'color:var(--severity-high);' : 'color:var(--status-compliant);'}">${staleTelemetry}</span></div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Top Related Vulnerabilities & KB Updates</div>
+        ${
+          relatedVulns.length
+            ? relatedVulns.map(v => `
+                <div style="padding:10px 12px;border:1px solid var(--border-subtle);border-radius:8px;margin-bottom:8px;background:var(--bg-elevated);">
+                  <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:5px;">
+                    <div style="font-size:12px;font-weight:700;color:var(--text-primary);font-family:'JetBrains Mono',monospace;">${v.id}</div>
+                    <div style="font-size:10px;color:${v.exploited ? 'var(--severity-critical)' : 'var(--text-muted)'};font-family:'JetBrains Mono',monospace;font-weight:700;">CVSS ${Number(v.cvss || 0).toFixed(1)}${v.exploited ? ' · Exploited' : ''}</div>
+                  </div>
+                  <div style="font-size:11px;color:var(--text-secondary);margin-bottom:6px;">${v.title}</div>
+                  <div style="font-size:10px;color:var(--text-muted);line-height:1.5;">
+                    ${(KB_PATCH_MAP[v.id] && KB_PATCH_MAP[v.id].length)
+                      ? `KB/Update: ${KB_PATCH_MAP[v.id].map(k => `${k.kb} (${k.target})`).join(' · ')}`
+                      : 'KB/Update: Validate in Microsoft Security Update Guide'}
+                  </div>
+                </div>
+              `).join('')
+            : '<div style="font-size:12px;color:var(--text-muted);">No mapped vulnerabilities for this OS group in current sample data.</div>'
+        }
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Highest-Risk Devices in this OS Group</div>
+        ${
+          topImpactedDevices.length
+            ? topImpactedDevices.map(device => `
+                <div style="padding:8px 10px;border:1px solid var(--border-subtle);border-radius:7px;background:var(--bg-elevated);margin-bottom:6px;font-size:11px;color:var(--text-secondary);display:flex;justify-content:space-between;gap:8px;">
+                  <span style="font-family:'JetBrains Mono',monospace;color:var(--text-primary);font-weight:700;">${device.name}</span>
+                  <span>${device.location} · Risk ${device.riskScore} · ${device.vulns} vuln(s)</span>
+                </div>
+              `).join('')
+            : '<div style="font-size:12px;color:var(--text-muted);">No impacted devices in this OS group based on current sample dataset.</div>'
+        }
+      </div>
+    `;
+  } else if (type.startsWith('app:') || type.startsWith('app-')) {
+    const appName = type.startsWith('app:')
+      ? decodeURIComponent(type.slice(4))
+      : type.slice(4);
+    const appNorm = String(appName || '').toLowerCase().trim();
+    const app = softwareInventory.find(item => String(item.name || '').toLowerCase().trim() === appNorm)
+      || softwareInventory.find(item => String(item.name || '').toLowerCase().includes(appNorm))
+      || softwareInventory.find(item => appNorm.includes(String(item.name || '').toLowerCase()));
+    const relatedVulns = getFilteredVulnerabilities()
+      .filter(v => {
+        const txt = `${v.title || ''} ${v.software || ''}`.toLowerCase();
+        return appNorm && txt.includes(appNorm);
+      })
+      .sort((a, b) => Number(b.cvss || 0) - Number(a.cvss || 0))
+      .slice(0, 10);
+    const exploitedCount = relatedVulns.filter(v => v.exploited).length;
+    const avgCvss = relatedVulns.length
+      ? (relatedVulns.reduce((sum, v) => sum + Number(v.cvss || 0), 0) / relatedVulns.length).toFixed(1)
+      : '0.0';
+
+    title.textContent = `${appName} — Software Risk Detail`;
+    html = `
+      <div class="detail-section">
+        <div class="detail-section-title">Inventory Snapshot</div>
+        <div class="detail-row"><span class="label">Software</span><span class="value" style="font-family:JetBrains Mono;">${appName}</span></div>
+        <div class="detail-row"><span class="label">Vendor</span><span class="value">${app?.vendor || 'Unknown'}</span></div>
+        <div class="detail-row"><span class="label">Installed devices</span><span class="value" style="font-family:JetBrains Mono;">${Number(app?.devices || 0).toLocaleString()}</span></div>
+        <div class="detail-row"><span class="label">Known vulnerabilities</span><span class="value" style="font-family:JetBrains Mono;color:${Number(app?.vulns || 0) >= 10 ? 'var(--severity-high)' : 'var(--text-primary)'};">${Number(app?.vulns || 0).toLocaleString()}</span></div>
+        <div class="detail-row"><span class="label">Version</span><span class="value" style="font-family:JetBrains Mono;">${app?.version || 'n/a'}</span></div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Related CVEs (Current Filter Scope)</div>
+        <div class="detail-row"><span class="label">Matched findings</span><span class="value" style="font-family:JetBrains Mono;">${relatedVulns.length}</span></div>
+        <div class="detail-row"><span class="label">Actively exploited</span><span class="value" style="font-family:JetBrains Mono;color:var(--severity-critical);">${exploitedCount}</span></div>
+        <div class="detail-row"><span class="label">Average CVSS</span><span class="value" style="font-family:JetBrains Mono;">${avgCvss}</span></div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Top Related Vulnerabilities</div>
+        ${
+          relatedVulns.length
+            ? relatedVulns.map(v => `
+                <div style="padding:10px 12px;border:1px solid var(--border-subtle);border-radius:8px;margin-bottom:8px;background:var(--bg-elevated);cursor:pointer;" onclick="openVulnDetail('${encodeURIComponent(v.id)}')">
+                  <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:5px;">
+                    <div style="font-size:12px;font-weight:700;color:var(--text-primary);font-family:'JetBrains Mono',monospace;">${v.id}</div>
+                    <div style="font-size:10px;color:${v.exploited ? 'var(--severity-critical)' : 'var(--text-muted)'};font-family:'JetBrains Mono',monospace;font-weight:700;">CVSS ${Number(v.cvss || 0).toFixed(1)}${v.exploited ? ' · Exploited' : ''}</div>
+                  </div>
+                  <div style="font-size:11px;color:var(--text-secondary);">${v.title}</div>
+                </div>
+              `).join('')
+            : '<div style="font-size:12px;color:var(--text-muted);">No CVEs currently mapped for this software in the active filters.</div>'
+        }
+      </div>
+    `;
   } else {
     title.textContent = type;
     html = `<div class="detail-section">
@@ -5382,7 +7848,8 @@ function openDetail(type) {
 }
 
 function openVulnDetail(cveId) {
-  const vuln = vulnerabilities.find(v => v.id === cveId);
+  const decodedId = decodeUriComponentSafe(cveId);
+  const vuln = vulnerabilities.find(v => v.id === decodedId);
   if (!vuln) return;
   const sevClass = getSeverityBucket(vuln);
   const sevLabel = getSeverityLabel(sevClass);
@@ -5584,7 +8051,8 @@ function openRemediationDetail(cveId) {
 }
 
 function openDeviceDetail(deviceName) {
-  const device = devices.find(d => d.name === deviceName);
+  const decodedName = decodeUriComponentSafe(deviceName);
+  const device = devices.find(d => d.name === decodedName);
   if (!device) return;
 
   const overlay = document.getElementById('detailOverlay');
@@ -5739,6 +8207,61 @@ function openPolicyGapBucketDetail(bucket) {
   overlay.classList.add('visible');
 }
 
+function openPolicyOverlapDetail(pairId) {
+  if (!pairId) return;
+  const overlap = buildPolicyOverlapInsights(getFilteredPolicies());
+  const target = overlap.pairs.find(item => item.id === pairId);
+  if (!target) return;
+
+  const overlay = document.getElementById('detailOverlay');
+  const title = document.getElementById('detailTitle');
+  const body = document.getElementById('detailBody');
+  const label = overlapClassLabel(target.classification);
+  const pillColor = target.classification === 'exact'
+    ? 'var(--severity-critical)'
+    : target.classification === 'conflict'
+      ? 'var(--severity-high)'
+      : 'var(--severity-medium)';
+
+  title.textContent = `Policy Overlap — ${target.a.name} vs ${target.b.name}`;
+  body.innerHTML = `
+    <div class="detail-section">
+      <div class="detail-section-title">Overlap Classification</div>
+      <div style="font-size:32px;font-weight:800;color:${pillColor};font-family:'JetBrains Mono';margin:6px 0;">${target.overlapScore}%</div>
+      <div style="font-size:12px;color:var(--text-secondary);line-height:1.7;">${label}: ${target.reasons[0] || 'Control overlap detected.'}</div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">Similarity Breakdown</div>
+      <div class="detail-row"><span class="label">Cloud App Scope</span><span class="value">${target.metrics.appsSim}%</span></div>
+      <div class="detail-row"><span class="label">Conditions</span><span class="value">${target.metrics.conditionSim}%</span></div>
+      <div class="detail-row"><span class="label">Grant Controls</span><span class="value">${target.metrics.grantSim}%</span></div>
+      <div class="detail-row"><span class="label">Session Controls</span><span class="value">${target.metrics.sessionSim}%</span></div>
+      <div class="detail-row"><span class="label">Coverage Similarity</span><span class="value">${target.metrics.coverageSim}%</span></div>
+      <div class="detail-row"><span class="label">Policy A State</span><span class="value">${target.a.state}</span></div>
+      <div class="detail-row"><span class="label">Policy B State</span><span class="value">${target.b.state}</span></div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">Policies Compared</div>
+      <div class="detail-row"><span class="label">${target.a.name}</span><span class="value">${target.a.apps} · ${target.a.conditions}</span></div>
+      <div class="detail-row"><span class="label">${target.b.name}</span><span class="value">${target.b.apps} · ${target.b.conditions}</span></div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">Recommended Remediation</div>
+      <div style="font-size:12px;color:var(--text-secondary);line-height:1.75;">
+        ${target.actions.map((step, idx) => `${idx + 1}. ${step}`).join('<br>')}
+      </div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">Change Control Path</div>
+      <div style="font-size:12px;color:var(--text-secondary);line-height:1.7;">
+        Entra admin center &gt; Protection &gt; Conditional Access &gt; Policies. Normalize duplicated controls into a baseline policy, then keep narrowly scoped exception policies only where justified.
+      </div>
+    </div>
+  `;
+
+  overlay.classList.add('visible');
+}
+
 function closeDetail(event) {
   if (event && event.target !== event.currentTarget) return;
   document.getElementById('detailOverlay').classList.remove('visible');
@@ -5774,6 +8297,84 @@ document.querySelectorAll('.filter-chip[data-policy-filter]').forEach(chip => {
   });
 });
 
+document.querySelectorAll('.filter-chip[data-comp-strictness]').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('.filter-chip[data-comp-strictness]').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    compensationStrictness = chip.dataset.compStrictness || 'standard';
+    renderPolicyGapInsights();
+    renderPolicyMitreCoverage();
+  });
+});
+
+const customizeMenuBtn = document.getElementById('customizeMenuBtn');
+const customizeDropdown = document.getElementById('customizeDropdown');
+
+if (customizeMenuBtn && customizeDropdown) {
+  customizeMenuBtn.addEventListener('click', (event) => {
+    event.stopPropagation();
+    const open = customizeDropdown.classList.toggle('open');
+    customizeMenuBtn.classList.toggle('active', open);
+    customizeMenuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+
+  customizeDropdown.addEventListener('click', (event) => {
+    event.stopPropagation();
+  });
+
+  document.addEventListener('click', () => {
+    customizeDropdown.classList.remove('open');
+    customizeMenuBtn.classList.remove('active');
+    customizeMenuBtn.setAttribute('aria-expanded', 'false');
+  });
+}
+
+document.querySelectorAll('.customize-option input[data-ui-option]').forEach(input => {
+  input.addEventListener('change', () => {
+    const option = input.dataset.uiOption;
+    if (option === 'toprow') {
+      uiShowTopRow = input.checked;
+    } else {
+      if (input.checked) {
+        uiHiddenViews.delete(option);
+      } else {
+        const visibleCount = document.querySelectorAll('.topnav-tab[data-view]').length - (uiHiddenViews.size + 1);
+        if (visibleCount < 1) {
+          input.checked = true;
+          return;
+        }
+        uiHiddenViews.add(option);
+      }
+    }
+    applyUiPreferences();
+    saveUiPreferences();
+  });
+});
+
+const nightModeBtn = document.getElementById('nightModeBtn');
+if (nightModeBtn) {
+  nightModeBtn.addEventListener('click', () => {
+    uiTheme = uiTheme === 'dark-mode' ? 'light' : 'dark-mode';
+    applyUiTheme();
+    saveUiPreferences();
+  });
+}
+
+const mitreViewCoverageBtn = document.getElementById('mitreViewCoverageBtn');
+const mitreViewHeatmapBtn = document.getElementById('mitreViewHeatmapBtn');
+if (mitreViewCoverageBtn && mitreViewHeatmapBtn) {
+  mitreViewCoverageBtn.addEventListener('click', () => {
+    standardsMitreView = 'coverage';
+    applyStandardsMitreView();
+    saveUiPreferences();
+  });
+  mitreViewHeatmapBtn.addEventListener('click', () => {
+    standardsMitreView = 'heatmap';
+    applyStandardsMitreView();
+    saveUiPreferences();
+  });
+}
+
 // ===== VIEW SWITCHING =====
 function applyView(view) {
   const grid = document.querySelector('.dashboard-grid');
@@ -5801,6 +8402,13 @@ function switchView(view, el) {
   document.querySelectorAll('.topnav-tab').forEach(t => t.classList.remove('active'));
   if (el) el.classList.add('active');
   applyView(view);
+  if (view === 'policies') {
+    requestAnimationFrame(() => {
+      renderCAPolicies();
+      renderPolicyGapInsights();
+      renderPolicyMitreCoverage();
+    });
+  }
 }
 
 // ===== CONNECT TENANT =====
@@ -5922,6 +8530,11 @@ async function attemptConnect() {
   const clientId = document.getElementById('clientIdInput').value.trim();
   const status = document.getElementById('connectStatus');
 
+  if (authInProgress) {
+    if (status) status.innerHTML = '<span style="color:var(--text-secondary);">Authentication already in progress...</span>';
+    return;
+  }
+
   if (!tenantId || !clientId) {
     status.innerHTML = '<span style="color:var(--severity-high);">Please enter both Tenant ID and Client ID.</span>';
     return;
@@ -5935,13 +8548,14 @@ async function attemptConnect() {
   }
 
   status.innerHTML = '<span style="color:var(--text-secondary);">Authenticating with Microsoft...</span>';
+  setAuthBanner('', false);
+  authInProgress = true;
 
   try {
     const app = await getOrCreateMsalInstance(tenantId, clientId);
 
     const loginResponse = await app.loginPopup({
-      scopes: GRAPH_CONNECT_SCOPES,
-      prompt: 'select_account'
+      scopes: GRAPH_CONNECT_SCOPES
     });
 
     const account = loginResponse.account || app.getActiveAccount() || app.getAllAccounts()[0];
@@ -5975,14 +8589,18 @@ async function attemptConnect() {
     const defenderExpiresOn = defenderTokenResponse && defenderTokenResponse.expiresOn
       ? new Date(defenderTokenResponse.expiresOn).toLocaleString()
       : 'n/a';
-    const loadWarnings = loaded.errors.length ? `<br>Some endpoints failed: ${loaded.errors.slice(0, 2).join(' | ')}` : '';
+    const loadWarnings = loaded.errors.length
+      ? `<br>Some endpoints failed: ${loaded.errors.slice(0, 2).map(err => escapeHtml(err)).join(' | ')}`
+      : '';
     const noRowsHint = loaded.noRows ? '<br>Authenticated successfully, but endpoints returned 0 rows for mapped datasets.' : '';
-    const defenderScopeHint = defenderScopeUsed ? `<br>Defender scopes used: <code>${defenderScopeUsed}</code>` : '';
-    const graphScopeHint = `<br>Graph scopes used: <code>${graphToken.scopes.join(', ')}</code>`;
+    const defenderScopeHint = defenderScopeUsed ? `<br>Defender scopes used: <code>${escapeHtml(defenderScopeUsed)}</code>` : '';
+    const graphScopeHint = `<br>Graph scopes used: <code>${escapeHtml(graphToken.scopes.join(', '))}</code>`;
     const defenderTokenInfo = defenderTokenResponse ? ` Defender token expires ${defenderExpiresOn}.` : '';
 
     lastConnectedContext = { tenantId, clientId };
-    status.innerHTML = `<span style="color:var(--status-compliant);">Connected as ${account?.username || 'authenticated user'}. Live data loaded from: ${loaded.sources.join(', ')}. Graph token expires ${graphExpiresOn}.${defenderTokenInfo}${defenderWarning}${graphScopeHint}${defenderScopeHint}${noRowsHint}${loadWarnings}</span>`;
+    status.innerHTML = `<span style="color:var(--status-compliant);">Connected as ${escapeHtml(account?.username || 'authenticated user')}. Live data loaded from: ${escapeHtml(loaded.sources.join(', '))}. Graph token expires ${escapeHtml(graphExpiresOn)}.${escapeHtml(defenderTokenInfo)} Auto-refresh every ${Math.round(AUTO_REFRESH_MS / 60000)} minutes.${escapeHtml(defenderWarning)}${graphScopeHint}${defenderScopeHint}${noRowsHint}${loadWarnings}</span>`;
+    setAuthBanner('', false);
+    startAutoRefresh();
   } catch (err) {
     const message = err && err.message ? err.message : 'Authentication failed.';
     const isSpaClientTypeError =
@@ -5996,24 +8614,35 @@ async function attemptConnect() {
       ? `
       <br><br><strong>Fix in Entra App Registration:</strong>
       <br>1) Authentication -> add platform <strong>Single-page application</strong> (not only Web).
-      <br>2) Add redirect URI exactly: <code>${resolveRedirectUri()}</code>
+      <br>2) Add redirect URI exactly: <code>${escapeHtml(resolveRedirectUri())}</code>
       <br>3) If this app is browser-only, remove any client secret usage and keep MSAL SPA flow.
       <br>4) In API permissions, grant admin consent, then retry.
       `
       : '';
-    status.innerHTML = `<span style="color:var(--severity-high);">Connection failed: ${message}.${hint}${spaHint}</span>`;
+    status.innerHTML = `<span style="color:var(--severity-high);">Connection failed: ${escapeHtml(message)}.${escapeHtml(hint)}${spaHint}</span>`;
+    if (/interaction_required|login_required|consent_required/i.test(message)) {
+      setAuthBanner('Interactive sign-in is required. Reconnect tenant to continue securely.', true);
+      setDataModeLabel('SESSION EXPIRED');
+    }
+  } finally {
+    authInProgress = false;
   }
 }
 
-async function refreshTenantData() {
+async function refreshTenantData(options = {}) {
+  const silentOnly = options.silentOnly !== false;
+  const suppressNoConnectionHint = Boolean(options.suppressNoConnectionHint);
+  const suppressStatusUpdates = Boolean(options.suppressStatusUpdates);
   const overlayStatus = document.getElementById('connectStatus');
+  if (authInProgress) return;
 
   if (!lastConnectedContext || !lastConnectedContext.tenantId || !lastConnectedContext.clientId) {
-    if (overlayStatus) {
-      overlayStatus.innerHTML = '<span style="color:var(--severity-high);">Connect a tenant first, then use Refresh Data.</span>';
-    } else {
-      alert('Connect a tenant first, then use Refresh Data.');
+    if (!suppressNoConnectionHint && overlayStatus) {
+      overlayStatus.innerHTML = '<span style="color:var(--severity-high);">Connect a tenant first to enable live updates.</span>';
+    } else if (!suppressNoConnectionHint) {
+      alert('Connect a tenant first to enable live updates.');
     }
+    setAuthBanner('No tenant session is active. Connect tenant to enable live updates.', true);
     return;
   }
 
@@ -6021,24 +8650,29 @@ async function refreshTenantData() {
   const app = await getOrCreateMsalInstance(tenantId, clientId);
   const account = app.getActiveAccount() || app.getAllAccounts()[0];
   if (!account) {
-    if (overlayStatus) {
+    if (!suppressNoConnectionHint && overlayStatus) {
       overlayStatus.innerHTML = '<span style="color:var(--severity-high);">No active signed-in account found. Reconnect tenant.</span>';
-    } else {
+    } else if (!suppressNoConnectionHint) {
       alert('No active signed-in account found. Reconnect tenant.');
     }
+    setAuthBanner('Session is not active. Reconnect tenant to resume live updates.', true);
     return;
   }
 
   setDataModeLabel('REFRESHING...');
-  if (overlayStatus) {
+  if (overlayStatus && !suppressStatusUpdates) {
     overlayStatus.innerHTML = '<span style="color:var(--text-secondary);">Refreshing live datasets...</span>';
   }
 
   try {
-    const graphToken = await acquireGraphToken(app, account);
+    const graphToken = silentOnly
+      ? await acquireGraphTokenSilent(app, account)
+      : await acquireGraphToken(app, account);
     let defenderTokenResponse = null;
     try {
-      const defenderToken = await acquireDefenderToken(app, account);
+      const defenderToken = silentOnly
+        ? await acquireDefenderTokenSilent(app, account)
+        : await acquireDefenderToken(app, account);
       defenderTokenResponse = defenderToken.token;
     } catch (_defenderErr) {
       // Graph refresh can still succeed without Defender token.
@@ -6049,23 +8683,47 @@ async function refreshTenantData() {
       defenderTokenResponse ? defenderTokenResponse.accessToken : null
     );
 
-    if (overlayStatus) {
-      overlayStatus.innerHTML = `<span style="color:var(--status-compliant);">Refresh complete. Updated from: ${loaded.sources.join(', ')}${loaded.noRows ? ' (0 rows returned)' : ''}.</span>`;
+    if (overlayStatus && !suppressStatusUpdates) {
+      overlayStatus.innerHTML = `<span style="color:var(--status-compliant);">Refresh complete. Updated from: ${escapeHtml(loaded.sources.join(', '))}${loaded.noRows ? ' (0 rows returned)' : ''}.</span>`;
     }
+    setAuthBanner('', false);
   } catch (err) {
     setDataModeLabel('PARTIAL LIVE');
     const message = err && err.message ? err.message : 'Refresh failed.';
-    if (overlayStatus) {
-      overlayStatus.innerHTML = `<span style="color:var(--severity-high);">Refresh failed: ${message}</span>`;
-    } else {
+    if (overlayStatus && !suppressStatusUpdates) {
+      overlayStatus.innerHTML = `<span style="color:var(--severity-high);">Refresh failed: ${escapeHtml(message)}</span>`;
+    } else if (!suppressStatusUpdates) {
       alert(`Refresh failed: ${message}`);
+    }
+    if (silentOnly && /interaction_required|login_required|consent_required|token/i.test(message)) {
+      setDataModeLabel('SESSION EXPIRED');
+      setAuthBanner('Session expired. Reconnect tenant to resume live updates.', true);
+      if (overlayStatus && !suppressStatusUpdates) {
+        overlayStatus.innerHTML = '<span style="color:var(--severity-high);">Session expired. Reconnect tenant to resume live updates.</span>';
+      }
     }
   }
 }
 
 // ===== KEYBOARD SHORTCUTS =====
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') closeDetail();
+  if (e.key !== 'Escape') return;
+  const helpOverlay = document.getElementById('helpOverlay');
+  if (helpOverlay && helpOverlay.classList.contains('visible')) {
+    closeHelpPanel();
+    return;
+  }
+  closeDetail();
+});
+
+let policyJourneyResizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(policyJourneyResizeTimer);
+  policyJourneyResizeTimer = setTimeout(() => {
+    const panel = document.getElementById('policyFocusPanel');
+    if (!panel || panel.offsetParent === null) return;
+    renderPolicyMitreCoverage();
+  }, 120);
 });
 
 // ===== INIT =====
@@ -6091,10 +8749,14 @@ function rerenderDashboard() {
   renderDefenderStack();
   renderMitreCoverage();
   setupMitreInteractions();
+  applyStandardsMitreView();
   renderTrendChart();
 }
 
 function init() {
+  loadUiPreferences();
+  applyUiPreferences();
+  applyUiTheme();
   setupSoftwareViewInteractions();
   setupVulnerabilityViewInteractions();
   setupRemediationViewInteractions();
