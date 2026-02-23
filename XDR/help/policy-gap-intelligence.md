@@ -36,3 +36,15 @@ Validate in sign-in logs and CA insights before retirement.
 2. Remove or merge exact duplicates.
 3. Address conflicting overlap by separating baseline vs exception policy intent.
 4. Re-check journey map `Effective Coverage` after each policy change.
+
+## Decision Guidance
+
+- If a policy is `report-only` and high-gap, prioritize enforcement planning first.
+- If overlap is high but outcomes differ, treat as design conflict, not duplicate.
+- If average coverage looks healthy but critical gaps remain, prioritize by risk path, not averages.
+
+## Validation After Changes
+
+- Confirm expected outcomes in CA insights/sign-in logs.
+- Re-open affected policies in this dashboard and verify gap score reduction.
+- Ensure no new unmitigated stages appear in the journey map.

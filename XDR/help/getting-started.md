@@ -1,29 +1,42 @@
 # Getting Started
 
-This dashboard provides a security posture view across vulnerabilities, devices, conditional access, and standards.
+Welcome to **XDR Compliance Centre**.  
+This dashboard combines vulnerability posture, device health, policy quality, and standards alignment in one workflow.
 
-## Main Navigation
+## Navigation
 
-- **Overview**: executive posture, risk matrix, and quick-triage cards.
-- **Devices**: inventory, compliance status, and Defender version health.
-- **Policies**: conditional access coverage, gaps, overlap, and journey map.
-- **Vulnerabilities**: threat workbench and remediation prioritization.
-- **Standards**: CIS, NIST CSF 2.0, identity baseline, and NIS2 alignment.
+- **Overview**: executive KPIs, risk matrix, and high-priority exposure signals.
+- **Devices**: managed asset inventory, health posture, and Defender version coverage.
+- **Policies**: Conditional Access policy coverage, gap queue, overlap insights, and journey map.
+- **Vulnerabilities**: threat relevance, patch prioritization, and remediation planning.
+- **Standards**: CIS Controls, NIST CSF 2.0, identity baseline, and NIS2 readiness mapping.
 
-## Filters
+## Filters and Scope
 
-- Use the top filter chips to narrow by time scope and severity.
-- Most cards and lists re-render when filters are changed.
-- Detail panels always reflect the current filter state.
+- Use top filter chips to scope the view by data window and severity.
+- Cards and lists update to reflect filter context.
+- Detail flyouts preserve the same filter context, so numbers remain consistent.
 
-## Detail Panels
+## Reading the Dashboard
 
-- Click a card, row, or list item to open a right-side detail panel.
-- Detail panels include context, supporting signals, and action guidance.
-- Press `Esc` to close the panel.
+- **Executive strip** gives a rapid posture snapshot.
+- **Card-level views** explain the contributing signals behind each metric.
+- **Detail flyouts** show evidence, affected entities, and recommended next steps.
+
+## Working Pattern
+
+1. Start in **Overview** to identify priority pressure points.
+2. Move to **Vulnerabilities** and **Devices** for root-cause detail.
+3. Use **Policies** to remove control gaps and policy sprawl.
+4. Validate improvements in **Standards** view and executive cards.
 
 ## Data Modes
 
-- `MOCK DATA`: local sample model for demos and validation.
-- `LIVE DATA` / `PARTIAL LIVE`: active Microsoft Graph/Defender pull succeeded fully or partially.
-- `SESSION EXPIRED`: token refresh or consent flow is required.
+- `MOCK DATA`: local sample model for design/testing.
+- `LIVE DATA`: Graph/Defender datasets loaded successfully.
+- `PARTIAL LIVE`: at least one data source loaded, others failed.
+- `SESSION EXPIRED`: token refresh or interactive sign-in required.
+
+## Keyboard
+
+- Press `Esc` to close open flyouts/panels quickly.

@@ -1,6 +1,6 @@
 # Conditional Access Journey Map
 
-The journey map breaks policy posture into stages and shows where controls are strong, partial, or missing.
+The journey map breaks Conditional Access posture into stages so teams can see exactly where control quality is strong, partial, or missing.
 
 ## Stage Model
 
@@ -12,10 +12,10 @@ The journey map breaks policy posture into stages and shows where controls are s
 - Risk Decision Engine
 - Enforcement and Monitoring
 
-Each stage has:
+Each stage includes:
 
 - A score out of 100
-- Stage signals (what was detected)
+- Stage signals (what was detected in policy data)
 - Best-practice reference
 - Gap statement
 - MITRE mapping
@@ -23,7 +23,7 @@ Each stage has:
 ## Effective Coverage
 
 `Effective Coverage` does not rely only on the selected policy.  
-It evaluates overlap-weighted compensation across other relevant policies.
+It evaluates **overlap-weighted compensation across other relevant policies**.
 
 - **Covered**: the selected policy directly enforces the required control path.
 - **Compensated**: cumulative overlap from other policies reaches the configured threshold.
@@ -35,9 +35,15 @@ It evaluates overlap-weighted compensation across other relevant policies.
 - Open each stage for technical detail and remediation steps.
 - Prioritize stages marked `Unmitigated Gap`, then `Compensated`.
 
-## Analyst Tip
+## Operational Tip
 
 Use the journey map with Policy Gap Intelligence:
 
 - Journey map identifies *where* a control path is weak.
 - Gap/overlap views identify *which policies* should be consolidated or hardened.
+
+## Common Interpretation Errors
+
+- A high policy coverage percentage does **not** always mean all stages are covered.
+- A stage can be `Compensated` even if the selected policy misses that control.
+- `Compensated` still carries residual risk; it is not equivalent to `Covered`.
