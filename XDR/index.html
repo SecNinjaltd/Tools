@@ -1074,6 +1074,8 @@ let liveEndpointPatchData = new Map();
 let liveEndpointCveData = new Map();
 let liveSecurityRecommendations = [];
 let liveSecureConfigByDevice = new Map();
+let liveDefenderAvInfoStats = { rows: 0, matched: 0, versioned: 0 };
+window.liveDefenderAvInfoStats = liveDefenderAvInfoStats;
 let hasLiveVulnerabilityBaseline = false;
 let standardsDetailModel = { cis: {}, nist: {}, identity: {}, nis2: {} };
 let exposureTrendPoints = [];
@@ -1110,18 +1112,41 @@ async function graphGetAll(url, accessToken, maxPages = 10) {
   return items;
 }
 
+async function fetchDefenderWithDomainFallback(url, accessToken) {
+  const doFetch = async (targetUrl) => fetch(targetUrl, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      Accept: 'application/json'
+    }
+  });
+
+  const alternateUrl = String(url || '').includes('api.security.microsoft.com')
+    ? String(url).replace('api.security.microsoft.com', 'api.securitycenter.microsoft.com')
+    : String(url || '').includes('api.securitycenter.microsoft.com')
+      ? String(url).replace('api.securitycenter.microsoft.com', 'api.security.microsoft.com')
+      : '';
+
+  try {
+    return await doFetch(url);
+  } catch (primaryErr) {
+    if (!alternateUrl || alternateUrl === url) {
+      throw primaryErr;
+    }
+    try {
+      return await doFetch(alternateUrl);
+    } catch (_secondaryErr) {
+      throw primaryErr;
+    }
+  }
+}
+
 async function defenderGetAll(url, accessToken, maxPages = 10) {
   let nextUrl = url;
   let pages = 0;
   const items = [];
 
   while (nextUrl && pages < maxPages) {
-    const res = await fetch(nextUrl, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        Accept: 'application/json'
-      }
-    });
+    const res = await fetchDefenderWithDomainFallback(nextUrl, accessToken);
 
     if (!res.ok) {
       const body = await res.text();
@@ -1141,12 +1166,7 @@ async function defenderGetAll(url, accessToken, maxPages = 10) {
 }
 
 async function defenderGetJson(url, accessToken) {
-  const res = await fetch(url, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      Accept: 'application/json'
-    }
-  });
+  const res = await fetchDefenderWithDomainFallback(url, accessToken);
 
   if (!res.ok) {
     const body = await res.text();
@@ -2001,18 +2021,36 @@ function recommendationsForVulnerability(vuln, max = 3) {
 }
 
 function applyLiveDeviceAvInfo(rows) {
-  if (!Array.isArray(rows) || !rows.length || !devices.length) return false;
+  if (!Array.isArray(rows) || !rows.length || !devices.length) {
+    liveDefenderAvInfoStats = { rows: Array.isArray(rows) ? rows.length : 0, matched: 0, versioned: 0 };
+    window.liveDefenderAvInfoStats = liveDefenderAvInfoStats;
+    return false;
+  }
 
   let updated = 0;
+  let matched = 0;
+  let versioned = 0;
   rows.forEach(row => {
     const machineId = String(row.machineId || row.id || '').trim();
     const rawName = row.computerDnsName || row.deviceName || '';
     const match = findDeviceByIdentity(machineId, rawName);
     if (!match) return;
+    matched += 1;
 
-    if (row.avPlatformVersion) match.defenderPlatformVer = String(row.avPlatformVersion);
-    if (row.avEngineVersion) match.defenderEngineVer = String(row.avEngineVersion);
-    if (row.avSignatureVersion) match.defenderSecurityIntelVer = String(row.avSignatureVersion);
+    let rowVersioned = false;
+    if (row.avPlatformVersion) {
+      match.defenderPlatformVer = String(row.avPlatformVersion);
+      rowVersioned = true;
+    }
+    if (row.avEngineVersion) {
+      match.defenderEngineVer = String(row.avEngineVersion);
+      rowVersioned = true;
+    }
+    if (row.avSignatureVersion) {
+      match.defenderSecurityIntelVer = String(row.avSignatureVersion);
+      rowVersioned = true;
+    }
+    if (rowVersioned) versioned += 1;
 
     if (row.osPlatform || row.osVersion) {
       const osProfile = endpointOsProfile({
@@ -2029,6 +2067,8 @@ function applyLiveDeviceAvInfo(rows) {
     updated += 1;
   });
 
+  liveDefenderAvInfoStats = { rows: rows.length, matched, versioned };
+  window.liveDefenderAvInfoStats = liveDefenderAvInfoStats;
   return updated > 0;
 }
 
@@ -2140,7 +2180,10 @@ async function loadLiveTenantData(graphAccessToken, defenderAccessToken) {
       resultsByKey[key] = result.value;
       succeeded.push(key);
     }
-    else errors.push(result.reason?.message || `${key} failed`);
+    else {
+      const message = result.reason?.message || 'request failed';
+      errors.push(`${key}: ${message}`);
+    }
   });
 
   const updated = {
