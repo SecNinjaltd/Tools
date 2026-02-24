@@ -1072,6 +1072,7 @@ let liveExposureScore = null;
 let liveSecureScore = null;
 let liveEndpointPatchData = new Map();
 let liveEndpointCveData = new Map();
+let hasLiveVulnerabilityBaseline = false;
 let standardsDetailModel = { cis: {}, nist: {}, identity: {}, nis2: {} };
 let exposureTrendPoints = [];
 let exposureTrendAnchorScore = null;
@@ -1649,6 +1650,10 @@ function applyLiveDefenderMachines(machines) {
 
 function applyLiveDefenderVulnerabilities(vulns) {
   if (!Array.isArray(vulns) || !vulns.length) return false;
+  if (!hasLiveVulnerabilityBaseline) {
+    vulnerabilities.splice(0, vulnerabilities.length);
+    hasLiveVulnerabilityBaseline = true;
+  }
 
   const byId = new Map();
   vulns.forEach((v, idx) => {
@@ -1681,6 +1686,10 @@ function applyLiveDefenderVulnerabilities(vulns) {
 
 function applyLiveDefenderMachineVulnerabilities(rows) {
   if (!Array.isArray(rows) || !rows.length) return false;
+  if (!hasLiveVulnerabilityBaseline) {
+    vulnerabilities.splice(0, vulnerabilities.length);
+    hasLiveVulnerabilityBaseline = true;
+  }
 
   const nextMap = new Map();
   const nextCveMap = new Map();
@@ -1832,6 +1841,10 @@ function severityToCvss(sev) {
 
 function applyLiveAlerts(alerts) {
   if (!Array.isArray(alerts) || !alerts.length) return false;
+  if (!hasLiveVulnerabilityBaseline) {
+    vulnerabilities.splice(0, vulnerabilities.length);
+    hasLiveVulnerabilityBaseline = true;
+  }
 
   const byId = new Map();
   alerts.forEach((a, idx) => {
@@ -2114,6 +2127,27 @@ function getFilteredVulnerabilities() {
   return filtered;
 }
 
+function endpointClassForDevice(device) {
+  const os = String(device?.os || '').toLowerCase();
+  const type = String(device?.type || '').toLowerCase();
+  if (type === 'server' || os.includes('server')) return { key: 'server', icon: '🖥', label: 'Server' };
+  if (type === 'mobile' || os.includes('ios') || os.includes('android')) return { key: 'mobile', icon: '📱', label: 'Mobile' };
+  if (os.includes('mac')) return { key: 'mac', icon: '🍎', label: 'Mac' };
+  if (os.includes('linux') || os.includes('ubuntu')) return { key: 'linux', icon: '🐧', label: 'Linux' };
+  if (os.includes('windows')) return { key: 'pc', icon: '💻', label: 'PC' };
+  return { key: 'other', icon: '🧩', label: 'Other' };
+}
+
+function summarizeEndpointClassMix(classCounts, max = 3) {
+  const counts = classCounts || {};
+  const items = Object.values(counts)
+    .filter(item => Number(item?.count || 0) > 0)
+    .sort((a, b) => Number(b.count || 0) - Number(a.count || 0))
+    .slice(0, max);
+  if (!items.length) return 'Type mix unavailable';
+  return items.map(item => `${item.icon} ${item.label} ${item.count}`).join(' · ');
+}
+
 function renderVulnSeverityPanel() {
   const grid = document.getElementById('vulnSeverityGrid');
   if (!grid) return;
@@ -2127,17 +2161,24 @@ function renderVulnSeverityPanel() {
     const osAgg = {};
     devices.forEach(d => {
       const key = d.os || 'Unknown OS';
-      osAgg[key] = (osAgg[key] || 0) + Number(d.vulns || 0);
+      if (!osAgg[key]) osAgg[key] = { vulns: 0, classCounts: {} };
+      osAgg[key].vulns += Number(d.vulns || 0);
+      const cls = endpointClassForDevice(d);
+      if (!osAgg[key].classCounts[cls.key]) osAgg[key].classCounts[cls.key] = { ...cls, count: 0 };
+      osAgg[key].classCounts[cls.key].count += 1;
     });
     const topOs = Object.entries(osAgg)
-      .sort((a, b) => b[1] - a[1])
+      .sort((a, b) => Number(b[1]?.vulns || 0) - Number(a[1]?.vulns || 0))
       .slice(0, 4);
     const classes = ['crit', 'high', 'med', 'low'];
 
-    grid.innerHTML = topOs.map(([os, total], idx) => `
+    grid.innerHTML = topOs.map(([os, data], idx) => `
       <div class="severity-cell ${classes[idx] || 'low'}" onclick="openDetail('os-${os.replace(/'/g, '')}')">
-        <div class="sev-count">${total}</div>
-        <div class="sev-label">${os.length > 20 ? `${os.slice(0, 19)}…` : os}</div>
+        <div class="sev-count">${Number(data?.vulns || 0)}</div>
+        <div class="sev-label">
+          ${os.length > 20 ? `${os.slice(0, 19)}…` : os}
+          <div style="font-size:9px;line-height:1.3;color:var(--text-muted);margin-top:3px;">${summarizeEndpointClassMix(data?.classCounts, 2)}</div>
+        </div>
       </div>
     `).join('');
     return;
@@ -2244,10 +2285,13 @@ function renderVulnList() {
     const byOs = {};
     devices.forEach(device => {
       const key = device.os || 'Unknown OS';
-      if (!byOs[key]) byOs[key] = { os: key, devices: 0, vulns: 0, highRisk: 0 };
+      if (!byOs[key]) byOs[key] = { os: key, devices: 0, vulns: 0, highRisk: 0, classCounts: {} };
       byOs[key].devices += 1;
       byOs[key].vulns += Number(device.vulns || 0);
       if (Number(device.riskScore || 0) >= 60) byOs[key].highRisk += 1;
+      const cls = endpointClassForDevice(device);
+      if (!byOs[key].classCounts[cls.key]) byOs[key].classCounts[cls.key] = { ...cls, count: 0 };
+      byOs[key].classCounts[cls.key].count += 1;
     });
 
     const rows = Object.values(byOs)
@@ -2264,7 +2308,7 @@ function renderVulnList() {
         <div class="vuln-sev-badge ${row.vulns >= 20 ? 'critical' : row.vulns >= 12 ? 'high' : row.vulns >= 6 ? 'medium' : 'low'}"></div>
         <div class="vuln-info">
           <div class="vuln-cve">${row.os}</div>
-          <div class="vuln-desc">${row.devices} device(s) · ${row.highRisk} high-risk endpoint(s)</div>
+          <div class="vuln-desc">${row.devices} device(s) · ${row.highRisk} high-risk endpoint(s)<br><span style="font-size:10px;color:var(--text-muted);">${summarizeEndpointClassMix(row.classCounts, 3)}</span></div>
         </div>
         <div class="vuln-meta">
           <div class="vuln-devices">${row.devices} assets</div>
