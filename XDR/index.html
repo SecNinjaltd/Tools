@@ -82,7 +82,7 @@
       <div class="exec-value info" id="execMitreComplianceValue">68%</div>
       <div class="exec-sub" id="execMitreComplianceSub">6 tactics below 70%</div>
     </div>
-    <div class="exec-card warning" onclick="openDetail('criticalVulns')">
+    <div class="exec-card warning" onclick="openDetail('vulnCritical')">
       <div class="exec-label">Critical Vulns</div>
       <div class="exec-value warning" id="execCriticalVulnsValue">23</div>
       <div class="exec-sub" id="execCriticalVulnsSub"><span class="trend-up">▲ 5</span> new this week</div>
@@ -276,13 +276,20 @@
           Threat Prioritization Workbench
         </div>
         <div class="card-actions">
-          <button class="card-action-btn active" id="threatWorkbenchRiskBtn" type="button">Risk Ranking</button>
-          <button class="card-action-btn" id="threatWorkbenchRemediationBtn" type="button">Action Queue</button>
+          <button class="card-action-btn active" id="threatWorkbenchPatchNowBtn" type="button">Patch Now</button>
+          <button class="card-action-btn" id="threatWorkbenchPatchNextBtn" type="button">Patch Next Window</button>
+          <button class="card-action-btn" id="threatWorkbenchMonitorBtn" type="button">Accept / Monitor</button>
         </div>
       </div>
       <div class="card-body">
         <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;">
-          Switch between threat-driven ranking and remediation-focused action sequencing without leaving the Threat view.
+          Relevance-gated queue: high-confidence threats are routed to immediate or planned patch actions; low-relevance items are parked in monitor queue.
+        </div>
+        <div style="font-size:11px;color:var(--text-secondary);line-height:1.6;background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:8px;padding:10px 12px;margin-bottom:10px;">
+          <strong style="color:var(--text-primary);">How decisions are made:</strong><br>
+          1. Relevance gate checks tenant context (affected assets or endpoint patch evidence).<br>
+          2. Threat score combines CVSS, exploit status, exposure size, and average related device risk.<br>
+          3. Queue routing: immediate-risk findings go to <em>Patch Now</em>, relevant non-immediate findings go to <em>Patch Next Window</em>, low-context/low-relevance findings go to <em>Accept / Monitor</em>.
         </div>
         <div class="threat-workbench-list" id="threatWorkbenchList"></div>
       </div>
@@ -871,6 +878,81 @@ const POLICY_MITRE_MAP = {
   }
 };
 
+const POLICY_MITRE_FALLBACK_RULES = [
+  {
+    keys: ['mfa', 'multifactor', 'authentication strength', 'phishing-resistant'],
+    mitre: POLICY_MITRE_MAP['Require MFA for All Users']
+  },
+  {
+    keys: ['legacy authentication', 'legacy auth', 'basic auth'],
+    mitre: POLICY_MITRE_MAP['Block Legacy Authentication']
+  },
+  {
+    keys: ['compliant device', 'compliance', 'intune compliant'],
+    mitre: POLICY_MITRE_MAP['Compliant Device Required']
+  },
+  {
+    keys: ['high risk', 'risk sign-in', 'user risk', 'sign-in risk'],
+    mitre: POLICY_MITRE_MAP['High Risk Sign-in Block']
+  },
+  {
+    keys: ['named location', 'trusted location', 'network trust'],
+    mitre: POLICY_MITRE_MAP['Named Location - Corp Network Trust']
+  },
+  {
+    keys: ['admin', 'directory role', 'privileged'],
+    mitre: POLICY_MITRE_MAP['Admin MFA Enforcement']
+  },
+  {
+    keys: ['byod', 'app protection', 'mam'],
+    mitre: POLICY_MITRE_MAP['BYOD App Protection']
+  },
+  {
+    keys: ['guest', 'external user', 'b2b'],
+    mitre: POLICY_MITRE_MAP['Guest Access Restrictions']
+  },
+  {
+    keys: ['token protection', 'token', 'session token'],
+    mitre: POLICY_MITRE_MAP['Token Protection (Preview)']
+  }
+];
+
+function normalizePolicyNameForMatching(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/\(preview\)/g, ' ')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+const POLICY_MITRE_INDEX = Object.entries(POLICY_MITRE_MAP).reduce((acc, [name, map]) => {
+  const normalized = normalizePolicyNameForMatching(name);
+  if (normalized) acc[normalized] = map;
+  return acc;
+}, {});
+
+function resolvePolicyMitreMapping(policy) {
+  const empty = { tactics: [], techniques: [], threats: [] };
+  if (!policy) return empty;
+
+  const direct = POLICY_MITRE_MAP[policy.name];
+  if (direct) return direct;
+
+  const normalizedName = normalizePolicyNameForMatching(policy.name);
+  if (normalizedName && POLICY_MITRE_INDEX[normalizedName]) return POLICY_MITRE_INDEX[normalizedName];
+
+  const matchedEntry = Object.entries(POLICY_MITRE_INDEX).find(([known]) =>
+    normalizedName && (normalizedName.includes(known) || known.includes(normalizedName))
+  );
+  if (matchedEntry) return matchedEntry[1];
+
+  const context = `${policy.name || ''} ${policy.apps || ''} ${policy.conditions || ''} ${policy.grantControls || ''} ${policy.sessionControls || ''}`
+    .toLowerCase();
+  const fallback = POLICY_MITRE_FALLBACK_RULES.find(rule => rule.keys.some(key => context.includes(key)));
+  return fallback ? fallback.mitre : empty;
+}
+
 const locations = [
   { name: "London", flag: "🇬🇧", devices: 487, healthy: 412, warning: 58, critical: 17 },
   { name: "New York", flag: "🇺🇸", devices: 312, healthy: 278, warning: 28, critical: 6 },
@@ -988,6 +1070,7 @@ let msalInstanceClientId = '';
 let lastConnectedContext = null;
 let liveExposureScore = null;
 let liveSecureScore = null;
+let liveEndpointPatchData = new Map();
 let standardsDetailModel = { cis: {}, nist: {}, identity: {}, nis2: {} };
 let exposureTrendPoints = [];
 let exposureTrendAnchorScore = null;
@@ -1258,6 +1341,83 @@ function normalizeSessionControls(sessionControls) {
   return enabled.length ? enabled.join(', ') : 'None';
 }
 
+function formatPolicyScopeList(values, max = 4) {
+  const list = Array.isArray(values)
+    ? values.map(v => String(v || '').trim()).filter(Boolean)
+    : [];
+  if (!list.length) return '';
+  return list.length > max ? `${list.slice(0, max).join(', ')} (+${list.length - max} more)` : list.join(', ');
+}
+
+function normalizePolicyUserScope(users) {
+  if (!users || typeof users !== 'object') {
+    return {
+      summary: 'Scoped policy assignments (details unavailable)',
+      details: ['Include: Scope not explicitly defined in API response.']
+    };
+  }
+
+  const include = [];
+  const exclude = [];
+  const includeUsers = Array.isArray(users.includeUsers) ? users.includeUsers : [];
+  const excludeUsers = Array.isArray(users.excludeUsers) ? users.excludeUsers : [];
+  const includeGroups = Array.isArray(users.includeGroups) ? users.includeGroups : [];
+  const excludeGroups = Array.isArray(users.excludeGroups) ? users.excludeGroups : [];
+  const includeRoles = Array.isArray(users.includeRoles) ? users.includeRoles : [];
+  const excludeRoles = Array.isArray(users.excludeRoles) ? users.excludeRoles : [];
+
+  if (includeUsers.some(v => String(v).toLowerCase() === 'all')) include.push('All users');
+  else if (includeUsers.length) include.push(`Users: ${formatPolicyScopeList(includeUsers)}`);
+  if (includeGroups.length) include.push(`Groups: ${formatPolicyScopeList(includeGroups)}`);
+  if (includeRoles.length) include.push(`Directory roles: ${formatPolicyScopeList(includeRoles)}`);
+
+  const guestExternal = users.includeGuestsOrExternalUsers;
+  if (guestExternal) {
+    const guestType = formatPolicyScopeList(guestExternal.guestOrExternalUserTypes || []);
+    const tenants = guestExternal.externalTenants?.membershipKind;
+    include.push(
+      guestType || tenants
+        ? `Guests/External: ${[guestType, tenants].filter(Boolean).join(' | ')}`
+        : 'Guests/External users included'
+    );
+  }
+
+  if (excludeUsers.length) exclude.push(`Users: ${formatPolicyScopeList(excludeUsers)}`);
+  if (excludeGroups.length) exclude.push(`Groups: ${formatPolicyScopeList(excludeGroups)}`);
+  if (excludeRoles.length) exclude.push(`Directory roles: ${formatPolicyScopeList(excludeRoles)}`);
+
+  const summaryParts = [];
+  if (include.length) summaryParts.push(`Include ${include[0]}`);
+  if (exclude.length) summaryParts.push(`Exclude ${exclude[0]}`);
+
+  const details = [];
+  details.push(`Include: ${include.length ? include.join(' · ') : 'No explicit include targets listed'}`);
+  details.push(`Exclude: ${exclude.length ? exclude.join(' · ') : 'No explicit exclusions listed'}`);
+
+  return {
+    summary: summaryParts.join(' | ') || 'Scoped policy assignments',
+    details
+  };
+}
+
+function getPolicyAffectedUsersSummary(policy) {
+  if (policy && typeof policy.affectedUsersSummary === 'string' && policy.affectedUsersSummary.trim()) {
+    return policy.affectedUsersSummary;
+  }
+  const conditions = String(policy?.conditions || '').toLowerCase();
+  if (conditions.includes('guest')) return 'Include guest users';
+  if (conditions.includes('directory roles') || conditions.includes('admin')) return 'Include privileged roles/users';
+  if (conditions.includes('all platform') || conditions.includes('all users')) return 'Include all users';
+  return 'Scoped policy assignments';
+}
+
+function getPolicyAffectedUsersDetails(policy) {
+  if (Array.isArray(policy?.affectedUsersDetails) && policy.affectedUsersDetails.length) {
+    return policy.affectedUsersDetails;
+  }
+  return [`Include: ${getPolicyAffectedUsersSummary(policy)}`, 'Exclude: No explicit exclusions listed'];
+}
+
 function applyLivePolicies(policies) {
   if (!Array.isArray(policies) || !policies.length) return false;
   const totalUsers = Math.max(devices.length, 1);
@@ -1265,11 +1425,14 @@ function applyLivePolicies(policies) {
   const mapped = policies.map(p => {
     const state = mapPolicyState(p.state);
     const coverage = state === 'enabled' ? 95 : state === 'report-only' ? 65 : 5;
+    const userScope = normalizePolicyUserScope(p.conditions?.users);
     return {
       name: p.displayName || p.id || 'Unnamed policy',
       state,
       coverage,
       users: totalUsers,
+      affectedUsersSummary: userScope.summary,
+      affectedUsersDetails: userScope.details,
       apps: normalizePolicyApplications(p.conditions?.applications),
       conditions: normalizePolicyConditions(p.conditions),
       grantControls: normalizeGrantControls(p.grantControls),
@@ -1318,6 +1481,66 @@ function defenderMachineRisk(machine = {}, health = 'Healthy') {
   return 20;
 }
 
+function normalizeDeviceKey(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function extractCveId(value) {
+  const match = String(value || '').match(/CVE-\d{4}-\d{4,7}/i);
+  return match ? match[0].toUpperCase() : '';
+}
+
+function normalizeKbId(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  const match = raw.match(/kb[-\s]?(\d{6,8})/i);
+  if (match) return `KB${match[1]}`;
+  if (/^\d{6,8}$/.test(raw)) return `KB${raw}`;
+  return raw;
+}
+
+function getLiveEndpointPatchesForDevice(device) {
+  const key = normalizeDeviceKey(device?.name);
+  if (!key) return [];
+  const direct = liveEndpointPatchData.get(key);
+  if (Array.isArray(direct) && direct.length) return direct;
+
+  const short = key.split('.')[0];
+  for (const [deviceKey, patches] of liveEndpointPatchData.entries()) {
+    const candidateShort = String(deviceKey || '').split('.')[0];
+    if (deviceKey === key || candidateShort === short || key.startsWith(`${candidateShort}.`) || deviceKey.startsWith(`${short}.`)) {
+      if (Array.isArray(patches) && patches.length) return patches;
+    }
+  }
+  return [];
+}
+
+function getEndpointPatchRefsForVulnerability(cveId) {
+  const targetId = extractCveId(cveId);
+  if (!targetId) return [];
+  const byPatch = new Map();
+  liveEndpointPatchData.forEach((patches, deviceKey) => {
+    if (!Array.isArray(patches)) return;
+    patches.forEach(ref => {
+      if (extractCveId(ref.cveId) !== targetId) return;
+      const key = `${ref.kb}::${ref.target}`;
+      const existing = byPatch.get(key) || {
+        kb: ref.kb,
+        target: ref.target,
+        note: ref.note || 'Endpoint-reported missing security update',
+        affectedDevices: 0,
+        _devices: new Set()
+      };
+      if (!existing._devices.has(deviceKey)) {
+        existing._devices.add(deviceKey);
+        existing.affectedDevices += 1;
+      }
+      byPatch.set(key, existing);
+    });
+  });
+  return Array.from(byPatch.values());
+}
+
 function applyLiveDefenderMachines(machines) {
   if (!Array.isArray(machines) || !machines.length) return false;
 
@@ -1336,6 +1559,7 @@ function applyLiveDefenderMachines(machines) {
 
     return withDefenderVersionDetails({
       name: m.computerDnsName || m.deviceName || m.id || `MACHINE-${idx + 1}`,
+      sourceMachineId: m.id || m.machineId || m.deviceId || '',
       type,
       os,
       location,
@@ -1385,6 +1609,70 @@ function applyLiveDefenderVulnerabilities(vulns) {
 
   vulnerabilities.splice(0, vulnerabilities.length, ...mapped);
   return true;
+}
+
+function applyLiveDefenderMachineVulnerabilities(rows) {
+  if (!Array.isArray(rows) || !rows.length) return false;
+
+  const nextMap = new Map();
+
+  rows.forEach((row, idx) => {
+    const rawName = row.machineName || row.computerDnsName || row.deviceName || row.hostname || '';
+    const machineId = String(row.machineId || row.deviceId || row.id || '').trim();
+    const cveId = extractCveId(row.cveId || row.vulnerabilityId || row.name || row.title || row.id || '');
+    if (!cveId && !machineId && !rawName) return;
+
+    const matchedDevice = devices.find(d =>
+      (machineId && String(d.sourceMachineId || '') === machineId) ||
+      normalizeDeviceKey(d.name) === normalizeDeviceKey(rawName)
+    );
+    const deviceKey = normalizeDeviceKey(matchedDevice?.name || rawName || machineId || `unknown-${idx + 1}`);
+    const deviceOs = String(matchedDevice?.os || row.osPlatform || row.productName || '').toLowerCase();
+
+    const kbCandidates = [
+      row.fixingKbId,
+      row.kbId,
+      row.kbNumber,
+      row.remediationKb,
+      row.recommendedSecurityUpdateId,
+      row.securityUpdate
+    ].map(normalizeKbId).filter(Boolean);
+
+    const mappedFallback = cveId && Array.isArray(KB_PATCH_MAP[cveId]) ? KB_PATCH_MAP[cveId] : [];
+    const osAlignedFallback = mappedFallback.filter(entry => {
+      const target = String(entry.target || '').toLowerCase();
+      if (!deviceOs) return true;
+      if (deviceOs.includes('windows') && target.includes('windows')) return true;
+      if (deviceOs.includes('server') && target.includes('server')) return true;
+      if (deviceOs.includes('mac') && target.includes('mac')) return true;
+      if (deviceOs.includes('ios') && target.includes('ios')) return true;
+      if (deviceOs.includes('android') && target.includes('android')) return true;
+      if (deviceOs.includes('linux') && (target.includes('linux') || target.includes('ubuntu'))) return true;
+      return false;
+    });
+
+    const patchRefs = kbCandidates.length
+      ? kbCandidates.map(kb => ({
+          kb,
+          target: row.productName || row.softwareName || matchedDevice?.os || 'Operating system',
+          note: 'Endpoint-reported missing security update',
+          cveId: cveId || 'Unknown'
+        }))
+      : (osAlignedFallback.length ? osAlignedFallback : mappedFallback).map(entry => ({
+          kb: entry.kb,
+          target: entry.target || row.productName || row.softwareName || matchedDevice?.os || 'Operating system',
+          note: entry.note || 'Mapped via CVE remediation reference',
+          cveId: cveId || 'Unknown'
+        }));
+
+    if (!patchRefs.length) return;
+    const existing = nextMap.get(deviceKey) || [];
+    patchRefs.forEach(ref => existing.push(ref));
+    nextMap.set(deviceKey, existing);
+  });
+
+  liveEndpointPatchData = nextMap;
+  return nextMap.size > 0;
 }
 
 function applyLiveDefenderSoftware(softwareRows) {
@@ -1485,6 +1773,7 @@ async function loadLiveTenantData(graphAccessToken, defenderAccessToken) {
     tasks.push(
       { key: 'defenderMachines', run: () => defenderGetAll('https://api.securitycenter.microsoft.com/api/machines?$top=300', defenderAccessToken, 10) },
       { key: 'defenderVulns', run: () => defenderGetAll('https://api.securitycenter.microsoft.com/api/vulnerabilities?$top=300', defenderAccessToken, 10) },
+      { key: 'defenderMachineVulns', run: () => defenderGetAll('https://api.securitycenter.microsoft.com/api/vulnerabilities/machinesVulnerabilities?$top=500', defenderAccessToken, 20) },
       { key: 'defenderSoftware', run: () => defenderGetAll('https://api.securitycenter.microsoft.com/api/Software?$top=300', defenderAccessToken, 10) },
       { key: 'defenderExposure', run: () => defenderGetJson('https://api.securitycenter.microsoft.com/api/exposureScore', defenderAccessToken) }
     );
@@ -1511,6 +1800,7 @@ async function loadLiveTenantData(graphAccessToken, defenderAccessToken) {
   const updated = {
     graphDevices: resultsByKey.graphDevices ? applyLiveDevices(resultsByKey.graphDevices) : false,
     defenderMachines: resultsByKey.defenderMachines ? applyLiveDefenderMachines(resultsByKey.defenderMachines) : false,
+    defenderMachineVulns: resultsByKey.defenderMachineVulns ? applyLiveDefenderMachineVulnerabilities(resultsByKey.defenderMachineVulns) : false,
     graphPolicies: resultsByKey.graphPolicies ? applyLivePolicies(resultsByKey.graphPolicies) : false,
     graphAlerts: resultsByKey.graphAlerts ? applyLiveAlerts(resultsByKey.graphAlerts) : false,
     defenderVulns: resultsByKey.defenderVulns ? applyLiveDefenderVulnerabilities(resultsByKey.defenderVulns) : false,
@@ -1529,6 +1819,7 @@ async function loadLiveTenantData(graphAccessToken, defenderAccessToken) {
     graphPolicies: 'Graph conditional access',
     graphAlerts: 'Graph alerts',
     defenderMachines: 'Defender machines',
+    defenderMachineVulns: 'Defender machine vulnerabilities',
     defenderVulns: 'Defender vulnerabilities',
     defenderSoftware: 'Defender software inventory',
     defenderExposure: 'Defender exposure score'
@@ -1557,7 +1848,7 @@ let activeSeverityFilter = 'all';
 let appInventoryViewMode = 'grid';
 let vulnSeverityViewMode = 'summary';
 let remediationViewMode = 'actionable';
-let threatWorkbenchMode = 'risk';
+let threatWorkbenchMode = 'patch-now';
 let deviceInventoryFilterMode = 'all';
 let deviceMixMode = 'type';
 let defenderVersionMetricMode = 'platform';
@@ -2286,48 +2577,103 @@ function threatRelevanceScore(vuln) {
   return { score, relatedDevices, avgRisk };
 }
 
+function classifyThreatActionQueue(vuln, model) {
+  const endpointEvidence = getEndpointPatchRefsForVulnerability(vuln.id);
+  const hasAssetContext = model.relatedDevices.length > 0 || endpointEvidence.length > 0;
+  const relevanceScore = model.score + (hasAssetContext ? 8 : -18) + (vuln.exploited ? 10 : 0);
+  const relevant = hasAssetContext && relevanceScore >= 60;
+
+  if (!relevant) {
+    return {
+      queue: 'monitor',
+      label: 'Accept / Monitor',
+      rationale: hasAssetContext
+        ? 'Lower-priority risk with compensating context. Keep monitored with review cadence.'
+        : 'Low contextual relevance in current tenant data. Hold in monitor queue until exposure evidence increases.'
+    };
+  }
+
+  const immediate =
+    vuln.exploited ||
+    model.score >= 80 ||
+    vuln.cvss >= 9 ||
+    model.avgRisk >= 70;
+
+  if (immediate) {
+    return {
+      queue: 'patch-now',
+      label: 'Patch Now',
+      rationale: 'High-confidence, high-impact threat. Remediate in emergency window.'
+    };
+  }
+
+  return {
+    queue: 'patch-next',
+    label: 'Patch Next Window',
+    rationale: 'Relevant threat with meaningful exposure. Schedule in next approved patch window.'
+  };
+}
+
 function renderThreatWorkbench() {
-  const riskBtn = document.getElementById('threatWorkbenchRiskBtn');
-  const remediationBtn = document.getElementById('threatWorkbenchRemediationBtn');
-  if (riskBtn) riskBtn.classList.toggle('active', threatWorkbenchMode === 'risk');
-  if (remediationBtn) remediationBtn.classList.toggle('active', threatWorkbenchMode === 'remediation');
+  const patchNowBtn = document.getElementById('threatWorkbenchPatchNowBtn');
+  const patchNextBtn = document.getElementById('threatWorkbenchPatchNextBtn');
+  const monitorBtn = document.getElementById('threatWorkbenchMonitorBtn');
+  if (patchNowBtn) patchNowBtn.classList.toggle('active', threatWorkbenchMode === 'patch-now');
+  if (patchNextBtn) patchNextBtn.classList.toggle('active', threatWorkbenchMode === 'patch-next');
+  if (monitorBtn) monitorBtn.classList.toggle('active', threatWorkbenchMode === 'monitor');
 
   const container = document.getElementById('threatWorkbenchList');
   if (!container) return;
 
-  const ranked = getFilteredVulnerabilities()
-    .map(vuln => ({ vuln, ...remediationPriority(vuln) }))
-    .sort((a, b) => {
-      if (threatWorkbenchMode === 'remediation') {
-        const order = { P1: 3, P2: 2, P3: 1 };
-        return (order[b.priority] - order[a.priority]) || (b.reductionEstimate - a.reductionEstimate) || (b.score - a.score);
-      }
-      return b.score - a.score;
+  const triaged = getFilteredVulnerabilities()
+    .map(vuln => {
+      const model = remediationPriority(vuln);
+      const triage = classifyThreatActionQueue(vuln, model);
+      return { vuln, ...model, triage };
     })
-    .slice(0, 10);
+    .filter(item => item.triage.queue === threatWorkbenchMode);
+
+  const ranked = triaged
+    .sort((a, b) => {
+      if (threatWorkbenchMode === 'monitor') {
+        return a.score - b.score || Number(a.vuln.cvss || 0) - Number(b.vuln.cvss || 0);
+      }
+      const order = { P1: 3, P2: 2, P3: 1 };
+      return (order[b.priority] - order[a.priority]) || (b.score - a.score) || (b.reductionEstimate - a.reductionEstimate);
+    })
+    .slice(0, 12);
+
+  const queueGuidance = {
+    'patch-now': 'Items in this queue passed relevance checks and met immediate-risk criteria (for example: exploited, very high score, or critical CVSS/risk context).',
+    'patch-next': 'Items in this queue are relevant to your tenant and should be remediated in the next approved patch window.',
+    'monitor': 'Items in this queue are currently lower relevance or lower urgency. Keep watch, re-evaluate regularly, and promote if exploit or exposure signals increase.'
+  };
+  const guidanceText = queueGuidance[threatWorkbenchMode] || queueGuidance['patch-next'];
+  const guidanceBlock = `<div style="font-size:11px;color:var(--text-secondary);line-height:1.55;background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:8px;padding:9px 11px;margin-bottom:10px;">${guidanceText}</div>`;
 
   if (!ranked.length) {
-    container.innerHTML = '<div style="font-size:12px;color:var(--text-muted);">No threat items match the selected filters.</div>';
+    container.innerHTML = `${guidanceBlock}<div style="font-size:12px;color:var(--text-muted);">No items in this queue for current filters and relevance criteria.</div>`;
     return;
   }
 
-  container.innerHTML = ranked.map(item => `
-    <article class="remediation-item" onclick="${threatWorkbenchMode === 'remediation' ? 'openRemediationDetail' : 'openThreatRelevanceDetail'}('${item.vuln.id}')">
+  container.innerHTML = `${guidanceBlock}${ranked.map(item => `
+    <article class="remediation-item" onclick="${threatWorkbenchMode === 'monitor' ? 'openThreatRelevanceDetail' : 'openRemediationDetail'}('${item.vuln.id}')">
       <div class="remediation-head">
         <div class="remediation-title">${item.vuln.id}</div>
-        <span class="prio-tag ${item.priority.toLowerCase()}">${item.priority} · ${priorityLabel(item.priority)}</span>
+        <span class="prio-tag ${threatWorkbenchMode === 'monitor' ? 'p3' : item.priority.toLowerCase()}">${item.triage.label}</span>
       </div>
       <div class="remediation-meta">
         ${item.vuln.title}<br>
-        ${threatWorkbenchMode === 'remediation'
-          ? `Suggested action: ${item.action}<br>Est. exposure score reduction if fixed: ${item.reductionEstimate} pts · Threat relevance score: ${item.score}/100`
-          : `Threat relevance score: ${item.score}/100 · ${item.vuln.exploited ? 'Actively exploited' : 'No active exploitation flag'} · ${item.vuln.affectedDevices} affected endpoints`}
+        ${item.triage.rationale}<br>
+        ${threatWorkbenchMode === 'monitor'
+          ? `Threat relevance score: ${item.score}/100 · ${item.vuln.exploited ? 'Exploit signal present' : 'No active exploit signal'} · ${item.vuln.affectedDevices} affected endpoints`
+          : `Suggested action: ${item.action}<br>Est. exposure score reduction if fixed: ${item.reductionEstimate} pts · Threat relevance score: ${item.score}/100`}
       </div>
       <div class="remediation-tags">
         ${item.tags.map(tag => `<span class="remediation-pill ${tag.tone}">${tag.text}</span>`).join('')}
       </div>
     </article>
-  `).join('');
+  `).join('')}`;
 }
 
 function renderMissingPatchesCard() {
@@ -2336,8 +2682,71 @@ function renderMissingPatchesCard() {
 
   const priorityWeight = { P1: 3, P2: 2, P3: 1 };
   const patchMap = new Map();
+  const filteredVulns = getFilteredVulnerabilities();
+  const vulnById = new Map(filteredVulns.map(v => [v.id, v]));
+  const defaultVuln = filteredVulns[0] || vulnerabilities[0] || null;
 
-  getFilteredVulnerabilities().forEach(vuln => {
+  if (liveEndpointPatchData.size) {
+    liveEndpointPatchData.forEach((patches, deviceKey) => {
+      if (!Array.isArray(patches) || !patches.length) return;
+      patches.forEach(ref => {
+        const cveId = extractCveId(ref.cveId || '');
+        const vuln = cveId ? vulnById.get(cveId) : null;
+        if (!vuln && cveId && filteredVulns.length) return;
+
+        const model = remediationPriority(vuln || defaultVuln || {
+          id: cveId || 'UNKNOWN',
+          title: 'Endpoint-reported missing update',
+          cvss: 6.5,
+          exploited: false,
+          affectedDevices: 1,
+          software: ref.target || 'Operating system'
+        });
+        const key = `${ref.kb}__${ref.target}`;
+        const published = vuln ? toDateSafe(vuln.published) : null;
+        const existing = patchMap.get(key) || {
+          kb: ref.kb,
+          target: ref.target,
+          note: ref.note || 'Endpoint-reported missing security update',
+          priority: model.priority,
+          score: 0,
+          reductionEstimate: 0,
+          maxCvss: 0,
+          affectedDevices: 0,
+          vulnCount: 0,
+          exploitedCount: 0,
+          primaryVulnId: vuln?.id || defaultVuln?.id || '',
+          oldestPublished: published,
+          latestPublished: published,
+          action: model.action,
+          _deviceSet: new Set(),
+          _vulnSet: new Set()
+        };
+
+        if (priorityWeight[model.priority] > priorityWeight[existing.priority]) existing.priority = model.priority;
+        if (model.score > existing.score) {
+          existing.score = model.score;
+          existing.primaryVulnId = vuln?.id || existing.primaryVulnId;
+          existing.action = model.action;
+        }
+
+        existing.reductionEstimate = Math.min(35, existing.reductionEstimate + model.reductionEstimate);
+        existing.maxCvss = Math.max(existing.maxCvss, Number(vuln?.cvss || 0));
+        existing._deviceSet.add(deviceKey);
+        if (vuln?.id) existing._vulnSet.add(vuln.id);
+        if (vuln?.exploited) existing.exploitedCount += 1;
+
+        if (published) {
+          if (!existing.oldestPublished || published < existing.oldestPublished) existing.oldestPublished = published;
+          if (!existing.latestPublished || published > existing.latestPublished) existing.latestPublished = published;
+        }
+
+        patchMap.set(key, existing);
+      });
+    });
+  }
+
+  if (!patchMap.size) filteredVulns.forEach(vuln => {
     const model = remediationPriority(vuln);
     const patchRefs = (KB_PATCH_MAP[vuln.id] && KB_PATCH_MAP[vuln.id].length)
       ? KB_PATCH_MAP[vuln.id]
@@ -2387,6 +2796,12 @@ function renderMissingPatchesCard() {
 
   const ranked = Array.from(patchMap.values())
     .map(item => {
+      if (item._deviceSet instanceof Set) {
+        item.affectedDevices = item._deviceSet.size;
+      }
+      if (item._vulnSet instanceof Set) {
+        item.vulnCount = item._vulnSet.size;
+      }
       const ageDays = item.oldestPublished ? Math.max(0, Math.floor((Date.now() - item.oldestPublished.getTime()) / 86400000)) : null;
       const cvssTone = item.maxCvss >= 9 ? 'critical' : item.maxCvss >= 7 ? 'high' : item.maxCvss >= 4 ? 'medium' : 'low';
       const exposureTone = item.affectedDevices >= 300 ? 'critical' : item.affectedDevices >= 150 ? 'high' : item.affectedDevices >= 60 ? 'medium' : 'low';
@@ -2723,6 +3138,16 @@ function compareVersionStrings(a, b) {
 }
 
 function getMissingOsPatchesForDevice(device, providedMappedVulns = null) {
+  const livePatches = getLiveEndpointPatchesForDevice(device);
+  if (livePatches.length) {
+    const deduped = new Map();
+    livePatches.forEach(ref => {
+      const key = `${ref.kb}::${ref.target}`;
+      if (!deduped.has(key)) deduped.set(key, ref);
+    });
+    return Array.from(deduped.values());
+  }
+
   const osNorm = String(device?.os || '').toLowerCase();
   const mappedVulns = Array.isArray(providedMappedVulns) ? providedMappedVulns : mapVulnerabilitiesForDevice(device);
   const missingOsPatches = new Map();
@@ -2818,6 +3243,8 @@ function renderCAPolicies() {
     const stateClass = p.state === 'enabled' ? 'enabled' : p.state === 'report-only' ? 'report-only' : 'disabled';
     const coverageBand = p.coverage >= 90 ? 'High' : p.coverage >= 60 ? 'Medium' : 'Low';
     const escapedName = p.name.replace(/'/g, "\\'");
+    const affectedSummary = getPolicyAffectedUsersSummary(p);
+    const affectedPreview = affectedSummary.length > 40 ? `${affectedSummary.slice(0, 40)}...` : affectedSummary;
     return `<div class="ca-item ${selectedPolicyName === p.name ? 'selected' : ''}" role="button" tabindex="0" onclick="openPolicyDetailFromList('${escapedName}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openPolicyDetailFromList('${escapedName}')}">
       <div class="ca-item-header">
         <div class="ca-item-name">${p.name}</div>
@@ -2825,7 +3252,11 @@ function renderCAPolicies() {
       </div>
       <div class="ca-detail-row">
         <span>👥 ${p.users.toLocaleString()} users</span>
+        <span>🎯 ${affectedPreview}</span>
+      </div>
+      <div class="ca-detail-row">
         <span>📱 ${p.apps.length > 25 ? p.apps.substring(0,25)+'...' : p.apps}</span>
+        <span></span>
       </div>
       <div class="ca-coverage-bar">
         <div class="ca-coverage-fill" style="width:${p.coverage}%"></div>
@@ -2874,7 +3305,7 @@ function assessPolicyGap(policy) {
   }
 
   const severity = score >= 55 ? 'critical' : score >= 35 ? 'high' : score >= 20 ? 'medium' : 'low';
-  const mitre = POLICY_MITRE_MAP[policy.name] || { tactics: [], techniques: [], threats: [] };
+  const mitre = resolvePolicyMitreMapping(policy);
   const recommendations = [];
 
   if (policy.state === 'report-only') recommendations.push('Move from report-only to enabled after pilot validation.');
@@ -3147,17 +3578,17 @@ function renderPolicyOverlapInsights() {
 
   if (summaryEl) {
     summaryEl.innerHTML = `
-      <article class="policy-gap-cell">
+      <article class="policy-gap-cell" role="button" tabindex="0" onclick="openPolicyOverlapBucketDetail('exact')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openPolicyOverlapBucketDetail('exact')}">
         <div class="k">Exact Duplicates</div>
         <div class="v" style="color:var(--severity-critical);">${overlap.summary.exact}</div>
         <div class="s">Same control path and same outcome</div>
       </article>
-      <article class="policy-gap-cell">
+      <article class="policy-gap-cell" role="button" tabindex="0" onclick="openPolicyOverlapBucketDetail('high')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openPolicyOverlapBucketDetail('high')}">
         <div class="k">High Overlap</div>
         <div class="v" style="color:var(--severity-high);">${overlap.summary.high}</div>
         <div class="s">Likely merge candidates</div>
       </article>
-      <article class="policy-gap-cell">
+      <article class="policy-gap-cell" role="button" tabindex="0" onclick="openPolicyOverlapBucketDetail('conflict')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openPolicyOverlapBucketDetail('conflict')}">
         <div class="k">Conflicting Overlap</div>
         <div class="v" style="color:var(--severity-medium);">${overlap.summary.conflict}</div>
         <div class="s">Same scope with different control outcomes</div>
@@ -3182,6 +3613,53 @@ function renderPolicyOverlapInsights() {
         `).join('')
       : '<div style="font-size:12px;color:var(--text-muted);">No overlap or duplication risks detected in the current policy filter.</div>';
   }
+}
+
+function openPolicyOverlapBucketDetail(bucket) {
+  const overlap = buildPolicyOverlapInsights(getFilteredPolicies());
+  const rows = overlap.pairs.filter(item => item.classification === bucket);
+  const labels = {
+    exact: 'Exact Duplicates',
+    high: 'High Overlap',
+    conflict: 'Conflicting Overlap'
+  };
+  const titleLabel = labels[bucket] || 'Policy Overlap';
+
+  const overlay = document.getElementById('detailOverlay');
+  const title = document.getElementById('detailTitle');
+  const body = document.getElementById('detailBody');
+
+  title.textContent = `Policy Overlap Bucket — ${titleLabel}`;
+  body.innerHTML = `
+    <div class="detail-section">
+      <div class="detail-section-title">Bucket Summary</div>
+      <div class="detail-row"><span class="label">Matches</span><span class="value" style="font-family:JetBrains Mono;">${rows.length}</span></div>
+      <div style="font-size:12px;color:var(--text-secondary);line-height:1.65;margin-top:6px;">
+        Click an item below to open full overlap detail and remediation guidance.
+      </div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">Matched Policy Pairs</div>
+      ${
+        rows.length
+          ? rows.map(item => `
+              <article class="policy-gap-item" role="button" tabindex="0" onclick="openPolicyOverlapDetail('${item.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openPolicyOverlapDetail('${item.id}')}">
+                <div class="policy-gap-head">
+                  <div class="policy-gap-title">${item.a.name} <span style="color:var(--text-muted);">vs</span> ${item.b.name}</div>
+                  <span class="policy-pill ${overlapPillClass(item.classification)}">${overlapClassLabel(item.classification)} · ${item.overlapScore}%</span>
+                </div>
+                <div class="policy-gap-meta">
+                  App overlap ${item.metrics.appsSim}% · Conditions ${item.metrics.conditionSim}% · Grant ${item.metrics.grantSim}% · Session ${item.metrics.sessionSim}%<br>
+                  ${item.reasons[0] || 'Review for consolidation opportunity.'}
+                </div>
+              </article>
+            `).join('')
+          : '<div style="font-size:12px;color:var(--text-muted);">No policy pairs matched this bucket in the current filter context.</div>'
+      }
+    </div>
+  `;
+
+  overlay.classList.add('visible');
 }
 
 function renderPolicyGapInsights() {
@@ -3920,18 +4398,20 @@ function setupRemediationViewInteractions() {
 }
 
 function setupThreatWorkbenchInteractions() {
-  const riskBtn = document.getElementById('threatWorkbenchRiskBtn');
-  const remediationBtn = document.getElementById('threatWorkbenchRemediationBtn');
-  if (!riskBtn || !remediationBtn || riskBtn.dataset.bound === 'true') return;
+  const patchNowBtn = document.getElementById('threatWorkbenchPatchNowBtn');
+  const patchNextBtn = document.getElementById('threatWorkbenchPatchNextBtn');
+  const monitorBtn = document.getElementById('threatWorkbenchMonitorBtn');
+  if (!patchNowBtn || !patchNextBtn || !monitorBtn || patchNowBtn.dataset.bound === 'true') return;
 
   const setMode = (mode) => {
     threatWorkbenchMode = mode;
     renderThreatWorkbench();
   };
 
-  riskBtn.addEventListener('click', () => setMode('risk'));
-  remediationBtn.addEventListener('click', () => setMode('remediation'));
-  riskBtn.dataset.bound = 'true';
+  patchNowBtn.addEventListener('click', () => setMode('patch-now'));
+  patchNextBtn.addEventListener('click', () => setMode('patch-next'));
+  monitorBtn.addEventListener('click', () => setMode('monitor'));
+  patchNowBtn.dataset.bound = 'true';
 }
 
 function setupDeviceInventoryInteractions() {
@@ -5464,7 +5944,8 @@ function openThreatRelevanceDetail(cveId) {
   if (!vuln) return;
 
   const { score, relatedDevices, avgRisk } = threatRelevanceScore(vuln);
-  const kbPatches = KB_PATCH_MAP[vuln.id] || [];
+  const endpointKbPatches = getEndpointPatchRefsForVulnerability(vuln.id);
+  const kbPatches = endpointKbPatches.length ? endpointKbPatches : (KB_PATCH_MAP[vuln.id] || []);
   const playbook = remediationPlaybook(vuln);
   const topDevices = relatedDevices
     .sort((a, b) => b.riskScore - a.riskScore || b.vulns - a.vulns)
@@ -5511,7 +5992,7 @@ function openThreatRelevanceDetail(cveId) {
                   <div style="font-size:12px;font-weight:700;color:var(--text-primary);font-family:'JetBrains Mono',monospace;">${item.kb}</div>
                   <div style="font-size:10px;color:var(--text-secondary);font-family:'JetBrains Mono',monospace;">${item.target}</div>
                 </div>
-                <div style="font-size:11px;color:var(--text-muted);">${item.note}</div>
+                <div style="font-size:11px;color:var(--text-muted);">${item.note}${item.affectedDevices ? ` · ${item.affectedDevices} endpoint${item.affectedDevices === 1 ? '' : 's'}` : ''}</div>
               </div>
             `).join('')
           : `
@@ -5539,7 +6020,8 @@ function openRemediationDetail(cveId) {
 
   const details = remediationPriority(vuln);
   const playbook = remediationPlaybook(vuln);
-  const kbPatches = KB_PATCH_MAP[vuln.id] || [];
+  const endpointKbPatches = getEndpointPatchRefsForVulnerability(vuln.id);
+  const kbPatches = endpointKbPatches.length ? endpointKbPatches : (KB_PATCH_MAP[vuln.id] || []);
   const impacted = details.relatedDevices
     .sort((a, b) => b.riskScore - a.riskScore || b.vulns - a.vulns)
     .slice(0, 10);
@@ -5582,7 +6064,7 @@ function openRemediationDetail(cveId) {
                   <div style="font-size:12px;font-weight:700;color:var(--text-primary);font-family:'JetBrains Mono',monospace;">${item.kb}</div>
                   <div style="font-size:10px;color:var(--text-secondary);font-family:'JetBrains Mono',monospace;">${item.target}</div>
                 </div>
-                <div style="font-size:11px;color:var(--text-muted);">${item.note}</div>
+                <div style="font-size:11px;color:var(--text-muted);">${item.note}${item.affectedDevices ? ` · ${item.affectedDevices} endpoint${item.affectedDevices === 1 ? '' : 's'}` : ''}</div>
               </div>
             `).join('')
           : `
@@ -5736,6 +6218,13 @@ function openCADetail(policyName) {
   const policy = caPolicies.find(p => p.name === policyName);
   if (!policy) return;
   const assessment = assessPolicyGap(policy);
+  const affectedDetails = getPolicyAffectedUsersDetails(policy);
+  const stateClass = policy.state === 'enabled' ? 'enabled' : policy.state === 'report-only' ? 'report-only' : 'disabled';
+  const stateLabel = policy.state === 'report-only'
+    ? 'Report Only'
+    : policy.state === 'disabled'
+      ? 'Disabled'
+      : 'Enabled';
 
   const overlay = document.getElementById('detailOverlay');
   const title = document.getElementById('detailTitle');
@@ -5745,10 +6234,17 @@ function openCADetail(policyName) {
   body.innerHTML = `
     <div class="detail-section">
       <div class="detail-section-title">Policy Configuration</div>
-      <div class="detail-row"><span class="label">State</span><span class="value"><span class="ca-status-badge ${policy.state === 'enabled' ? 'enabled' : 'report-only'}">${policy.state === 'report-only' ? 'Report Only' : 'Enabled'}</span></span></div>
+      <div class="detail-row"><span class="label">State</span><span class="value"><span class="ca-status-badge ${stateClass}">${stateLabel}</span></span></div>
       <div class="detail-row"><span class="label">Coverage</span><span class="value" style="font-family:JetBrains Mono;">${policy.coverage}%</span></div>
       <div class="detail-row"><span class="label">Affected Users</span><span class="value" style="font-family:JetBrains Mono;">${policy.users.toLocaleString()}</span></div>
+      <div class="detail-row"><span class="label">Affected Scope</span><span class="value">${getPolicyAffectedUsersSummary(policy)}</span></div>
       <div class="detail-row"><span class="label">Gap Score</span><span class="value"><span class="policy-pill ${assessment.severity}">${assessment.score}</span></span></div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">Affected Identities</div>
+      <div style="font-size:12px;color:var(--text-secondary);line-height:1.7;">
+        ${affectedDetails.map((entry, idx) => `${idx + 1}. ${entry}`).join('<br>')}
+      </div>
     </div>
     <div class="detail-section">
       <div class="detail-section-title">Conditions</div>
