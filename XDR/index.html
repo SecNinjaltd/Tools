@@ -1072,6 +1072,8 @@ let liveExposureScore = null;
 let liveSecureScore = null;
 let liveEndpointPatchData = new Map();
 let liveEndpointCveData = new Map();
+let liveSecurityRecommendations = [];
+let liveSecureConfigByDevice = new Map();
 let hasLiveVulnerabilityBaseline = false;
 let standardsDetailModel = { cis: {}, nist: {}, identity: {}, nis2: {} };
 let exposureTrendPoints = [];
@@ -1169,15 +1171,16 @@ function endpointOsProfile(input = {}) {
   const osPlatform = normalizeOsToken(input.osPlatform || input.operatingSystem || '');
   const osDistribution = normalizeOsToken(input.osDistribution || input.productName || '');
   const osVersion = normalizeOsToken(input.osVersion || input.version || '');
+  const osBuild = normalizeOsToken(input.osBuild || '');
   const deviceName = normalizeOsToken(input.deviceName || input.computerDnsName || input.name || '');
   const context = `${osPlatform} ${osDistribution}`.toLowerCase();
-  const version = osVersion.toLowerCase();
+  const version = `${osVersion} ${osBuild}`.toLowerCase();
 
   const isMobile = /ios|android/.test(context);
   const isMac = /mac|osx|darwin/.test(context);
   const isLinux = /linux|ubuntu|debian|centos|rhel/.test(context);
   const windowsHint = /windows|win32|win11|win10/.test(context);
-  const serverHintByText = /windows\s*server|server\s*20\d{2}|datacenter|domain controller/.test(context);
+  const serverHintByText = /windows\s*server|windowsserver|server\s*20\d{2}|datacenter|domain controller/.test(context);
   const serverHintByHost = /^srv[-_.]/i.test(deviceName);
   const serverHintByRole = /server|dc|domain/.test(String(input.machineRole || input.rbacGroupName || '').toLowerCase());
   const isServer = serverHintByText || serverHintByHost || serverHintByRole;
@@ -1564,6 +1567,25 @@ function normalizeDeviceKey(value) {
   return String(value || '').trim().toLowerCase();
 }
 
+function shortDeviceKey(value) {
+  return normalizeDeviceKey(value).split('.')[0];
+}
+
+function findDeviceByIdentity(machineId, deviceName) {
+  const id = String(machineId || '').trim();
+  const key = normalizeDeviceKey(deviceName);
+  const short = shortDeviceKey(deviceName);
+  return devices.find(device => {
+    const sourceId = String(device.sourceMachineId || '').trim();
+    const deviceKey = normalizeDeviceKey(device.name);
+    const deviceShort = shortDeviceKey(device.name);
+    if (id && sourceId && sourceId === id) return true;
+    if (key && deviceKey === key) return true;
+    if (short && deviceShort === short) return true;
+    return false;
+  }) || null;
+}
+
 function extractCveId(value) {
   const match = String(value || '').match(/CVE-\d{4}-\d{4,7}/i);
   return match ? match[0].toUpperCase() : '';
@@ -1678,6 +1700,21 @@ function getEndpointCvesForDevice(device) {
   return [];
 }
 
+function getSecureConfigAssessmentForDevice(device) {
+  const key = normalizeDeviceKey(device?.name);
+  if (!key) return null;
+  const direct = liveSecureConfigByDevice.get(key);
+  if (direct) return direct;
+  const short = key.split('.')[0];
+  for (const [deviceKey, item] of liveSecureConfigByDevice.entries()) {
+    const candidateShort = String(deviceKey || '').split('.')[0];
+    if (deviceKey === key || candidateShort === short || key.startsWith(`${candidateShort}.`) || deviceKey.startsWith(`${short}.`)) {
+      return item;
+    }
+  }
+  return null;
+}
+
 function syncDeviceVulnCountsFromEndpointEvidence() {
   if (!liveEndpointCveData.size || !devices.length) return false;
   devices.forEach(device => {
@@ -1695,6 +1732,7 @@ function applyLiveDefenderMachines(machines) {
       osPlatform: m.osPlatform,
       osDistribution: m.osDistribution,
       osVersion: m.osVersion || m.version,
+      osBuild: m.osBuild,
       deviceName: m.computerDnsName || m.deviceName,
       machineRole: m.machineRole,
       rbacGroupName: m.rbacGroupName
@@ -1787,10 +1825,7 @@ function applyLiveDefenderMachineVulnerabilities(rows) {
     const cveId = extractCveId(row.cveId || row.vulnerabilityId || row.name || row.title || row.id || '');
     if (!cveId && !machineId && !rawName) return;
 
-    const matchedDevice = devices.find(d =>
-      (machineId && String(d.sourceMachineId || '') === machineId) ||
-      normalizeDeviceKey(d.name) === normalizeDeviceKey(rawName)
-    );
+    const matchedDevice = findDeviceByIdentity(machineId, rawName);
     const deviceKey = normalizeDeviceKey(matchedDevice?.name || rawName || machineId || `unknown-${idx + 1}`);
     const deviceOs = String(matchedDevice?.os || row.osPlatform || row.productName || '').toLowerCase();
 
@@ -1892,17 +1927,87 @@ function applyLiveDefenderSoftware(softwareRows) {
   return true;
 }
 
+function applyLiveSecurityRecommendations(rows) {
+  if (!Array.isArray(rows) || !rows.length) return false;
+
+  const mapped = rows
+    .map((row, idx) => ({
+      id: String(row.id || `REC-${idx + 1}`),
+      recommendationName: String(row.recommendationName || row.name || row.title || 'Security recommendation'),
+      productName: String(row.productName || row.relatedComponent || row.vendor || 'Endpoint'),
+      recommendedVersion: String(row.recommendedVersion || row.recommendedProgram || '').trim(),
+      remediationType: String(row.remediationType || row.recommendationCategory || 'Mitigate'),
+      status: String(row.status || 'Active'),
+      exposedMachinesCount: Number(row.exposedMachinesCount || row.totalMachineCount || 0),
+      publicExploit: Boolean(row.publicExploit || row.activeAlert),
+      configScoreImpact: Number(row.configScoreImpact || 0),
+      exposureImpact: Number(row.exposureImpact || 0),
+      severityScore: Number(row.severityScore || 0)
+    }))
+    .filter(item => item.status.toLowerCase() !== 'fixed')
+    .sort((a, b) =>
+      Number(b.publicExploit) - Number(a.publicExploit) ||
+      Number(b.exposureImpact || 0) - Number(a.exposureImpact || 0) ||
+      Number(b.exposedMachinesCount || 0) - Number(a.exposedMachinesCount || 0)
+    );
+
+  liveSecurityRecommendations = mapped;
+  return mapped.length > 0;
+}
+
+function applyLiveSecureConfigurationAssessment(rows) {
+  if (!Array.isArray(rows) || !rows.length || !devices.length) return false;
+
+  const next = new Map();
+  rows.forEach((row, idx) => {
+    const machineId = String(row.machineId || row.deviceId || row.id || '').trim();
+    const rawName = row.computerDnsName || row.deviceName || row.machineName || '';
+    const matched = findDeviceByIdentity(machineId, rawName);
+    if (!matched) return;
+
+    const deviceKey = normalizeDeviceKey(matched.name);
+    const passed = String(row.isCompliant ?? row.compliant ?? row.isApplicable).toLowerCase() === 'true';
+    const record = next.get(deviceKey) || { nonCompliant: 0, highRisk: 0, items: [] };
+    const title = String(row.configuration || row.configurationName || row.controlName || row.name || `Configuration ${idx + 1}`);
+    const impact = Number(row.impact || row.scoreImpact || row.exposureImpact || 0);
+
+    if (!passed) {
+      record.nonCompliant += 1;
+      if (impact >= 1) record.highRisk += 1;
+      if (record.items.length < 8) {
+        record.items.push({
+          title,
+          impact,
+          remediation: String(row.remediation || row.remediationDescription || row.expectedValue || 'Review recommended security baseline setting')
+        });
+      }
+    }
+    next.set(deviceKey, record);
+  });
+
+  liveSecureConfigByDevice = next;
+  return next.size > 0;
+}
+
+function recommendationsForVulnerability(vuln, max = 3) {
+  if (!Array.isArray(liveSecurityRecommendations) || !liveSecurityRecommendations.length || !vuln) return [];
+  const text = `${vuln.software || ''} ${vuln.title || ''}`.toLowerCase();
+  return liveSecurityRecommendations
+    .filter(rec => {
+      const recText = `${rec.productName} ${rec.recommendationName}`.toLowerCase();
+      return recText && (text.includes(recText) || recText.includes(String(vuln.software || '').toLowerCase()) || recText.includes(String(vuln.id || '').toLowerCase()));
+    })
+    .slice(0, max);
+}
+
 function applyLiveDeviceAvInfo(rows) {
   if (!Array.isArray(rows) || !rows.length || !devices.length) return false;
 
   let updated = 0;
   rows.forEach(row => {
     const machineId = String(row.machineId || row.id || '').trim();
-    const dnsName = normalizeDeviceKey(row.computerDnsName || row.deviceName || '');
-    const match = devices.find(device =>
-      (machineId && String(device.sourceMachineId || '').trim() === machineId) ||
-      (dnsName && normalizeDeviceKey(device.name) === dnsName)
-    );
+    const rawName = row.computerDnsName || row.deviceName || '';
+    const match = findDeviceByIdentity(machineId, rawName);
     if (!match) return;
 
     if (row.avPlatformVersion) match.defenderPlatformVer = String(row.avPlatformVersion);
@@ -1913,6 +2018,7 @@ function applyLiveDeviceAvInfo(rows) {
       const osProfile = endpointOsProfile({
         osPlatform: row.osPlatform,
         osVersion: row.osVersion,
+        osBuild: row.osBuild,
         deviceName: match.name
       });
       if (osProfile.display && (!match.os || String(match.os).toLowerCase().includes('unknown'))) match.os = osProfile.display;
@@ -2008,12 +2114,14 @@ async function loadLiveTenantData(graphAccessToken, defenderAccessToken) {
 
   if (defenderAccessToken) {
     tasks.push(
-      { key: 'defenderMachines', run: () => defenderGetAll('https://api.securitycenter.microsoft.com/api/machines?$top=300', defenderAccessToken, 10) },
-      { key: 'defenderDeviceAvInfo', run: () => defenderGetAll('https://api.securitycenter.microsoft.com/api/deviceavinfo?$top=2000', defenderAccessToken, 20) },
-      { key: 'defenderVulns', run: () => defenderGetAll('https://api.securitycenter.microsoft.com/api/vulnerabilities?$top=300', defenderAccessToken, 10) },
-      { key: 'defenderMachineVulns', run: () => defenderGetAll('https://api.securitycenter.microsoft.com/api/vulnerabilities/machinesVulnerabilities?$top=500', defenderAccessToken, 20) },
-      { key: 'defenderSoftware', run: () => defenderGetAll('https://api.securitycenter.microsoft.com/api/Software?$top=300', defenderAccessToken, 10) },
-      { key: 'defenderExposure', run: () => defenderGetJson('https://api.securitycenter.microsoft.com/api/exposureScore', defenderAccessToken) }
+      { key: 'defenderMachines', run: () => defenderGetAll('https://api.security.microsoft.com/api/machines?$top=300', defenderAccessToken, 10) },
+      { key: 'defenderDeviceAvInfo', run: () => defenderGetAll('https://api.security.microsoft.com/api/deviceavinfo?$top=2000', defenderAccessToken, 20) },
+      { key: 'defenderRecommendations', run: () => defenderGetAll('https://api.security.microsoft.com/api/recommendations?$top=500', defenderAccessToken, 20) },
+      { key: 'defenderSecureConfigs', run: () => defenderGetAll('https://api.security.microsoft.com/api/machines/SecureConfigurationsAssessmentByMachine?$top=2000', defenderAccessToken, 20) },
+      { key: 'defenderVulns', run: () => defenderGetAll('https://api.security.microsoft.com/api/vulnerabilities?$top=300', defenderAccessToken, 10) },
+      { key: 'defenderMachineVulns', run: () => defenderGetAll('https://api.security.microsoft.com/api/vulnerabilities/machinesVulnerabilities?$top=500', defenderAccessToken, 20) },
+      { key: 'defenderSoftware', run: () => defenderGetAll('https://api.security.microsoft.com/api/Software?$top=300', defenderAccessToken, 10) },
+      { key: 'defenderExposure', run: () => defenderGetJson('https://api.security.microsoft.com/api/exposureScore', defenderAccessToken) }
     );
   }
 
@@ -2039,6 +2147,8 @@ async function loadLiveTenantData(graphAccessToken, defenderAccessToken) {
     graphDevices: resultsByKey.graphDevices ? applyLiveDevices(resultsByKey.graphDevices) : false,
     defenderMachines: resultsByKey.defenderMachines ? applyLiveDefenderMachines(resultsByKey.defenderMachines) : false,
     defenderDeviceAvInfo: resultsByKey.defenderDeviceAvInfo ? applyLiveDeviceAvInfo(resultsByKey.defenderDeviceAvInfo) : false,
+    defenderRecommendations: resultsByKey.defenderRecommendations ? applyLiveSecurityRecommendations(resultsByKey.defenderRecommendations) : false,
+    defenderSecureConfigs: resultsByKey.defenderSecureConfigs ? applyLiveSecureConfigurationAssessment(resultsByKey.defenderSecureConfigs) : false,
     defenderMachineVulns: resultsByKey.defenderMachineVulns ? applyLiveDefenderMachineVulnerabilities(resultsByKey.defenderMachineVulns) : false,
     graphPolicies: resultsByKey.graphPolicies ? applyLivePolicies(resultsByKey.graphPolicies) : false,
     graphAlerts: resultsByKey.graphAlerts ? applyLiveAlerts(resultsByKey.graphAlerts) : false,
@@ -2062,6 +2172,8 @@ async function loadLiveTenantData(graphAccessToken, defenderAccessToken) {
     graphAlerts: 'Graph alerts',
     defenderMachines: 'Defender machines',
     defenderDeviceAvInfo: 'Defender device AV health',
+    defenderRecommendations: 'Defender recommendations',
+    defenderSecureConfigs: 'Defender secure configuration',
     defenderMachineVulns: 'Defender machine vulnerabilities',
     defenderVulns: 'Defender vulnerabilities',
     defenderSoftware: 'Defender software inventory',
@@ -2995,7 +3107,31 @@ function renderMissingPatchesCard() {
   const defaultVuln = filteredVulns[0] || vulnerabilities[0] || null;
 
   if (!liveEndpointPatchData.size) {
-    container.innerHTML = '<div style="font-size:12px;color:var(--text-muted);">No endpoint missing patch data is available yet. Connect Defender endpoint sources to populate this card.</div>';
+    const recommendationFallback = liveSecurityRecommendations
+      .filter(item => item.status.toLowerCase() === 'active' && /update|upgrade|patch/i.test(item.remediationType))
+      .slice(0, 10);
+    if (!recommendationFallback.length) {
+      container.innerHTML = '<div style="font-size:12px;color:var(--text-muted);">No endpoint missing patch data is available yet. Connect Defender endpoint sources to populate this card.</div>';
+      return;
+    }
+    container.innerHTML = recommendationFallback.map(item => `
+      <article class="remediation-item">
+        <div class="remediation-head">
+          <div class="remediation-title">${item.productName}</div>
+          <span class="prio-tag ${item.publicExploit ? 'p1' : item.exposedMachinesCount >= 100 ? 'p2' : 'p3'}">${item.publicExploit ? 'P1' : item.exposedMachinesCount >= 100 ? 'P2' : 'P3'} · Recommendation</span>
+        </div>
+        <div class="remediation-meta">
+          ${item.recommendationName}<br>
+          Recommended version: ${item.recommendedVersion || 'See recommendation details'}<br>
+          Exposed endpoints: ${Number(item.exposedMachinesCount || 0).toLocaleString()} · Exposure impact: ${Number(item.exposureImpact || 0).toFixed(2)}
+        </div>
+        <div class="remediation-tags">
+          <span class="remediation-pill ${item.publicExploit ? 'critical' : 'high'}">${item.publicExploit ? 'Exploit context present' : 'No active exploit signal'}</span>
+          <span class="remediation-pill medium">${item.remediationType}</span>
+          <span class="remediation-pill low">Source: Defender recommendations</span>
+        </div>
+      </article>
+    `).join('');
     return;
   }
 
@@ -3138,6 +3274,7 @@ function priorityLabel(priority) {
 function remediationPlaybook(vuln) {
   const text = `${vuln.title} ${vuln.software}`.toLowerCase();
   const actions = [];
+  const mappedRecommendations = recommendationsForVulnerability(vuln, 2);
 
   if (text.includes('windows') || text.includes('server')) {
     actions.push('Apply latest Microsoft cumulative security update (Patch Tuesday baseline) for impacted Windows/Server builds.');
@@ -3160,6 +3297,10 @@ function remediationPlaybook(vuln) {
     actions.push('Apply vendor security patch to affected software versions and validate closure through rescanning.');
     actions.push('Apply compensating controls (isolation, policy restrictions, IOC blocking) until full patch coverage is achieved.');
   }
+
+  mappedRecommendations.forEach(item => {
+    actions.push(`Defender recommendation: ${item.recommendationName}${item.recommendedVersion ? ` (target version ${item.recommendedVersion})` : ''}.`);
+  });
 
   return actions.slice(0, 5);
 }
@@ -6124,6 +6265,7 @@ function openVulnDetail(cveId) {
   if (!vuln) return;
   const sevClass = getSeverityBucket(vuln);
   const sevLabel = getSeverityLabel(sevClass);
+  const mappedRecommendations = recommendationsForVulnerability(vuln, 3);
 
   const overlay = document.getElementById('detailOverlay');
   const title = document.getElementById('detailTitle');
@@ -6155,6 +6297,14 @@ function openVulnDetail(cveId) {
       <div style="font-size:12px;color:var(--text-secondary);line-height:1.6;">
         Apply the latest security update from Microsoft. This vulnerability is addressed in the ${vuln.published.substring(0,7)} Patch Tuesday cumulative update. Prioritise deployment to internet-facing devices and servers.
       </div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">Defender Recommendations</div>
+      ${
+        mappedRecommendations.length
+          ? mappedRecommendations.map(item => `<div class="detail-row"><span class="label">${item.productName}</span><span class="value">${item.recommendationName}${item.recommendedVersion ? ` · ${item.recommendedVersion}` : ''}</span></div>`).join('')
+          : '<div style="font-size:12px;color:var(--text-muted);">No direct recommendation mapping found for this vulnerability.</div>'
+      }
     </div>
   `;
   overlay.classList.add('visible');
@@ -6238,6 +6388,7 @@ function openRemediationDetail(cveId) {
 
   const details = remediationPriority(vuln);
   const playbook = remediationPlaybook(vuln);
+  const mappedRecommendations = recommendationsForVulnerability(vuln, 3);
   const endpointKbPatches = getEndpointPatchRefsForVulnerability(vuln.id);
   const kbPatches = endpointKbPatches;
   const impacted = details.relatedDevices
@@ -6295,6 +6446,19 @@ function openRemediationDetail(cveId) {
       </div>
     </div>
     <div class="detail-section">
+      <div class="detail-section-title">Defender Recommendations</div>
+      ${
+        mappedRecommendations.length
+          ? mappedRecommendations.map(item => `
+              <div style="padding:10px 12px;border:1px solid var(--border-subtle);border-radius:8px;margin-bottom:8px;background:var(--bg-elevated);">
+                <div style="font-size:12px;font-weight:700;color:var(--text-primary);">${item.recommendationName}</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">${item.productName}${item.recommendedVersion ? ` · target ${item.recommendedVersion}` : ''} · ${item.exposedMachinesCount} exposed endpoint(s)</div>
+              </div>
+            `).join('')
+          : '<div style="font-size:12px;color:var(--text-muted);">No direct Defender recommendations mapped to this remediation item.</div>'
+      }
+    </div>
+    <div class="detail-section">
       <div class="detail-section-title">Top Impacted Devices (Sample Mapping)</div>
       ${
         impacted.length
@@ -6334,6 +6498,7 @@ function openDeviceDetail(deviceName) {
     })
     .slice(0, 8);
   const missingOsPatchList = getMissingOsPatchesForDevice(device, mappedVulns);
+  const secureConfigAssessment = getSecureConfigAssessmentForDevice(device);
 
   const nonCompliantReasons = [];
   if (String(device.health || '').toLowerCase() !== 'healthy') nonCompliantReasons.push(`Health status is ${device.health}`);
@@ -6341,6 +6506,7 @@ function openDeviceDetail(deviceName) {
   if (platformClass !== 'current') nonCompliantReasons.push('Defender platform version is not current');
   if (engineClass !== 'current') nonCompliantReasons.push('Defender engine version is not current');
   if (intelClass !== 'current') nonCompliantReasons.push('Defender security intelligence is not current');
+  if (Number(secureConfigAssessment?.nonCompliant || 0) > 0) nonCompliantReasons.push(`${secureConfigAssessment.nonCompliant} secure configuration control(s) are non-compliant`);
 
   const appliedPolicies = caPolicies
     .slice(0, Number(device.caPolicies || 0))
@@ -6372,6 +6538,7 @@ function openDeviceDetail(deviceName) {
       <div class="detail-row"><span class="label">Risk Score</span><span class="value" style="font-family:JetBrains Mono;color:${device.riskScore > 70 ? 'var(--severity-critical)' : device.riskScore > 40 ? 'var(--severity-high)' : 'var(--status-compliant)'};">${device.riskScore}/100</span></div>
       <div class="detail-row"><span class="label">Open Vulnerabilities</span><span class="value" style="font-family:JetBrains Mono;${device.vulns > 10 ? 'color:var(--severity-critical);' : ''}">${device.vulns}</span></div>
       <div class="detail-row"><span class="label">Missing OS Patches</span><span class="value" style="font-family:JetBrains Mono;color:${missingOsPatchList.length ? 'var(--severity-high)' : 'var(--status-compliant)'};">${missingOsPatchList.length}</span></div>
+      <div class="detail-row"><span class="label">Secure Config Gaps</span><span class="value" style="font-family:JetBrains Mono;color:${Number(secureConfigAssessment?.nonCompliant || 0) > 0 ? 'var(--severity-high)' : 'var(--status-compliant)'};">${Number(secureConfigAssessment?.nonCompliant || 0)}</span></div>
       <div class="detail-row"><span class="label">CA Policies Applied</span><span class="value" style="font-family:JetBrains Mono;">${device.caPolicies}</span></div>
     </div>
     <div class="detail-section">
@@ -6395,6 +6562,23 @@ function openDeviceDetail(deviceName) {
               </div>
             `).join('')
           : '<div style="font-size:12px;color:var(--text-muted);line-height:1.7;">No OS-specific patch gap is currently mapped for this device. Validate latest cumulative updates in <a href="https://msrc.microsoft.com/update-guide/" target="_blank" rel="noopener noreferrer">Microsoft Security Update Guide</a>.</div>'
+      }
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">Secure Configuration Assessment</div>
+      ${
+        secureConfigAssessment && Number(secureConfigAssessment.nonCompliant || 0) > 0
+          ? `
+            <div class="detail-row"><span class="label">Non-compliant controls</span><span class="value" style="font-family:JetBrains Mono;color:var(--severity-high);">${secureConfigAssessment.nonCompliant}</span></div>
+            <div class="detail-row"><span class="label">High-impact controls</span><span class="value" style="font-family:JetBrains Mono;color:${secureConfigAssessment.highRisk ? 'var(--severity-high)' : 'var(--text-primary)'};">${secureConfigAssessment.highRisk}</span></div>
+            ${secureConfigAssessment.items.map(item => `
+              <div style="padding:10px 12px;border:1px solid var(--border-subtle);border-radius:8px;margin-top:8px;background:var(--bg-elevated);">
+                <div style="font-size:12px;font-weight:700;color:var(--text-primary);">${item.title}</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">${item.remediation}${Number(item.impact || 0) ? ` · Impact ${Number(item.impact).toFixed(2)}` : ''}</div>
+              </div>
+            `).join('')}
+          `
+          : '<div style="font-size:12px;color:var(--text-muted);line-height:1.7;">No non-compliant secure configuration controls were returned for this endpoint.</div>'
       }
     </div>
     <div class="detail-section">
