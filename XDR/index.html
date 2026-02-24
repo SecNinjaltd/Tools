@@ -1071,6 +1071,7 @@ let lastConnectedContext = null;
 let liveExposureScore = null;
 let liveSecureScore = null;
 let liveEndpointPatchData = new Map();
+let liveEndpointCveData = new Map();
 let standardsDetailModel = { cis: {}, nist: {}, identity: {}, nis2: {} };
 let exposureTrendPoints = [];
 let exposureTrendAnchorScore = null;
@@ -1562,9 +1563,9 @@ function getDevicesForEndpointCve(cveId) {
   const byName = new Map(devices.map(d => [normalizeDeviceKey(d.name), d]));
   const hits = new Map();
 
-  liveEndpointPatchData.forEach((patches, deviceKey) => {
-    if (!Array.isArray(patches) || !patches.length) return;
-    const hasCve = patches.some(ref => extractCveId(ref.cveId) === targetId);
+  liveEndpointCveData.forEach((cves, deviceKey) => {
+    if (!(cves instanceof Set) || !cves.size) return;
+    const hasCve = Array.from(cves.values()).some(id => extractCveId(id) === targetId);
     if (!hasCve) return;
     const normalizedKey = normalizeDeviceKey(deviceKey);
     const direct = byName.get(normalizedKey);
@@ -1581,6 +1582,31 @@ function getDevicesForEndpointCve(cveId) {
   });
 
   return Array.from(hits.values());
+}
+
+function getEndpointCvesForDevice(device) {
+  const key = normalizeDeviceKey(device?.name);
+  if (!key) return [];
+  const direct = liveEndpointCveData.get(key);
+  if (direct instanceof Set && direct.size) return Array.from(direct.values());
+
+  const short = key.split('.')[0];
+  for (const [deviceKey, cves] of liveEndpointCveData.entries()) {
+    const candidateShort = String(deviceKey || '').split('.')[0];
+    if (deviceKey === key || candidateShort === short || key.startsWith(`${candidateShort}.`) || deviceKey.startsWith(`${short}.`)) {
+      if (cves instanceof Set && cves.size) return Array.from(cves.values());
+    }
+  }
+  return [];
+}
+
+function syncDeviceVulnCountsFromEndpointEvidence() {
+  if (!liveEndpointCveData.size || !devices.length) return false;
+  devices.forEach(device => {
+    const cves = getEndpointCvesForDevice(device);
+    if (cves.length) device.vulns = cves.length;
+  });
+  return true;
 }
 
 function applyLiveDefenderMachines(machines) {
@@ -1657,6 +1683,7 @@ function applyLiveDefenderMachineVulnerabilities(rows) {
   if (!Array.isArray(rows) || !rows.length) return false;
 
   const nextMap = new Map();
+  const nextCveMap = new Map();
   const cveAggregate = new Map();
 
   rows.forEach((row, idx) => {
@@ -1684,21 +1711,11 @@ function applyLiveDefenderMachineVulnerabilities(rows) {
     const targetCandidate = row.productName || row.softwareName || matchedDevice?.os || 'Operating system';
     const targetLooksOs = isOsPatchTarget(targetCandidate);
 
-    const patchRefs = kbCandidates.length
-      ? kbCandidates.map(kb => ({
-          kb,
-          target: targetCandidate,
-          note: 'Endpoint-reported missing security update',
-          cveId: cveId || 'Unknown'
-        }))
-      : [];
-
-    if (!patchRefs.length || !targetLooksOs) return;
-    const existing = nextMap.get(deviceKey) || [];
-    patchRefs.forEach(ref => existing.push(ref));
-    nextMap.set(deviceKey, existing);
-
     if (cveId) {
+      const cveSet = nextCveMap.get(deviceKey) || new Set();
+      cveSet.add(cveId);
+      nextCveMap.set(deviceKey, cveSet);
+
       const agg = cveAggregate.get(cveId) || {
         id: cveId,
         title: row.name || row.title || row.vulnerabilityName || 'Endpoint vulnerability',
@@ -1712,9 +1729,24 @@ function applyLiveDefenderMachineVulnerabilities(rows) {
       agg._devices.add(deviceKey);
       cveAggregate.set(cveId, agg);
     }
+
+    const patchRefs = kbCandidates.length
+      ? kbCandidates.map(kb => ({
+          kb,
+          target: targetCandidate,
+          note: 'Endpoint-reported missing security update',
+          cveId: cveId || 'Unknown'
+        }))
+      : [];
+
+    if (!patchRefs.length || !targetLooksOs) return;
+    const existing = nextMap.get(deviceKey) || [];
+    patchRefs.forEach(ref => existing.push(ref));
+    nextMap.set(deviceKey, existing);
   });
 
   liveEndpointPatchData = nextMap;
+  liveEndpointCveData = nextCveMap;
   if (cveAggregate.size) {
     cveAggregate.forEach(agg => {
       const affectedDevices = agg._devices.size;
@@ -1743,7 +1775,8 @@ function applyLiveDefenderMachineVulnerabilities(rows) {
       }
     });
   }
-  return nextMap.size > 0;
+  syncDeviceVulnCountsFromEndpointEvidence();
+  return nextMap.size > 0 || nextCveMap.size > 0;
 }
 
 function applyLiveDefenderSoftware(softwareRows) {
@@ -1880,6 +1913,7 @@ async function loadLiveTenantData(graphAccessToken, defenderAccessToken) {
   };
 
   if (updated.graphDevices || updated.defenderMachines) summarizeDeviceDistributions();
+  if (updated.defenderMachineVulns || updated.defenderMachines) syncDeviceVulnCountsFromEndpointEvidence();
   if (updated.defenderSoftware && resultsByKey.defenderSoftware) {
     applyLiveDefenderSoftware(resultsByKey.defenderSoftware);
   }
@@ -2609,6 +2643,15 @@ function openDeviceOsDetail(osLabel) {
 }
 
 function mapVulnerabilitiesForDevice(device) {
+  const endpointCves = getEndpointCvesForDevice(device);
+  if (endpointCves.length) {
+    const cveSet = new Set(endpointCves.map(id => String(id).toUpperCase()));
+    const direct = vulnerabilities
+      .filter(vuln => cveSet.has(String(vuln.id || '').toUpperCase()))
+      .sort((a, b) => Number(b.cvss || 0) - Number(a.cvss || 0));
+    if (direct.length) return direct.slice(0, 8);
+  }
+
   return vulnerabilities
     .filter(vuln => {
       const osNorm = device.os.toLowerCase();
