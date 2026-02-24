@@ -1155,10 +1155,79 @@ async function defenderGetJson(url, accessToken) {
 }
 
 function classifyDeviceType(osText = '') {
-  const os = osText.toLowerCase();
+  const os = String(osText || '').toLowerCase();
   if (os.includes('ios') || os.includes('android')) return 'Mobile';
-  if (os.includes('server')) return 'Server';
+  if (os.includes('server') || os.includes('datacenter')) return 'Server';
   return 'Workstation';
+}
+
+function normalizeOsToken(value) {
+  return String(value || '').trim().replace(/\s+/g, ' ');
+}
+
+function endpointOsProfile(input = {}) {
+  const osPlatform = normalizeOsToken(input.osPlatform || input.operatingSystem || '');
+  const osDistribution = normalizeOsToken(input.osDistribution || input.productName || '');
+  const osVersion = normalizeOsToken(input.osVersion || input.version || '');
+  const deviceName = normalizeOsToken(input.deviceName || input.computerDnsName || input.name || '');
+  const context = `${osPlatform} ${osDistribution}`.toLowerCase();
+  const version = osVersion.toLowerCase();
+
+  const isMobile = /ios|android/.test(context);
+  const isMac = /mac|osx|darwin/.test(context);
+  const isLinux = /linux|ubuntu|debian|centos|rhel/.test(context);
+  const windowsHint = /windows|win32|win11|win10/.test(context);
+  const serverHintByText = /windows\s*server|server\s*20\d{2}|datacenter|domain controller/.test(context);
+  const serverHintByHost = /^srv[-_.]/i.test(deviceName);
+  const serverHintByRole = /server|dc|domain/.test(String(input.machineRole || input.rbacGroupName || '').toLowerCase());
+  const isServer = serverHintByText || serverHintByHost || serverHintByRole;
+
+  if (isMobile) {
+    const label = context.includes('ios') ? 'iOS' : context.includes('android') ? 'Android' : 'Mobile';
+    return { label, display: osVersion ? `${label} ${osVersion}` : label, type: 'Mobile', family: 'mobile' };
+  }
+
+  if (isMac) {
+    const label = context.includes('macos') ? 'macOS' : 'Mac';
+    return { label, display: osVersion ? `${label} ${osVersion}` : label, type: 'Workstation', family: 'macos' };
+  }
+
+  if (isLinux) {
+    const distro = osDistribution || osPlatform || 'Linux';
+    return { label: distro, display: osVersion ? `${distro} ${osVersion}` : distro, type: 'Workstation', family: 'linux' };
+  }
+
+  if (windowsHint) {
+    if (isServer) {
+      const yearMatch = `${osPlatform} ${osDistribution}`.match(/server\s*(20\d{2})/i);
+      let serverYear = yearMatch ? yearMatch[1] : '';
+      if (!serverYear) {
+        if (/20348/.test(version)) serverYear = '2022';
+        else if (/17763/.test(version)) serverYear = '2019';
+        else if (/26100/.test(version)) serverYear = '2025';
+      }
+      const label = serverYear ? `Windows Server ${serverYear}` : 'Windows Server';
+      const includeVersion = osVersion && !label.toLowerCase().includes(osVersion.toLowerCase());
+      return { label, display: includeVersion ? `${label} (${osVersion})` : label, type: 'Server', family: 'windows-server' };
+    }
+
+    const combined = `${osPlatform} ${osDistribution} ${osVersion}`.toLowerCase();
+    let label = 'Windows';
+    let family = 'windows-client';
+    if (/windows\s*11|win11|23h2|24h2/.test(combined) || /^10\.0\.(22|26)\d{3}/.test(version)) {
+      label = 'Windows 11';
+      family = 'windows-11';
+    } else if (/windows\s*10|win10|22h2/.test(combined) || /^10\.0\.1904\d/.test(version)) {
+      label = 'Windows 10';
+      family = 'windows-10';
+    }
+    const includeVersion = osVersion && !label.toLowerCase().includes(osVersion.toLowerCase());
+    return { label, display: includeVersion ? `${label} ${osVersion}` : label, type: 'Workstation', family };
+  }
+
+  const fallbackLabel = osPlatform || osDistribution || 'Unknown OS';
+  const fallbackDisplay = osVersion ? `${fallbackLabel} ${osVersion}` : fallbackLabel;
+  return { label: fallbackLabel, display: fallbackDisplay, type: classifyDeviceType(fallbackLabel), family: 'other' };
 }
 
 function complianceToHealth(state = '') {
@@ -1212,8 +1281,12 @@ function defaultDefenderVersionDetails(device) {
   };
 }
 
-function withDefenderVersionDetails(device) {
-  const defaults = defaultDefenderVersionDetails(device);
+function withDefenderVersionDetails(device, useDefaults = true) {
+  const defaults = useDefaults ? defaultDefenderVersionDetails(device) : {
+    defenderPlatformVer: 'n/a',
+    defenderEngineVer: 'n/a',
+    defenderSecurityIntelVer: 'n/a'
+  };
   return {
     ...device,
     defenderPlatformVer: String(device?.defenderPlatformVer || defaults.defenderPlatformVer || 'n/a'),
@@ -1226,10 +1299,13 @@ function applyLiveDevices(managedDevices) {
   if (!Array.isArray(managedDevices) || !managedDevices.length) return false;
 
   const mapped = managedDevices.map((d, idx) => {
-    const osBase = d.operatingSystem || 'Unknown OS';
-    const osVersion = d.osVersion ? ` ${d.osVersion}` : '';
-    const os = `${osBase}${osVersion}`.trim();
-    const type = classifyDeviceType(osBase);
+    const osProfile = endpointOsProfile({
+      operatingSystem: d.operatingSystem,
+      osVersion: d.osVersion,
+      deviceName: d.deviceName || d.managedDeviceName
+    });
+    const os = osProfile.display;
+    const type = osProfile.type;
     const health = complianceToHealth(d.complianceState);
     const riskScore = healthToRisk(health, d.jailBroken);
     const staleDays = d.lastSyncDateTime
@@ -1243,18 +1319,19 @@ function applyLiveDevices(managedDevices) {
     return withDefenderVersionDetails({
       name: d.deviceName || d.managedDeviceName || `DEVICE-${idx + 1}`,
       type,
+      osFamily: osProfile.family,
       os,
       location,
       health,
       defenderVer: d.osVersion || d.partnerReportedThreatState || 'n/a',
-      defenderPlatformVer: d.defenderAvPlatformVersion || d.defenderPlatformVersion || d.partnerReportedThreatState,
+      defenderPlatformVer: d.defenderAvPlatformVersion || d.defenderPlatformVersion,
       defenderEngineVer: d.defenderAvEngineVersion || d.defenderEngineVersion,
       defenderSecurityIntelVer: d.defenderAvSecurityIntelVersion || d.defenderSecurityIntelVersion || d.defenderSignatureVersion,
       vulns,
       caPolicies: 1,
       riskScore,
       lastSeen: d.lastSyncDateTime || new Date().toISOString()
-    });
+    }, false);
   });
 
   devices.splice(0, devices.length, ...mapped);
@@ -1614,8 +1691,16 @@ function applyLiveDefenderMachines(machines) {
   if (!Array.isArray(machines) || !machines.length) return false;
 
   const mapped = machines.map((m, idx) => {
-    const os = [m.osPlatform || m.osDistribution || 'Unknown OS', m.version || m.osVersion || ''].filter(Boolean).join(' ').trim();
-    const type = classifyDeviceType(`${m.osPlatform || ''} ${m.osDistribution || ''}`);
+    const osProfile = endpointOsProfile({
+      osPlatform: m.osPlatform,
+      osDistribution: m.osDistribution,
+      osVersion: m.osVersion || m.version,
+      deviceName: m.computerDnsName || m.deviceName,
+      machineRole: m.machineRole,
+      rbacGroupName: m.rbacGroupName
+    });
+    const os = osProfile.display;
+    const type = osProfile.type;
     const health = defenderMachineHealth(m);
     const riskScore = defenderMachineRisk(m, health);
 
@@ -1630,6 +1715,7 @@ function applyLiveDefenderMachines(machines) {
       name: m.computerDnsName || m.deviceName || m.id || `MACHINE-${idx + 1}`,
       sourceMachineId: m.id || m.machineId || m.deviceId || '',
       type,
+      osFamily: osProfile.family,
       os,
       location,
       health,
@@ -1641,7 +1727,7 @@ function applyLiveDefenderMachines(machines) {
       caPolicies: 1,
       riskScore,
       lastSeen
-    });
+    }, false);
   });
 
   devices.splice(0, devices.length, ...mapped);
@@ -1806,6 +1892,40 @@ function applyLiveDefenderSoftware(softwareRows) {
   return true;
 }
 
+function applyLiveDeviceAvInfo(rows) {
+  if (!Array.isArray(rows) || !rows.length || !devices.length) return false;
+
+  let updated = 0;
+  rows.forEach(row => {
+    const machineId = String(row.machineId || row.id || '').trim();
+    const dnsName = normalizeDeviceKey(row.computerDnsName || row.deviceName || '');
+    const match = devices.find(device =>
+      (machineId && String(device.sourceMachineId || '').trim() === machineId) ||
+      (dnsName && normalizeDeviceKey(device.name) === dnsName)
+    );
+    if (!match) return;
+
+    if (row.avPlatformVersion) match.defenderPlatformVer = String(row.avPlatformVersion);
+    if (row.avEngineVersion) match.defenderEngineVer = String(row.avEngineVersion);
+    if (row.avSignatureVersion) match.defenderSecurityIntelVer = String(row.avSignatureVersion);
+
+    if (row.osPlatform || row.osVersion) {
+      const osProfile = endpointOsProfile({
+        osPlatform: row.osPlatform,
+        osVersion: row.osVersion,
+        deviceName: match.name
+      });
+      if (osProfile.display && (!match.os || String(match.os).toLowerCase().includes('unknown'))) match.os = osProfile.display;
+      if (osProfile.family) match.osFamily = osProfile.family;
+      if (osProfile.type) match.type = osProfile.type;
+    }
+
+    updated += 1;
+  });
+
+  return updated > 0;
+}
+
 function applyLiveExposureScore(payload) {
   if (!payload) return false;
 
@@ -1889,6 +2009,7 @@ async function loadLiveTenantData(graphAccessToken, defenderAccessToken) {
   if (defenderAccessToken) {
     tasks.push(
       { key: 'defenderMachines', run: () => defenderGetAll('https://api.securitycenter.microsoft.com/api/machines?$top=300', defenderAccessToken, 10) },
+      { key: 'defenderDeviceAvInfo', run: () => defenderGetAll('https://api.securitycenter.microsoft.com/api/deviceavinfo?$top=2000', defenderAccessToken, 20) },
       { key: 'defenderVulns', run: () => defenderGetAll('https://api.securitycenter.microsoft.com/api/vulnerabilities?$top=300', defenderAccessToken, 10) },
       { key: 'defenderMachineVulns', run: () => defenderGetAll('https://api.securitycenter.microsoft.com/api/vulnerabilities/machinesVulnerabilities?$top=500', defenderAccessToken, 20) },
       { key: 'defenderSoftware', run: () => defenderGetAll('https://api.securitycenter.microsoft.com/api/Software?$top=300', defenderAccessToken, 10) },
@@ -1917,15 +2038,18 @@ async function loadLiveTenantData(graphAccessToken, defenderAccessToken) {
   const updated = {
     graphDevices: resultsByKey.graphDevices ? applyLiveDevices(resultsByKey.graphDevices) : false,
     defenderMachines: resultsByKey.defenderMachines ? applyLiveDefenderMachines(resultsByKey.defenderMachines) : false,
+    defenderDeviceAvInfo: resultsByKey.defenderDeviceAvInfo ? applyLiveDeviceAvInfo(resultsByKey.defenderDeviceAvInfo) : false,
     defenderMachineVulns: resultsByKey.defenderMachineVulns ? applyLiveDefenderMachineVulnerabilities(resultsByKey.defenderMachineVulns) : false,
     graphPolicies: resultsByKey.graphPolicies ? applyLivePolicies(resultsByKey.graphPolicies) : false,
     graphAlerts: resultsByKey.graphAlerts ? applyLiveAlerts(resultsByKey.graphAlerts) : false,
-    defenderVulns: resultsByKey.defenderVulns ? applyLiveDefenderVulnerabilities(resultsByKey.defenderVulns) : false,
+    defenderVulns: (resultsByKey.defenderVulns && !resultsByKey.defenderMachineVulns)
+      ? applyLiveDefenderVulnerabilities(resultsByKey.defenderVulns)
+      : false,
     defenderSoftware: resultsByKey.defenderSoftware ? applyLiveDefenderSoftware(resultsByKey.defenderSoftware) : false,
     defenderExposure: resultsByKey.defenderExposure ? applyLiveExposureScore(resultsByKey.defenderExposure) : false
   };
 
-  if (updated.graphDevices || updated.defenderMachines) summarizeDeviceDistributions();
+  if (updated.graphDevices || updated.defenderMachines || updated.defenderDeviceAvInfo) summarizeDeviceDistributions();
   if (updated.defenderMachineVulns || updated.defenderMachines) syncDeviceVulnCountsFromEndpointEvidence();
   if (updated.defenderSoftware && resultsByKey.defenderSoftware) {
     applyLiveDefenderSoftware(resultsByKey.defenderSoftware);
@@ -1937,6 +2061,7 @@ async function loadLiveTenantData(graphAccessToken, defenderAccessToken) {
     graphPolicies: 'Graph conditional access',
     graphAlerts: 'Graph alerts',
     defenderMachines: 'Defender machines',
+    defenderDeviceAvInfo: 'Defender device AV health',
     defenderMachineVulns: 'Defender machine vulnerabilities',
     defenderVulns: 'Defender vulnerabilities',
     defenderSoftware: 'Defender software inventory',
@@ -2127,14 +2252,19 @@ function getFilteredVulnerabilities() {
   return filtered;
 }
 
+function normalizedDeviceFamily(device) {
+  const explicit = String(device?.osFamily || '').toLowerCase();
+  if (explicit) return explicit;
+  return endpointOsProfile({ operatingSystem: device?.os, osVersion: '' }).family;
+}
+
 function endpointClassForDevice(device) {
-  const os = String(device?.os || '').toLowerCase();
-  const type = String(device?.type || '').toLowerCase();
-  if (type === 'server' || os.includes('server')) return { key: 'server', icon: '🖥', label: 'Server' };
-  if (type === 'mobile' || os.includes('ios') || os.includes('android')) return { key: 'mobile', icon: '📱', label: 'Mobile' };
-  if (os.includes('mac')) return { key: 'mac', icon: '🍎', label: 'Mac' };
-  if (os.includes('linux') || os.includes('ubuntu')) return { key: 'linux', icon: '🐧', label: 'Linux' };
-  if (os.includes('windows')) return { key: 'pc', icon: '💻', label: 'PC' };
+  const family = normalizedDeviceFamily(device);
+  if (family.startsWith('windows-server')) return { key: 'server', icon: '🖥', label: 'Server' };
+  if (family === 'mobile') return { key: 'mobile', icon: '📱', label: 'Mobile' };
+  if (family === 'macos') return { key: 'mac', icon: '🍎', label: 'Mac' };
+  if (family === 'linux') return { key: 'linux', icon: '🐧', label: 'Linux' };
+  if (family.startsWith('windows')) return { key: 'pc', icon: '💻', label: 'PC' };
   return { key: 'other', icon: '🧩', label: 'Other' };
 }
 
@@ -2558,13 +2688,20 @@ function renderDeviceMixCard() {
 }
 
 function getDevicesForOsLabel(osLabel) {
+  const norm = value => String(value || '').toLowerCase().replace(/\s+/g, ' ').trim();
+  const target = norm(osLabel);
   return devices.filter(device => {
-    const os = device.os.toLowerCase();
-    if (osLabel === 'Win 11 23H2') return os.includes('windows 11 23h2');
-    if (osLabel === 'Win 10 22H2') return os.includes('windows 10 22h2');
-    if (osLabel === 'macOS 15') return os.includes('macos 15');
-    if (osLabel === 'Server 2022') return os.includes('server 2022');
-    if (osLabel === 'iOS/Android') return os.includes('ios') || os.includes('android');
+    const os = norm(device.os);
+    const family = norm(device.osFamily);
+    if (!target) return false;
+    if (os === target || os.includes(target) || target.includes(os)) return true;
+    if (target.includes('windows server')) return family.startsWith('windows-server');
+    if (target.includes('windows 11')) return family === 'windows-11';
+    if (target.includes('windows 10')) return family === 'windows-10';
+    if (target === 'windows') return family.startsWith('windows');
+    if (target.includes('mac')) return family === 'macos';
+    if (target.includes('linux') || target.includes('ubuntu')) return family === 'linux';
+    if (target.includes('ios') || target.includes('android') || target.includes('mobile')) return family === 'mobile';
     return false;
   });
 }
@@ -2599,11 +2736,14 @@ function openDeviceOsDetail(osLabel) {
   const relatedVulns = vulnerabilities
     .filter(vuln => {
       const text = `${vuln.software} ${vuln.title}`.toLowerCase();
-      if (osLabel === 'Win 11 23H2') return text.includes('windows 11') || text.includes('windows 10/11') || text.includes('edge');
-      if (osLabel === 'Win 10 22H2') return text.includes('windows 10') || text.includes('windows 10/11') || text.includes('edge');
-      if (osLabel === 'macOS 15') return text.includes('macos');
-      if (osLabel === 'Server 2022') return text.includes('server 2022') || text.includes('server') || text.includes('windows');
-      if (osLabel === 'iOS/Android') return text.includes('ios') || text.includes('android') || text.includes('mobile');
+      const target = String(osLabel || '').toLowerCase();
+      if (target.includes('windows server')) return text.includes('windows server') || /server\s*20\d{2}/.test(text);
+      if (target.includes('windows 11')) return text.includes('windows 11') || text.includes('windows 10/11') || text.includes('edge');
+      if (target.includes('windows 10')) return text.includes('windows 10') || text.includes('windows 10/11') || text.includes('edge');
+      if (target.includes('windows')) return text.includes('windows') && !text.includes('server');
+      if (target.includes('mac')) return text.includes('macos') || text.includes('mac ');
+      if (target.includes('linux') || target.includes('ubuntu')) return text.includes('linux') || text.includes('ubuntu');
+      if (target.includes('ios') || target.includes('android') || target.includes('mobile')) return text.includes('ios') || text.includes('android') || text.includes('mobile');
       return false;
     })
     .sort((a, b) => (b.exploited === a.exploited ? b.cvss - a.cvss : (b.exploited ? 1 : -1)))
@@ -2696,13 +2836,17 @@ function mapVulnerabilitiesForDevice(device) {
     if (direct.length) return direct.slice(0, 8);
   }
 
+  const osFamily = normalizedDeviceFamily(device);
   return vulnerabilities
     .filter(vuln => {
-      const osNorm = device.os.toLowerCase();
-      const swNorm = vuln.software.toLowerCase();
-      if (osNorm.includes('windows') && swNorm.includes('windows')) return true;
-      if (osNorm.includes('macos') && swNorm.includes('macos')) return true;
-      if ((osNorm.includes('ios') || osNorm.includes('android')) && (swNorm.includes('ios') || swNorm.includes('android') || swNorm.includes('mobile'))) return true;
+      const text = `${vuln.software || ''} ${vuln.title || ''}`.toLowerCase();
+      if (osFamily.startsWith('windows-server')) return text.includes('windows server') || /server\s*20\d{2}/.test(text);
+      if (osFamily.startsWith('windows-11')) return text.includes('windows 11') || text.includes('windows 10/11');
+      if (osFamily.startsWith('windows-10')) return text.includes('windows 10') || text.includes('windows 10/11');
+      if (osFamily.startsWith('windows-client')) return text.includes('windows') && !text.includes('server');
+      if (osFamily === 'macos') return text.includes('macos') || text.includes('mac ');
+      if (osFamily === 'linux') return text.includes('linux') || text.includes('ubuntu');
+      if (osFamily === 'mobile') return text.includes('ios') || text.includes('android') || text.includes('mobile');
       return false;
     })
     .sort((a, b) => b.cvss - a.cvss)
@@ -2713,14 +2857,17 @@ function getRelatedDevicesForVulnerability(vuln) {
   const endpointMapped = getDevicesForEndpointCve(vuln?.id);
   if (endpointMapped.length) return endpointMapped;
 
-  const swNorm = vuln.software.toLowerCase();
+  const text = `${vuln?.software || ''} ${vuln?.title || ''}`.toLowerCase();
   return devices.filter(device => {
-    const osNorm = device.os.toLowerCase();
-    if (swNorm.includes('windows') && osNorm.includes('windows')) return true;
-    if (swNorm.includes('server') && device.type === 'Server') return true;
-    if (swNorm.includes('edge') && osNorm.includes('windows')) return true;
-    if (swNorm.includes('macos') && osNorm.includes('macos')) return true;
-    if ((swNorm.includes('ios') || swNorm.includes('android') || swNorm.includes('mobile')) && (osNorm.includes('ios') || osNorm.includes('android') || device.type === 'Mobile')) return true;
+    const family = normalizedDeviceFamily(device);
+    if ((text.includes('windows server') || /server\s*20\d{2}/.test(text)) && family.startsWith('windows-server')) return true;
+    if (text.includes('windows 11') && family.startsWith('windows-11')) return true;
+    if (text.includes('windows 10') && family.startsWith('windows-10')) return true;
+    if (text.includes('windows') && !text.includes('server') && family.startsWith('windows')) return true;
+    if ((text.includes('edge') || text.includes('mshtml')) && family.startsWith('windows')) return true;
+    if (text.includes('macos') && family === 'macos') return true;
+    if ((text.includes('linux') || text.includes('ubuntu')) && family === 'linux') return true;
+    if ((text.includes('ios') || text.includes('android') || text.includes('mobile')) && family === 'mobile') return true;
     return false;
   });
 }
