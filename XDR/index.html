@@ -1193,7 +1193,9 @@ function endpointOsProfile(input = {}) {
   const osVersion = normalizeOsToken(input.osVersion || input.version || '');
   const osBuild = normalizeOsToken(input.osBuild || '');
   const deviceName = normalizeOsToken(input.deviceName || input.computerDnsName || input.name || '');
-  const context = `${osPlatform} ${osDistribution}`.toLowerCase();
+  // edition = beta Graph API operatingSystemEdition e.g. "Windows Server 2025 Standard"
+  const edition = normalizeOsToken(input.edition || '');
+  const context = `${osPlatform} ${osDistribution} ${edition}`.toLowerCase();
   const version = `${osVersion} ${osBuild}`.toLowerCase();
 
   const isMobile = /ios|android/.test(context);
@@ -1228,7 +1230,7 @@ function endpointOsProfile(input = {}) {
 
   if (windowsHint) {
     if (isServer) {
-      const yearMatch = `${osPlatform} ${osDistribution}`.match(/server\s*(20\d{2})/i);
+      const yearMatch = `${osPlatform} ${osDistribution} ${edition}`.match(/server\s*(20\d{2})/i);
       let serverYear = yearMatch ? yearMatch[1] : '';
       if (!serverYear) {
         if (/20348/.test(version)) serverYear = '2022';
@@ -1333,6 +1335,7 @@ function applyLiveDevices(managedDevices) {
       osVersion: d.osVersion,
       deviceName: d.deviceName || d.managedDeviceName,
       model: d.model,
+      edition: d.operatingSystemEdition,
       operatingSystemProductType: d.hardwareInformation?.operatingSystemProductType
     });
     const os = osProfile.display;
@@ -2194,7 +2197,7 @@ async function loadLiveTenantData(graphAccessToken, defenderAccessToken) {
 
   if (graphAccessToken) {
     tasks.push(
-      { key: 'graphDevices', run: () => graphGetAll('https://graph.microsoft.com/v1.0/deviceManagement/managedDevices?$top=300&$expand=windowsProtectionState', graphAccessToken, 10) },
+      { key: 'graphDevices', run: () => graphGetAll('https://graph.microsoft.com/beta/deviceManagement/managedDevices?$top=300&$expand=windowsProtectionState', graphAccessToken, 10) },
       { key: 'graphPolicies', run: () => graphGetAll('https://graph.microsoft.com/v1.0/identity/conditionalAccess/policies?$top=100', graphAccessToken, 5) },
       { key: 'graphAlerts', run: () => graphGetAll('https://graph.microsoft.com/v1.0/security/alerts_v2?$top=100', graphAccessToken, 5) }
     );
