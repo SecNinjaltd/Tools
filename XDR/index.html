@@ -1499,6 +1499,21 @@ function normalizeKbId(value) {
   return raw;
 }
 
+function isKbStyleId(value) {
+  return /^KB\d{6,8}$/i.test(String(value || '').trim());
+}
+
+function isOsPatchTarget(value) {
+  const t = String(value || '').toLowerCase();
+  return t.includes('windows')
+    || t.includes('server')
+    || t.includes('ubuntu')
+    || t.includes('linux')
+    || t.includes('mac')
+    || t.includes('ios')
+    || t.includes('android');
+}
+
 function getLiveEndpointPatchesForDevice(device) {
   const key = normalizeDeviceKey(device?.name);
   if (!key) return [];
@@ -1664,36 +1679,21 @@ function applyLiveDefenderMachineVulnerabilities(rows) {
       row.remediationKb,
       row.recommendedSecurityUpdateId,
       row.securityUpdate
-    ].map(normalizeKbId).filter(Boolean);
+    ].map(normalizeKbId).filter(isKbStyleId);
 
-    const mappedFallback = cveId && Array.isArray(KB_PATCH_MAP[cveId]) ? KB_PATCH_MAP[cveId] : [];
-    const osAlignedFallback = mappedFallback.filter(entry => {
-      const target = String(entry.target || '').toLowerCase();
-      if (!deviceOs) return true;
-      if (deviceOs.includes('windows') && target.includes('windows')) return true;
-      if (deviceOs.includes('server') && target.includes('server')) return true;
-      if (deviceOs.includes('mac') && target.includes('mac')) return true;
-      if (deviceOs.includes('ios') && target.includes('ios')) return true;
-      if (deviceOs.includes('android') && target.includes('android')) return true;
-      if (deviceOs.includes('linux') && (target.includes('linux') || target.includes('ubuntu'))) return true;
-      return false;
-    });
+    const targetCandidate = row.productName || row.softwareName || matchedDevice?.os || 'Operating system';
+    const targetLooksOs = isOsPatchTarget(targetCandidate);
 
     const patchRefs = kbCandidates.length
       ? kbCandidates.map(kb => ({
           kb,
-          target: row.productName || row.softwareName || matchedDevice?.os || 'Operating system',
+          target: targetCandidate,
           note: 'Endpoint-reported missing security update',
           cveId: cveId || 'Unknown'
         }))
-      : (osAlignedFallback.length ? osAlignedFallback : mappedFallback).map(entry => ({
-          kb: entry.kb,
-          target: entry.target || row.productName || row.softwareName || matchedDevice?.os || 'Operating system',
-          note: entry.note || 'Mapped via CVE remediation reference',
-          cveId: cveId || 'Unknown'
-        }));
+      : [];
 
-    if (!patchRefs.length) return;
+    if (!patchRefs.length || !targetLooksOs) return;
     const existing = nextMap.get(deviceKey) || [];
     patchRefs.forEach(ref => existing.push(ref));
     nextMap.set(deviceKey, existing);
