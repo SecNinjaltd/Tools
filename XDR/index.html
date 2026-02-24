@@ -1963,6 +1963,62 @@ function applySoftwareInventoryFromRecommendations(rows) {
   return true;
 }
 
+function applySoftwareInventoryFromMachineVulns(rows) {
+  if (!Array.isArray(rows) || !rows.length) return false;
+
+  const isOperatingSystemInventoryName = (value) => {
+    const text = String(value || '').toLowerCase().trim();
+    if (!text) return false;
+    return (
+      /^windows(\s|$)/.test(text) ||
+      /^windows server/.test(text) ||
+      /^macos(\s|$)/.test(text) ||
+      /^ios(\s|$)/.test(text) ||
+      /^android(\s|$)/.test(text) ||
+      /^ubuntu(\s|$)/.test(text) ||
+      /^debian(\s|$)/.test(text) ||
+      /^centos(\s|$)/.test(text) ||
+      /^red hat(\s|$)/.test(text) ||
+      /^rhel(\s|$)/.test(text) ||
+      /^linux(\s|$)/.test(text)
+    );
+  };
+
+  const summary = new Map();
+  rows.forEach((row, idx) => {
+    const name = String(row.productName || row.softwareName || row.name || '').trim();
+    if (!name || isOperatingSystemInventoryName(name)) return;
+    const key = name.toLowerCase();
+    const existing = summary.get(key) || {
+      name,
+      vendor: String(row.vendor || row.publisher || 'Unknown vendor'),
+      version: String(row.productVersion || row.softwareVersion || row.version || 'n/a'),
+      machines: new Set(),
+      cves: new Set()
+    };
+    const machineId = String(row.machineId || row.deviceId || row.id || '').trim();
+    if (machineId) existing.machines.add(machineId);
+    const cve = extractCveId(row.cveId || row.vulnerabilityId || row.name || row.title || '');
+    if (cve) existing.cves.add(cve);
+    summary.set(key, existing);
+  });
+
+  const mapped = Array.from(summary.values())
+    .map((item) => ({
+      name: item.name,
+      vendor: item.vendor,
+      devices: item.machines.size,
+      vulns: item.cves.size,
+      version: item.version
+    }))
+    .sort((a, b) => b.vulns - a.vulns || b.devices - a.devices)
+    .slice(0, 24);
+
+  if (!mapped.length) return false;
+  softwareInventory.splice(0, softwareInventory.length, ...mapped);
+  return true;
+}
+
 function applyLiveSecurityRecommendations(rows) {
   if (!Array.isArray(rows) || !rows.length) return false;
 
@@ -2241,8 +2297,13 @@ async function loadLiveTenantData(graphAccessToken, defenderAccessToken) {
 
   if (updated.graphDevices || updated.defenderMachines || updated.defenderDeviceAvInfo) summarizeDeviceDistributions();
   if (updated.defenderMachineVulns || updated.defenderMachines) syncDeviceVulnCountsFromEndpointEvidence();
-  if (updated.defenderSoftware && resultsByKey.defenderSoftware) applyLiveDefenderSoftware(resultsByKey.defenderSoftware);
-  else if (resultsByKey.defenderRecommendations) applySoftwareInventoryFromRecommendations(resultsByKey.defenderRecommendations);
+  if (updated.defenderSoftware && resultsByKey.defenderSoftware) {
+    applyLiveDefenderSoftware(resultsByKey.defenderSoftware);
+  } else if (resultsByKey.defenderMachineVulns && applySoftwareInventoryFromMachineVulns(resultsByKey.defenderMachineVulns)) {
+    // Fallback to machine-vulnerability evidence when /Software has no usable rows.
+  } else if (resultsByKey.defenderRecommendations) {
+    applySoftwareInventoryFromRecommendations(resultsByKey.defenderRecommendations);
+  }
   rerenderDashboard();
 
   const sourceLabels = {
