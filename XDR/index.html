@@ -1204,6 +1204,9 @@ function endpointOsProfile(input = {}) {
   const windowsHint = /windows|win32|win11|win10/.test(context);
   const model = normalizeOsToken(input.model || '').toLowerCase();
   const serverHintByText = /windows\s*server|windowsserver|server\s*20\d{2}|datacenter|domain.controller/.test(context);
+  // Windows Registry EditionID values for server editions (e.g. "ServerStandard", "ServerDatacenter")
+  // These are returned by Graph API operatingSystemEdition and do NOT contain "Windows Server" as text
+  const serverHintByEdition = /^server(standard|datacenter|enterprise|essentials|nano|hypercore|hyper|core|rdsh|solution|foundation)/i.test(edition);
   const serverHintByHost = /^(srv|dc|sql|web|app|fs|hv|db|nas|mail|exch|adfs|mgmt|wsus|scom|sccm|rds|rdsh|backup|bkp|print|proxy|gw|vpn|mon|siem)[0-9_\-.]/i.test(deviceName);
   const serverHintByRole = /server|dc|domain/.test(String(input.machineRole || input.rbacGroupName || '').toLowerCase());
   const serverHintByModel = /proliant|poweredge|thinkagile|thinkserver|primergy|synergyframe|bladesystem|system\s*x|uvline|supermicro|nx-\d|az-\d|azure\s*stack/i.test(model);
@@ -1211,7 +1214,7 @@ function endpointOsProfile(input = {}) {
   // operatingSystemProductType from Intune hardwareInformation: 1=Workstation, 2=DC, 3=Server
   const productType = Number(input.operatingSystemProductType || 0);
   const serverHintByProductType = productType === 2 || productType === 3;
-  const isServer = serverHintByText || serverHintByHost || serverHintByRole || serverHintByModel || serverHintByVersion || serverHintByProductType;
+  const isServer = serverHintByText || serverHintByEdition || serverHintByHost || serverHintByRole || serverHintByModel || serverHintByVersion || serverHintByProductType;
 
   if (isMobile) {
     const label = context.includes('ios') ? 'iOS' : context.includes('android') ? 'Android' : 'Mobile';
@@ -1412,13 +1415,6 @@ function summarizeDeviceDistributions() {
     critical: healthCounts.critical
   });
 
-  softwareInventory.splice(0, softwareInventory.length, ...topOs.map(([label, count], idx) => ({
-    name: label,
-    vendor: 'Microsoft Intune',
-    devices: count,
-    vulns: Math.max(0, Math.round(count * (idx < 2 ? 0.06 : 0.03))),
-    version: label.split(' ').slice(-1)[0] || 'n/a'
-  })));
 }
 
 function mapPolicyState(rawState) {
@@ -1560,17 +1556,19 @@ function applyLivePolicies(policies) {
 
 function alertSeverityToVulnSeverity(severity) {
   const s = String(severity || '').toLowerCase();
-  if (s === 'high') return 'Critical';
-  if (s === 'medium') return 'High';
-  if (s === 'low') return 'Medium';
+  if (s === 'critical') return 'Critical';
+  if (s === 'high') return 'High';
+  if (s === 'medium') return 'Medium';
+  if (s === 'low') return 'Low';
   return 'Low';
 }
 
 function defenderSeverityToVulnSeverity(severity) {
   const s = String(severity || '').toLowerCase();
-  if (s.includes('critical') || s.includes('high')) return 'Critical';
-  if (s.includes('medium')) return 'High';
-  if (s.includes('low')) return 'Medium';
+  if (s.includes('critical')) return 'Critical';
+  if (s.includes('high')) return 'High';
+  if (s.includes('medium')) return 'Medium';
+  if (s.includes('low')) return 'Low';
   return 'Low';
 }
 
@@ -1976,7 +1974,26 @@ function applyLiveDefenderMachineVulnerabilities(rows) {
 function applyLiveDefenderSoftware(softwareRows) {
   if (!Array.isArray(softwareRows) || !softwareRows.length) return false;
 
+  const isOperatingSystemInventoryName = (value) => {
+    const text = String(value || '').toLowerCase().trim();
+    if (!text) return false;
+    return (
+      /^windows(\s|$)/.test(text) ||
+      /^windows server/.test(text) ||
+      /^macos(\s|$)/.test(text) ||
+      /^ios(\s|$)/.test(text) ||
+      /^android(\s|$)/.test(text) ||
+      /^ubuntu(\s|$)/.test(text) ||
+      /^debian(\s|$)/.test(text) ||
+      /^centos(\s|$)/.test(text) ||
+      /^red hat(\s|$)/.test(text) ||
+      /^rhel(\s|$)/.test(text) ||
+      /^linux(\s|$)/.test(text)
+    );
+  };
+
   const mapped = softwareRows
+    .filter(s => !isOperatingSystemInventoryName(s.name || s.softwareName))
     .map((s, idx) => ({
       name: s.name || s.softwareName || `Software ${idx + 1}`,
       vendor: s.vendor || s.publisher || 'Unknown vendor',
@@ -1987,6 +2004,7 @@ function applyLiveDefenderSoftware(softwareRows) {
     .sort((a, b) => b.vulns - a.vulns || b.devices - a.devices)
     .slice(0, 24);
 
+  if (!mapped.length) return false;
   softwareInventory.splice(0, softwareInventory.length, ...mapped);
   return true;
 }
@@ -2158,10 +2176,6 @@ function severityToCvss(sev) {
 
 function applyLiveAlerts(alerts) {
   if (!Array.isArray(alerts) || !alerts.length) return false;
-  if (!hasLiveVulnerabilityBaseline) {
-    vulnerabilities.splice(0, vulnerabilities.length);
-    hasLiveVulnerabilityBaseline = true;
-  }
 
   const byId = new Map();
   alerts.forEach((a, idx) => {
@@ -2188,7 +2202,25 @@ function applyLiveAlerts(alerts) {
     .sort((a, b) => b.cvss - a.cvss || b.affectedDevices - a.affectedDevices)
     .slice(0, 20);
 
-  vulnerabilities.splice(0, vulnerabilities.length, ...mapped);
+  if (!hasLiveVulnerabilityBaseline) {
+    // No Defender vuln data yet — use alerts as the starting baseline
+    vulnerabilities.splice(0, vulnerabilities.length, ...mapped);
+    hasLiveVulnerabilityBaseline = true;
+  } else {
+    // Defender CVE data already loaded — merge only: add new CVE-keyed records and
+    // update exploited flag on existing ones. Skip ALERT-xxx non-CVE records.
+    mapped.forEach(alertVuln => {
+      if (alertVuln.id.startsWith('ALERT-')) return;
+      const existingIdx = vulnerabilities.findIndex(v => String(v.id || '').toUpperCase() === alertVuln.id);
+      if (existingIdx >= 0) {
+        if (alertVuln.exploited && !vulnerabilities[existingIdx].exploited) {
+          vulnerabilities[existingIdx].exploited = true;
+        }
+      } else {
+        vulnerabilities.push(alertVuln);
+      }
+    });
+  }
   return true;
 }
 
