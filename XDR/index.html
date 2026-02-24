@@ -2098,11 +2098,18 @@ function applyLiveDeviceAvInfo(rows) {
         osPlatform: row.osPlatform,
         osVersion: row.osVersion,
         osBuild: row.osBuild,
-        deviceName: match.name
+        deviceName: match.name,
+        machineRole: match.machineRole,
+        rbacGroupName: match.rbacGroupName,
+        model: match.model
       });
       if (osProfile.display && (!match.os || String(match.os).toLowerCase().includes('unknown'))) match.os = osProfile.display;
       if (osProfile.family) match.osFamily = osProfile.family;
-      if (osProfile.type) match.type = osProfile.type;
+      // Never downgrade a confirmed Server or Mobile classification — deviceavinfo osPlatform
+      // can be less specific than what Defender /api/machines or hardwareInformation reported.
+      if (osProfile.type && !(match.type === 'Server' && osProfile.type === 'Workstation') && !(match.type === 'Mobile' && osProfile.type === 'Workstation')) {
+        match.type = osProfile.type;
+      }
     }
 
     updated += 1;
@@ -2557,7 +2564,7 @@ function renderExecutiveSummary() {
   const compliancePct = totalDevices ? Math.round((healthyDevices / totalDevices) * 100) : 0;
   const enabledPolicies = caPolicies.filter(p => p.state === 'enabled').length;
   const reportOnlyPolicies = caPolicies.filter(p => p.state === 'report-only').length;
-  const likelyCurrentDefender = devices.filter(d => String(d.defenderVer).includes('24110') || String(d.defenderVer).includes('24112')).length;
+  const likelyCurrentDefender = devices.filter(isDeviceOnCurrentDefender).length;
   const defenderCoverage = totalDevices ? Math.round((likelyCurrentDefender / totalDevices) * 100) : 0;
   const outdatedDefender = Math.max(0, totalDevices - likelyCurrentDefender);
   const mitreCompliance = MITRE_TACTICS.length
@@ -2927,7 +2934,7 @@ function openDeviceOsDetail(osLabel) {
     const now = Date.now();
     return (now - seen) > (24 * 60 * 60 * 1000);
   }).length;
-  const outdatedDefender = matchingDevices.filter(device => !device.defenderVer.includes('24110') && !device.defenderVer.includes('24112')).length;
+  const outdatedDefender = matchingDevices.filter(device => !isDeviceOnCurrentDefender(device)).length;
 
   const relatedVulns = vulnerabilities
     .filter(vuln => {
@@ -3590,28 +3597,20 @@ function renderDeviceTable() {
 
 function isDeviceNonCompliant(device) {
   const health = String(device.health || '').toLowerCase();
-  const defenderVer = String(device.defenderVer || '');
-  const outdatedDefender = !defenderVer.includes('24110') && !defenderVer.includes('24112');
+  const outdatedDefender = !isDeviceOnCurrentDefender(device);
   return health !== 'healthy' || Number(device.riskScore || 0) >= 55 || outdatedDefender;
 }
 
 function classifyVersionBadge(version, flavor = 'generic') {
   const value = String(version || '').trim();
   if (!value || value.toLowerCase() === 'n/a' || value.toLowerCase() === 'unknown') return 'outdated';
+  const ladder = getFleetVersionLadder(flavor);
+  if (!ladder.length) return 'outdated';
 
-  if (flavor === 'security-intel') {
-    const match = value.match(/^1\.(\d+)\./);
-    const signatureTrain = match ? Number(match[1]) : NaN;
-    if (Number.isFinite(signatureTrain)) {
-      if (signatureTrain >= 420) return 'current';
-      if (signatureTrain >= 400) return 'outdated';
-      return 'critical';
-    }
-  }
-
-  if (value.includes('2309') || value.includes('2308') || value.includes('2305')) return 'critical';
-  if (value.includes('24110') || value.includes('24112')) return 'current';
-  return 'outdated';
+  if (compareVersionStrings(value, ladder[0]) >= 0) return 'current';
+  if (!ladder[1]) return 'outdated';
+  if (compareVersionStrings(value, ladder[1]) >= 0) return 'outdated';
+  return 'critical';
 }
 
 function compareVersionStrings(a, b) {
@@ -3624,6 +3623,28 @@ function compareVersionStrings(a, b) {
     if (l !== r) return l - r;
   }
   return 0;
+}
+
+function getFleetVersionLadder(flavor = 'generic') {
+  const key = flavor === 'engine'
+    ? 'defenderEngineVer'
+    : flavor === 'security-intel'
+      ? 'defenderSecurityIntelVer'
+      : 'defenderPlatformVer';
+
+  const unique = Array.from(new Set(
+    devices
+      .map(d => String(d?.[key] || '').trim())
+      .filter(v => v && v.toLowerCase() !== 'n/a' && v.toLowerCase() !== 'unknown')
+  ));
+  unique.sort((a, b) => compareVersionStrings(b, a));
+  return unique;
+}
+
+function isDeviceOnCurrentDefender(device) {
+  return classifyVersionBadge(device?.defenderPlatformVer, 'platform') === 'current'
+    && classifyVersionBadge(device?.defenderEngineVer, 'engine') === 'current'
+    && classifyVersionBadge(device?.defenderSecurityIntelVer, 'security-intel') === 'current';
 }
 
 function getMissingOsPatchesForDevice(device, providedMappedVulns = null) {
@@ -5188,7 +5209,7 @@ function renderStandardsView() {
   const enabledRatio = caPolicies.length ? (enabledPolicies / caPolicies.length) * 100 : 0;
   const avgPolicyCoverage = caPolicies.length ? (caPolicies.reduce((sum, p) => sum + Number(p.coverage || 0), 0) / caPolicies.length) : 0;
   const defenderCoverage = devices.length
-    ? (devices.filter(d => String(d.defenderVer).includes('24110') || String(d.defenderVer).includes('24112')).length / devices.length) * 100
+    ? (devices.filter(isDeviceOnCurrentDefender).length / devices.length) * 100
     : 0;
   const healthyRatio = devices.length
     ? (devices.filter(d => String(d.health).toLowerCase() === 'healthy').length / devices.length) * 100
@@ -5386,7 +5407,7 @@ function renderStandardsView() {
   const unhealthyCount = devices.filter(d => String(d.health).toLowerCase() !== 'healthy').length;
   const policyReportOnlyCount = caPolicies.filter(p => p.state === 'report-only').length;
   const nonCompliantPolicyCount = caPolicies.length - enabledPolicies;
-  const staleDefenderCount = devices.filter(d => !String(d.defenderVer).includes('24110') && !String(d.defenderVer).includes('24112')).length;
+  const staleDefenderCount = devices.filter(d => !isDeviceOnCurrentDefender(d)).length;
   const businessContinuityScore = clampPct((getCurrentSecureScore() * 0.45) + (weightedPatchSla * 0.55));
   const nis2Rows = [
     {
@@ -5839,10 +5860,10 @@ function openDetail(type) {
   const enabledPolicies = caPolicies.filter(p => p.state === 'enabled');
   const reportOnlyPolicies = caPolicies.filter(p => p.state === 'report-only');
   const lowCoveragePolicies = caPolicies.filter(p => Number(p.coverage || 0) < 80);
-  const likelyCurrentDefender = devices.filter(d => String(d.defenderVer).includes('24110') || String(d.defenderVer).includes('24112')).length;
+  const likelyCurrentDefender = devices.filter(isDeviceOnCurrentDefender).length;
   const defenderCoverage = totalDevices ? Math.round((likelyCurrentDefender / totalDevices) * 100) : 0;
   const outdatedDefenderDevices = devices
-    .filter(d => !String(d.defenderVer).includes('24110') && !String(d.defenderVer).includes('24112'))
+    .filter(d => !isDeviceOnCurrentDefender(d))
     .sort((a, b) => Number(b.riskScore || 0) - Number(a.riskScore || 0));
 
   if (type === 'exposure') {
@@ -6190,10 +6211,7 @@ function openDetail(type) {
       const seen = new Date(device.lastSeen).getTime();
       return Number.isFinite(seen) ? (Date.now() - seen) > (24 * 60 * 60 * 1000) : false;
     }).length;
-    const outdatedDefender = matchingDevices.filter(device => {
-      const ver = String(device.defenderVer || '');
-      return !ver.includes('24110') && !ver.includes('24112');
-    }).length;
+    const outdatedDefender = matchingDevices.filter(device => !isDeviceOnCurrentDefender(device)).length;
 
     const mappedVulnMap = new Map();
     matchingDevices.forEach(device => {
