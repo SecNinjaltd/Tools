@@ -112,64 +112,26 @@
   <!-- Dashboard Grid -->
   <div class="dashboard-grid">
 
-    <!-- Vulnerability Severity Breakdown -->
-    <div class="card vuln-main-card" data-views="overview">
+
+    <!-- Top Vulnerable Software -->
+    <div class="card span-2 software-card" data-views="overview">
       <div class="card-header">
         <div class="card-title">
           <span class="icon">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1L14.5 13H1.5L8 1Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8 6V9M8 11V11.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 2H13C13.5523 2 14 2.44772 14 3V13C14 13.5523 13.5523 14 13 14H3C2.44772 14 2 13.5523 2 13V3C2 2.44772 2.44772 2 3 2Z" stroke="currentColor" stroke-width="1.5"/><path d="M5 6L7 8L5 10M9 10H11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </span>
-          Vulnerability Severity
+          Vulnerable Software Inventory
         </div>
         <div class="card-actions">
-          <button class="card-action-btn active" id="vulnViewSummaryBtn" type="button">Summary</button>
-          <button class="card-action-btn" id="vulnViewByOsBtn" type="button">By OS</button>
+          <button class="card-action-btn app-sev-btn app-sev-all active" id="appSevAllBtn" type="button">All</button>
+          <button class="card-action-btn app-sev-btn app-sev-critical" id="appSevCriticalBtn" type="button">Critical</button>
+          <button class="card-action-btn app-sev-btn app-sev-high" id="appSevHighBtn" type="button">High</button>
+          <button class="card-action-btn app-sev-btn app-sev-medium" id="appSevMediumBtn" type="button">Medium</button>
+          <button class="card-action-btn app-sev-btn app-sev-low" id="appSevLowBtn" type="button">Low</button>
         </div>
       </div>
       <div class="card-body">
-        <div class="vuln-severity-grid" id="vulnSeverityGrid">
-          <div class="severity-cell crit" onclick="openDetail('vulnCritical')">
-            <div class="sev-count" id="sevCountCritical">23</div>
-            <div class="sev-label">Critical</div>
-          </div>
-          <div class="severity-cell high" onclick="openDetail('vulnHigh')">
-            <div class="sev-count" id="sevCountHigh">67</div>
-            <div class="sev-label">High</div>
-          </div>
-          <div class="severity-cell med" onclick="openDetail('vulnMedium')">
-            <div class="sev-count" id="sevCountMedium">142</div>
-            <div class="sev-label">Medium</div>
-          </div>
-          <div class="severity-cell low" onclick="openDetail('vulnLow')">
-            <div class="sev-count" id="sevCountLow">89</div>
-            <div class="sev-label">Low</div>
-          </div>
-        </div>
-        <div class="vuln-list-wrap">
-          <div class="vuln-list" id="vulnList"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Device Health by Type (Donut) -->
-    <div class="card device-type-card" data-views="overview">
-      <div class="card-header">
-        <div class="card-title">
-          <span class="icon">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M5 14H11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-          </span>
-          Devices by Type
-        </div>
-      </div>
-      <div class="card-body">
-        <div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:4px;">
-          <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:600;">Total Devices</div>
-          <div id="deviceTypeTotal" style="font-size:28px;font-weight:800;line-height:1;font-family:'JetBrains Mono',monospace;color:var(--text-primary);">0</div>
-          <div style="font-size:11px;color:var(--text-secondary);font-family:'JetBrains Mono',monospace;">Across all device types</div>
-        </div>
-        <div style="margin-top: 2px;">
-          <div class="bar-chart" id="deviceTypeChart"></div>
-        </div>
+        <div class="app-grid" id="appGrid"></div>
       </div>
     </div>
 
@@ -185,45 +147,6 @@
       </div>
       <div class="card-body">
         <div class="risk-matrix" id="riskMatrix"></div>
-      </div>
-    </div>
-
-    <!-- Devices by OS -->
-    <div class="card os-card" data-views="overview">
-      <div class="card-header">
-        <div class="card-title">
-          <span class="icon">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 3.5A1.5 1.5 0 0 1 3.5 2h9A1.5 1.5 0 0 1 14 3.5v9a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 12.5v-9Z" stroke="currentColor" stroke-width="1.5"/><path d="M2 6h12" stroke="currentColor" stroke-width="1.5"/><path d="M5 9.5h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-          </span>
-          Devices by OS
-        </div>
-      </div>
-      <div class="card-body">
-        <div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:4px;margin-bottom:2px;">
-          <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:600;">Total Devices</div>
-          <div id="deviceOsTotal" style="font-size:28px;font-weight:800;line-height:1;font-family:'JetBrains Mono',monospace;color:var(--text-primary);">0</div>
-          <div style="font-size:11px;color:var(--text-secondary);font-family:'JetBrains Mono',monospace;">Across all operating systems</div>
-        </div>
-        <div class="bar-chart" id="deviceOsChart"></div>
-      </div>
-    </div>
-
-    <!-- Top Vulnerable Software -->
-    <div class="card span-2 software-card" data-views="overview">
-      <div class="card-header">
-        <div class="card-title">
-          <span class="icon">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 2H13C13.5523 2 14 2.44772 14 3V13C14 13.5523 13.5523 14 13 14H3C2.44772 14 2 13.5523 2 13V3C2 2.44772 2.44772 2 3 2Z" stroke="currentColor" stroke-width="1.5"/><path d="M5 6L7 8L5 10M9 10H11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </span>
-          Vulnerable Software Inventory
-        </div>
-        <div class="card-actions">
-          <button class="card-action-btn active" id="appViewGridBtn" type="button">Grid</button>
-          <button class="card-action-btn" id="appViewListBtn" type="button">List</button>
-        </div>
-      </div>
-      <div class="card-body">
-        <div class="app-grid" id="appGrid"></div>
       </div>
     </div>
 
@@ -262,6 +185,31 @@
       <div class="card-body">
         <div class="trend-chart-area">
           <svg class="trend-chart-svg" id="trendChart" viewBox="0 0 400 180" preserveAspectRatio="none"></svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="card device-mix-card" data-views="devices,overview">
+      <div class="card-header">
+        <div class="card-title">
+          <span class="icon">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="2" width="13" height="11" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M5 14h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </span>
+          Device Distribution
+        </div>
+        <div class="card-actions">
+          <button class="card-action-btn active" id="deviceMixTypeBtn" type="button">By Type</button>
+          <button class="card-action-btn" id="deviceMixOsBtn" type="button">By OS</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:4px;">
+          <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:600;">Total Devices</div>
+          <div id="deviceMixTotal" style="font-size:28px;font-weight:800;line-height:1;font-family:'JetBrains Mono',monospace;color:var(--text-primary);">0</div>
+          <div id="deviceMixSub" style="font-size:11px;color:var(--text-secondary);font-family:'JetBrains Mono',monospace;">Across all device types</div>
+        </div>
+        <div style="margin-top: 6px;">
+          <div class="bar-chart" id="deviceMixChart"></div>
         </div>
       </div>
     </div>
@@ -674,30 +622,6 @@
       </div>
     </div>
 
-    <div class="card device-mix-card" data-views="devices">
-      <div class="card-header">
-        <div class="card-title">
-          <span class="icon">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="2" width="13" height="11" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M5 14h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-          </span>
-          Device Distribution
-        </div>
-        <div class="card-actions">
-          <button class="card-action-btn active" id="deviceMixTypeBtn" type="button">By Type</button>
-          <button class="card-action-btn" id="deviceMixOsBtn" type="button">By OS</button>
-        </div>
-      </div>
-      <div class="card-body">
-        <div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:4px;">
-          <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:600;">Total Devices</div>
-          <div id="deviceMixTotal" style="font-size:28px;font-weight:800;line-height:1;font-family:'JetBrains Mono',monospace;color:var(--text-primary);">0</div>
-          <div id="deviceMixSub" style="font-size:11px;color:var(--text-secondary);font-family:'JetBrains Mono',monospace;">Across all device types</div>
-        </div>
-        <div style="margin-top: 6px;">
-          <div class="bar-chart" id="deviceMixChart"></div>
-        </div>
-      </div>
-    </div>
   </div>
 </main>
 
@@ -2009,6 +1933,36 @@ function applyLiveDefenderSoftware(softwareRows) {
   return true;
 }
 
+function applySoftwareInventoryFromRecommendations(rows) {
+  if (!Array.isArray(rows) || !rows.length) return false;
+
+  const summary = new Map();
+  rows.forEach((row) => {
+    const name = String(row.productName || row.relatedComponent || row.vendor || '').trim();
+    if (!name) return;
+    const key = name.toLowerCase();
+    const existing = summary.get(key) || { name, devices: 0, vulns: 0 };
+    existing.devices += Number(row.exposedMachinesCount || row.totalMachineCount || 0);
+    existing.vulns += 1;
+    summary.set(key, existing);
+  });
+
+  const mapped = Array.from(summary.values())
+    .map(item => ({
+      name: item.name,
+      vendor: item.name.toLowerCase().includes('microsoft') ? 'Microsoft' : 'Defender recommendation',
+      devices: Number(item.devices || 0),
+      vulns: Number(item.vulns || 0),
+      version: 'See recommendation'
+    }))
+    .sort((a, b) => b.vulns - a.vulns || b.devices - a.devices)
+    .slice(0, 24);
+
+  if (!mapped.length) return false;
+  softwareInventory.splice(0, softwareInventory.length, ...mapped);
+  return true;
+}
+
 function applyLiveSecurityRecommendations(rows) {
   if (!Array.isArray(rows) || !rows.length) return false;
 
@@ -2287,9 +2241,8 @@ async function loadLiveTenantData(graphAccessToken, defenderAccessToken) {
 
   if (updated.graphDevices || updated.defenderMachines || updated.defenderDeviceAvInfo) summarizeDeviceDistributions();
   if (updated.defenderMachineVulns || updated.defenderMachines) syncDeviceVulnCountsFromEndpointEvidence();
-  if (updated.defenderSoftware && resultsByKey.defenderSoftware) {
-    applyLiveDefenderSoftware(resultsByKey.defenderSoftware);
-  }
+  if (updated.defenderSoftware && resultsByKey.defenderSoftware) applyLiveDefenderSoftware(resultsByKey.defenderSoftware);
+  else if (resultsByKey.defenderRecommendations) applySoftwareInventoryFromRecommendations(resultsByKey.defenderRecommendations);
   rerenderDashboard();
 
   const sourceLabels = {
@@ -2326,7 +2279,7 @@ let activePolicyFilter = 'all';
 let compensationStrictness = 'standard';
 let activeDataFilter = 'all';
 let activeSeverityFilter = 'all';
-let appInventoryViewMode = 'grid';
+let appInventorySeverityFilter = 'all';
 let vulnSeverityViewMode = 'summary';
 let remediationViewMode = 'actionable';
 let threatWorkbenchMode = 'patch-now';
@@ -2711,18 +2664,24 @@ function renderVulnList() {
 
 function renderDeviceTypeSummary() {
   const total = DEVICE_TYPE_DATA.reduce((sum, item) => sum + item.count, 0);
-  document.getElementById('deviceTypeTotal').textContent = total.toLocaleString();
+  const el = document.getElementById('deviceTypeTotal');
+  if (!el) return;
+  el.textContent = total.toLocaleString();
 }
 
 function renderDeviceOsSummary() {
   const total = DEVICE_TYPE_DATA.reduce((sum, item) => sum + item.count, 0);
-  document.getElementById('deviceOsTotal').textContent = total.toLocaleString();
+  const el = document.getElementById('deviceOsTotal');
+  if (!el) return;
+  el.textContent = total.toLocaleString();
 }
 
 function renderDeviceTypeChart() {
+  const chart = document.getElementById('deviceTypeChart');
+  if (!chart) return;
   const data = DEVICE_TYPE_DATA.map(item => ({ label: item.label, value: item.count, color: item.color }));
   const maxVal = Math.max(...data.map(d => d.value));
-  document.getElementById('deviceTypeChart').innerHTML = `
+  chart.innerHTML = `
     ${data.map(d => `
     <div class="bar-row interactive" role="button" tabindex="0" onclick="openDeviceTypeDetail('${d.label}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDeviceTypeDetail('${d.label}')}">
       <div class="bar-label" style="display:flex;align-items:center;justify-content:flex-end;gap:6px;">
@@ -2872,9 +2831,11 @@ function openDeviceTypeDetail(typeLabel) {
 }
 
 function renderDeviceOsChart() {
+  const chart = document.getElementById('deviceOsChart');
+  if (!chart) return;
   const data = DEVICE_OS_DATA;
   const maxVal = Math.max(...data.map(d => d.value));
-  document.getElementById('deviceOsChart').innerHTML = `
+  chart.innerHTML = `
     ${data.map(d => `
     <div class="bar-row interactive" role="button" tabindex="0" onclick="openDeviceOsDetail('${d.label}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDeviceOsDetail('${d.label}')}">
       <div class="bar-label" style="display:flex;align-items:center;justify-content:flex-end;gap:6px;">
@@ -4820,52 +4781,87 @@ function renderAppGrid() {
   const container = document.getElementById('appGrid');
   if (!container) return;
 
-  const isList = appInventoryViewMode === 'list';
-  container.style.gridTemplateColumns = isList ? '1fr' : '1fr 1fr';
+  const normalizeAppToken = (value) => String(value || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 
-  if (isList) {
-    container.innerHTML = softwareInventory.map(app => `
+  const appSeverityFor = (appName) => {
+    const token = normalizeAppToken(appName);
+    const counts = { critical: 0, high: 0, medium: 0, low: 0 };
+    if (!token) return counts;
+    getFilteredVulnerabilities().forEach(v => {
+      const target = normalizeAppToken(`${v.software || ''} ${v.title || ''}`);
+      if (!target) return;
+      if (target.includes(token) || token.includes(target)) {
+        counts[getSeverityBucket(v)] += 1;
+      }
+    });
+    return counts;
+  };
+
+  const severityButtons = {
+    all: document.getElementById('appSevAllBtn'),
+    critical: document.getElementById('appSevCriticalBtn'),
+    high: document.getElementById('appSevHighBtn'),
+    medium: document.getElementById('appSevMediumBtn'),
+    low: document.getElementById('appSevLowBtn')
+  };
+  Object.entries(severityButtons).forEach(([key, btn]) => {
+    if (!btn) return;
+    btn.classList.toggle('active', appInventorySeverityFilter === key);
+  });
+
+  container.style.gridTemplateColumns = '1fr';
+  const rows = softwareInventory
+    .map(app => ({ app, severity: appSeverityFor(app.name) }))
+    .filter(item => {
+      if (appInventorySeverityFilter === 'all') return true;
+      return Number(item.severity[appInventorySeverityFilter] || 0) > 0;
+    });
+
+  container.innerHTML = rows.length
+    ? rows.map(({ app, severity }) => `
       <div class="app-item" onclick="openDetail('app:${encodeURIComponent(app.name)}')" style="display:flex;justify-content:space-between;gap:10px;align-items:center;">
         <div style="min-width:0;">
           <div class="app-name">${app.name}</div>
           <div class="app-vendor">${app.vendor} · v${app.version}</div>
         </div>
-        <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:flex-end;">
+        <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:flex-end;align-items:center;">
           <div class="app-stat">💻 <span class="num">${app.devices}</span> devices</div>
           <div class="app-stat" style="${app.vulns > 10 ? 'color:var(--severity-critical);' : app.vulns > 5 ? 'color:var(--severity-high);' : ''}">⚠ <span class="num">${app.vulns}</span> vulns</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="card-action-btn app-sev-btn app-sev-critical ${severity.critical ? 'active' : ''}" type="button" style="padding:2px 8px;min-width:44px;" onclick="event.stopPropagation();appInventorySeverityFilter='critical';renderAppGrid();">C ${severity.critical}</button>
+            <button class="card-action-btn app-sev-btn app-sev-high ${severity.high ? 'active' : ''}" type="button" style="padding:2px 8px;min-width:44px;" onclick="event.stopPropagation();appInventorySeverityFilter='high';renderAppGrid();">H ${severity.high}</button>
+            <button class="card-action-btn app-sev-btn app-sev-medium ${severity.medium ? 'active' : ''}" type="button" style="padding:2px 8px;min-width:44px;" onclick="event.stopPropagation();appInventorySeverityFilter='medium';renderAppGrid();">M ${severity.medium}</button>
+            <button class="card-action-btn app-sev-btn app-sev-low ${severity.low ? 'active' : ''}" type="button" style="padding:2px 8px;min-width:44px;" onclick="event.stopPropagation();appInventorySeverityFilter='low';renderAppGrid();">L ${severity.low}</button>
+          </div>
         </div>
       </div>
-    `).join('');
-    return;
-  }
-
-  container.innerHTML = softwareInventory.map(app => `
-    <div class="app-item" onclick="openDetail('app:${encodeURIComponent(app.name)}')">
-      <div class="app-name">${app.name}</div>
-      <div class="app-vendor">${app.vendor} · v${app.version}</div>
-      <div class="app-stats">
-        <div class="app-stat">💻 <span class="num">${app.devices}</span> devices</div>
-        <div class="app-stat" style="${app.vulns > 10 ? 'color:var(--severity-critical);' : app.vulns > 5 ? 'color:var(--severity-high);' : ''}">⚠ <span class="num">${app.vulns}</span> vulns</div>
-      </div>
-    </div>
-  `).join('');
+    `).join('')
+    : `<div style="padding:10px 0;font-size:12px;color:var(--text-muted);">No software items match the selected severity filter.</div>`;
 }
 
 function setupSoftwareViewInteractions() {
-  const gridBtn = document.getElementById('appViewGridBtn');
-  const listBtn = document.getElementById('appViewListBtn');
-  if (!gridBtn || !listBtn || gridBtn.dataset.bound === 'true') return;
+  const allBtn = document.getElementById('appSevAllBtn');
+  const criticalBtn = document.getElementById('appSevCriticalBtn');
+  const highBtn = document.getElementById('appSevHighBtn');
+  const mediumBtn = document.getElementById('appSevMediumBtn');
+  const lowBtn = document.getElementById('appSevLowBtn');
+  if (!allBtn || !criticalBtn || !highBtn || !mediumBtn || !lowBtn || allBtn.dataset.bound === 'true') return;
 
   const setMode = (mode) => {
-    appInventoryViewMode = mode;
-    gridBtn.classList.toggle('active', mode === 'grid');
-    listBtn.classList.toggle('active', mode === 'list');
+    appInventorySeverityFilter = mode;
     renderAppGrid();
   };
 
-  gridBtn.addEventListener('click', () => setMode('grid'));
-  listBtn.addEventListener('click', () => setMode('list'));
-  gridBtn.dataset.bound = 'true';
+  allBtn.addEventListener('click', () => setMode('all'));
+  criticalBtn.addEventListener('click', () => setMode('critical'));
+  highBtn.addEventListener('click', () => setMode('high'));
+  mediumBtn.addEventListener('click', () => setMode('medium'));
+  lowBtn.addEventListener('click', () => setMode('low'));
+  allBtn.dataset.bound = 'true';
 }
 
 function setupVulnerabilityViewInteractions() {
