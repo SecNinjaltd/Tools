@@ -326,7 +326,7 @@ function showConnectInfo() {
         <span style="color:var(--accent-ninja);">GET</span> <span style="color:var(--text-secondary);">graph.microsoft.com/v1.0/security/alerts_v2</span><br>
         <span style="color:var(--accent-ninja);">POST</span> <span style="color:var(--text-secondary);">graph.microsoft.com/v1.0/security/runHuntingQuery</span><br>
         <span style="color:var(--accent-ninja);">GET</span> <span style="color:var(--text-secondary);">graph.microsoft.com/v1.0/identity/conditionalAccess/policies</span><br>
-        <span style="color:var(--accent-ninja);">GET</span> <span style="color:var(--text-secondary);">graph.microsoft.com/v1.0/deviceManagement/managedDevices</span><br>
+        <span style="color:var(--accent-ninja);">GET</span> <span style="color:var(--text-secondary);">graph.microsoft.com/beta/deviceManagement/managedDevices</span><br>
         <br>
         <span style="color:var(--text-muted);font-size:9px;">── Defender for Endpoint ──</span><br>
         <span style="color:var(--chart-2);">GET</span> <span style="color:var(--text-secondary);">api.security.microsoft.com/api/machines</span><br>
