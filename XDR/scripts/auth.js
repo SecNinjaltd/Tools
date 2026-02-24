@@ -22,8 +22,22 @@ const GRAPH_CONNECT_SCOPE_CANDIDATES = [
 const GRAPH_CONNECT_SCOPES = GRAPH_CONNECT_SCOPE_CANDIDATES[0];
 
 const DEFENDER_CONNECT_SCOPE_CANDIDATES = [
-  ['https://api.securitycenter.microsoft.com/Machine.Read.All', 'https://api.securitycenter.microsoft.com/Vulnerability.Read.All', 'https://api.securitycenter.microsoft.com/Software.Read.All', 'https://api.securitycenter.microsoft.com/Score.Read.All'],
-  ['https://api.securitycenter.microsoft.com/Machine.Read', 'https://api.securitycenter.microsoft.com/Vulnerability.Read', 'https://api.securitycenter.microsoft.com/Software.Read', 'https://api.securitycenter.microsoft.com/Score.Read'],
+  [
+    'https://api.securitycenter.microsoft.com/Machine.Read.All',
+    'https://api.securitycenter.microsoft.com/Vulnerability.Read.All',
+    'https://api.securitycenter.microsoft.com/Software.Read.All',
+    'https://api.securitycenter.microsoft.com/Score.Read.All',
+    'https://api.securitycenter.microsoft.com/SecurityRecommendation.Read.All',
+    'https://api.securitycenter.microsoft.com/SecurityConfiguration.Read.All'
+  ],
+  [
+    'https://api.securitycenter.microsoft.com/Machine.Read',
+    'https://api.securitycenter.microsoft.com/Vulnerability.Read',
+    'https://api.securitycenter.microsoft.com/Software.Read',
+    'https://api.securitycenter.microsoft.com/Score.Read',
+    'https://api.securitycenter.microsoft.com/SecurityRecommendation.Read',
+    'https://api.securitycenter.microsoft.com/SecurityConfiguration.Read'
+  ],
   ['https://api.securitycenter.microsoft.com/.default']
 ];
 
@@ -302,6 +316,8 @@ function showConnectInfo() {
         <span style="color:var(--chart-2);">Vulnerability.Read.All</span> <span style="color:var(--text-muted);font-size:9px;">— CVE data per device</span><br>
         <span style="color:var(--chart-2);">Software.Read.All</span> <span style="color:var(--text-muted);font-size:9px;">— Software inventory</span><br>
         <span style="color:var(--chart-2);">Score.Read.All</span> <span style="color:var(--text-muted);font-size:9px;">— Exposure &amp; Secure Score</span><br>
+        <span style="color:var(--chart-2);">SecurityRecommendation.Read.All</span> <span style="color:var(--text-muted);font-size:9px;">— Top remediation recommendations</span><br>
+        <span style="color:var(--chart-2);">SecurityConfiguration.Read.All</span> <span style="color:var(--text-muted);font-size:9px;">— Secure configuration assessment</span><br>
         <span style="color:var(--chart-2);">AdvancedQuery.Read.All</span> <span style="color:var(--text-muted);font-size:9px;">— KQL advanced hunting</span>
       </div>
     </div>
@@ -316,11 +332,14 @@ function showConnectInfo() {
         <span style="color:var(--accent-ninja);">GET</span> <span style="color:var(--text-secondary);">graph.microsoft.com/v1.0/deviceManagement/managedDevices</span><br>
         <br>
         <span style="color:var(--text-muted);font-size:9px;">── Defender for Endpoint ──</span><br>
-        <span style="color:var(--chart-2);">GET</span> <span style="color:var(--text-secondary);">api.securitycenter.microsoft.com/api/machines</span><br>
-        <span style="color:var(--chart-2);">GET</span> <span style="color:var(--text-secondary);">api.securitycenter.microsoft.com/api/vulnerabilities</span><br>
-        <span style="color:var(--chart-2);">GET</span> <span style="color:var(--text-secondary);">api.securitycenter.microsoft.com/api/Software</span><br>
-        <span style="color:var(--chart-2);">POST</span> <span style="color:var(--text-secondary);">api.securitycenter.microsoft.com/api/advancedqueries/run</span><br>
-        <span style="color:var(--chart-2);">GET</span> <span style="color:var(--text-secondary);">api.securitycenter.microsoft.com/api/exposureScore</span>
+        <span style="color:var(--chart-2);">GET</span> <span style="color:var(--text-secondary);">api.security.microsoft.com/api/machines</span><br>
+        <span style="color:var(--chart-2);">GET</span> <span style="color:var(--text-secondary);">api.security.microsoft.com/api/deviceavinfo</span><br>
+        <span style="color:var(--chart-2);">GET</span> <span style="color:var(--text-secondary);">api.security.microsoft.com/api/recommendations</span><br>
+        <span style="color:var(--chart-2);">GET</span> <span style="color:var(--text-secondary);">api.security.microsoft.com/api/machines/SecureConfigurationsAssessmentByMachine</span><br>
+        <span style="color:var(--chart-2);">GET</span> <span style="color:var(--text-secondary);">api.security.microsoft.com/api/vulnerabilities</span><br>
+        <span style="color:var(--chart-2);">GET</span> <span style="color:var(--text-secondary);">api.security.microsoft.com/api/Software</span><br>
+        <span style="color:var(--chart-2);">POST</span> <span style="color:var(--text-secondary);">api.security.microsoft.com/api/advancedqueries/run</span><br>
+        <span style="color:var(--chart-2);">GET</span> <span style="color:var(--text-secondary);">api.security.microsoft.com/api/exposureScore</span>
       </div>
     </div>
 
