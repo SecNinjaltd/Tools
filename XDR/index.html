@@ -1200,10 +1200,16 @@ function endpointOsProfile(input = {}) {
   const isMac = /mac|osx|darwin/.test(context);
   const isLinux = /linux|ubuntu|debian|centos|rhel/.test(context);
   const windowsHint = /windows|win32|win11|win10/.test(context);
-  const serverHintByText = /windows\s*server|windowsserver|server\s*20\d{2}|datacenter|domain controller/.test(context);
-  const serverHintByHost = /^srv[-_.]/i.test(deviceName);
+  const model = normalizeOsToken(input.model || '').toLowerCase();
+  const serverHintByText = /windows\s*server|windowsserver|server\s*20\d{2}|datacenter|domain.controller/.test(context);
+  const serverHintByHost = /^(srv|dc|sql|web|app|fs|hv|db|nas|mail|exch|adfs|mgmt|wsus|scom|sccm|rds|rdsh|backup|bkp|print|proxy|gw|vpn|mon|siem)[0-9_\-.]/i.test(deviceName);
   const serverHintByRole = /server|dc|domain/.test(String(input.machineRole || input.rbacGroupName || '').toLowerCase());
-  const isServer = serverHintByText || serverHintByHost || serverHintByRole;
+  const serverHintByModel = /proliant|poweredge|thinkagile|thinkserver|primergy|synergyframe|bladesystem|system\s*x|uvline|supermicro|nx-\d|az-\d|azure\s*stack/i.test(model);
+  const serverHintByVersion = /^10\.0\.20348/.test(version); // Server 2022 is the only OS at build 20348
+  // operatingSystemProductType from Intune hardwareInformation: 1=Workstation, 2=DC, 3=Server
+  const productType = Number(input.operatingSystemProductType || 0);
+  const serverHintByProductType = productType === 2 || productType === 3;
+  const isServer = serverHintByText || serverHintByHost || serverHintByRole || serverHintByModel || serverHintByVersion || serverHintByProductType;
 
   if (isMobile) {
     const label = context.includes('ios') ? 'iOS' : context.includes('android') ? 'Android' : 'Mobile';
@@ -1325,7 +1331,9 @@ function applyLiveDevices(managedDevices) {
     const osProfile = endpointOsProfile({
       operatingSystem: d.operatingSystem,
       osVersion: d.osVersion,
-      deviceName: d.deviceName || d.managedDeviceName
+      deviceName: d.deviceName || d.managedDeviceName,
+      model: d.model,
+      operatingSystemProductType: d.hardwareInformation?.operatingSystemProductType
     });
     const os = osProfile.display;
     const type = osProfile.type;
@@ -1341,15 +1349,16 @@ function applyLiveDevices(managedDevices) {
 
     return withDefenderVersionDetails({
       name: d.deviceName || d.managedDeviceName || `DEVICE-${idx + 1}`,
+      sourceMachineId: d.azureAdDeviceId || d.id || '',
       type,
       osFamily: osProfile.family,
       os,
       location,
       health,
       defenderVer: d.osVersion || d.partnerReportedThreatState || 'n/a',
-      defenderPlatformVer: d.defenderAvPlatformVersion || d.defenderPlatformVersion,
-      defenderEngineVer: d.defenderAvEngineVersion || d.defenderEngineVersion,
-      defenderSecurityIntelVer: d.defenderAvSecurityIntelVersion || d.defenderSecurityIntelVersion || d.defenderSignatureVersion,
+      defenderPlatformVer: d.windowsProtectionState?.antiMalwareVersion || d.defenderAvPlatformVersion,
+      defenderEngineVer: d.windowsProtectionState?.engineVersion || d.defenderAvEngineVersion,
+      defenderSecurityIntelVer: d.windowsProtectionState?.signatureVersion || d.defenderAvSecurityIntelVersion,
       vulns,
       caPolicies: 1,
       riskScore,
@@ -1747,7 +1756,13 @@ function syncDeviceVulnCountsFromEndpointEvidence() {
 function applyLiveDefenderMachines(machines) {
   if (!Array.isArray(machines) || !machines.length) return false;
 
-  const mapped = machines.map((m, idx) => {
+  // If Intune (Graph) data is already loaded, merge Defender data into existing devices
+  // rather than replacing them. Defender has authoritative OS classification; Intune has
+  // authoritative compliance state. When both are present, the merged result is best.
+  const hasIntuneBase = devices.length > 0;
+  const newDevices = [];
+
+  machines.forEach((m, idx) => {
     const osProfile = endpointOsProfile({
       osPlatform: m.osPlatform,
       osDistribution: m.osDistribution,
@@ -1757,38 +1772,64 @@ function applyLiveDefenderMachines(machines) {
       machineRole: m.machineRole,
       rbacGroupName: m.rbacGroupName
     });
-    const os = osProfile.display;
-    const type = osProfile.type;
-    const health = defenderMachineHealth(m);
-    const riskScore = defenderMachineRisk(m, health);
 
-    const location = m.lastIpCountry || m.lastExternalIpAddress || m.rbacGroupName || 'Tenant';
-    const lastSeen = m.lastSeen || m.lastSeenDateTime || new Date().toISOString();
-    const staleDays = lastSeen
-      ? Math.max(0, Math.floor((Date.now() - new Date(lastSeen).getTime()) / (24 * 60 * 60 * 1000)))
-      : 0;
-    const vulns = health === 'Critical' ? 10 + Math.min(12, staleDays) : health === 'Warning' ? 3 + Math.min(6, staleDays) : Math.min(2, staleDays);
+    const existing = hasIntuneBase
+      ? findDeviceByIdentity(m.id || m.machineId || '', m.computerDnsName || m.deviceName || '')
+      : null;
 
-    return withDefenderVersionDetails({
-      name: m.computerDnsName || m.deviceName || m.id || `MACHINE-${idx + 1}`,
-      sourceMachineId: m.id || m.machineId || m.deviceId || '',
-      type,
-      osFamily: osProfile.family,
-      os,
-      location,
-      health,
-      defenderVer: m.version || m.agentVersion || m.osVersion || 'n/a',
-      defenderPlatformVer: m.defenderAvPlatformVersion || m.platformVersion || m.productVersion,
-      defenderEngineVer: m.defenderAvEngineVersion || m.engineVersion,
-      defenderSecurityIntelVer: m.defenderAvSignatureVersion || m.signatureVersion || m.securityIntelligenceVersion,
-      vulns,
-      caPolicies: 1,
-      riskScore,
-      lastSeen
-    }, false);
+    if (existing) {
+      // Patch existing Intune device with Defender's authoritative OS classification
+      existing.sourceMachineId = m.id || m.machineId || m.deviceId || existing.sourceMachineId || '';
+      existing.os = osProfile.display;
+      existing.osFamily = osProfile.family;
+      existing.type = osProfile.type;
+      existing.defenderVer = m.version || m.agentVersion || m.osVersion || existing.defenderVer || 'n/a';
+      const platVer = m.defenderAvPlatformVersion || m.platformVersion || m.productVersion;
+      const engVer = m.defenderAvEngineVersion || m.engineVersion;
+      const intelVer = m.defenderAvSignatureVersion || m.signatureVersion || m.securityIntelligenceVersion;
+      if (platVer) existing.defenderPlatformVer = String(platVer);
+      if (engVer) existing.defenderEngineVer = String(engVer);
+      if (intelVer) existing.defenderSecurityIntelVer = String(intelVer);
+      if (m.lastSeen || m.lastSeenDateTime) existing.lastSeen = m.lastSeen || m.lastSeenDateTime;
+    } else {
+      // Device not in Intune (or Defender is the sole source) — create from Defender data
+      const health = defenderMachineHealth(m);
+      const riskScore = defenderMachineRisk(m, health);
+      const location = m.lastIpCountry || m.lastExternalIpAddress || m.rbacGroupName || 'Tenant';
+      const lastSeen = m.lastSeen || m.lastSeenDateTime || new Date().toISOString();
+      const staleDays = lastSeen
+        ? Math.max(0, Math.floor((Date.now() - new Date(lastSeen).getTime()) / (24 * 60 * 60 * 1000)))
+        : 0;
+      const vulns = health === 'Critical' ? 10 + Math.min(12, staleDays) : health === 'Warning' ? 3 + Math.min(6, staleDays) : Math.min(2, staleDays);
+
+      newDevices.push(withDefenderVersionDetails({
+        name: m.computerDnsName || m.deviceName || m.id || `MACHINE-${idx + 1}`,
+        sourceMachineId: m.id || m.machineId || m.deviceId || '',
+        type: osProfile.type,
+        osFamily: osProfile.family,
+        os: osProfile.display,
+        location,
+        health,
+        defenderVer: m.version || m.agentVersion || m.osVersion || 'n/a',
+        defenderPlatformVer: m.defenderAvPlatformVersion || m.platformVersion || m.productVersion,
+        defenderEngineVer: m.defenderAvEngineVersion || m.engineVersion,
+        defenderSecurityIntelVer: m.defenderAvSignatureVersion || m.signatureVersion || m.securityIntelligenceVersion,
+        vulns,
+        caPolicies: 1,
+        riskScore,
+        lastSeen
+      }, false));
+    }
   });
 
-  devices.splice(0, devices.length, ...mapped);
+  if (hasIntuneBase) {
+    // Append any Defender-only devices (not in Intune) to the existing list
+    if (newDevices.length) devices.push(...newDevices);
+  } else {
+    // Defender is the sole source — full replace
+    devices.splice(0, devices.length, ...newDevices);
+  }
+
   return true;
 }
 
@@ -2146,7 +2187,7 @@ async function loadLiveTenantData(graphAccessToken, defenderAccessToken) {
 
   if (graphAccessToken) {
     tasks.push(
-      { key: 'graphDevices', run: () => graphGetAll('https://graph.microsoft.com/v1.0/deviceManagement/managedDevices?$top=300', graphAccessToken, 10) },
+      { key: 'graphDevices', run: () => graphGetAll('https://graph.microsoft.com/v1.0/deviceManagement/managedDevices?$top=300&$expand=windowsProtectionState', graphAccessToken, 10) },
       { key: 'graphPolicies', run: () => graphGetAll('https://graph.microsoft.com/v1.0/identity/conditionalAccess/policies?$top=100', graphAccessToken, 5) },
       { key: 'graphAlerts', run: () => graphGetAll('https://graph.microsoft.com/v1.0/security/alerts_v2?$top=100', graphAccessToken, 5) }
     );
