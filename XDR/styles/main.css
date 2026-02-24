@@ -506,6 +506,37 @@ body[data-theme="cyber-mode"] .theme-toggle-btn { color: #f2f7ff; }
 
 .card-action-btn:hover { color: #ffffff; border-color: #b9d4ee; }
 .card-action-btn.active { color: #ffffff; border-color: #b9d4ee; background: rgba(255,255,255,0.2); }
+.software-card .app-sev-btn {
+  color: #ffffff;
+  border: 1px solid transparent;
+}
+.software-card .app-sev-btn.app-sev-all {
+  background: linear-gradient(135deg, #1e3a5a 0%, #2f6fa8 100%);
+  border-color: #21486d;
+}
+.software-card .app-sev-btn.app-sev-critical {
+  background: linear-gradient(135deg, #b3002d 0%, #ff2d55 100%);
+  border-color: #970025;
+}
+.software-card .app-sev-btn.app-sev-high {
+  background: linear-gradient(135deg, #c94900 0%, #ff8f00 100%);
+  border-color: #a43b00;
+}
+.software-card .app-sev-btn.app-sev-medium {
+  background: linear-gradient(135deg, #f39a00 0%, #ffd000 100%);
+  border-color: #d48600;
+  color: #2d2100;
+}
+.software-card .app-sev-btn.app-sev-low {
+  background: linear-gradient(135deg, #007bc7 0%, #29c8ff 100%);
+  border-color: #0069ab;
+}
+.software-card .app-sev-btn:hover {
+  filter: brightness(1.05);
+}
+.software-card .app-sev-btn.active {
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.28) inset;
+}
 
 .card-body { padding: 16px 18px; }
 
@@ -2146,25 +2177,17 @@ body[data-active-view="standards"] .standards-mitre-card { grid-column: 2 / span
   body[data-active-view="standards"] .standards-mitre-card { grid-column: 1 / span 3; }
 }
 @media (min-width: 1201px) {
-  :root { --vuln-stack-height: 720px; }
   .dashboard-grid.overview-layout {
-    grid-template-rows: repeat(2, calc((var(--vuln-stack-height) - 16px) / 2)) auto auto;
+    grid-template-rows: auto auto auto;
     grid-auto-rows: auto;
   }
-  .dashboard-grid.overview-layout .vuln-main-card {
+  .dashboard-grid.overview-layout .software-card {
     grid-column: 1;
-    grid-row: 1 / span 2;
-    height: auto;
-    display: flex;
-    flex-direction: column;
-  }
-  .dashboard-grid.overview-layout .device-type-card {
-    grid-column: 2;
     grid-row: 1;
   }
-  .dashboard-grid.overview-layout .os-card {
+  .dashboard-grid.overview-layout .device-mix-card {
     grid-column: 2;
-    grid-row: 2;
+    grid-row: 1;
   }
   .dashboard-grid.overview-layout .risk-matrix-card {
     grid-column: 3;
@@ -2173,47 +2196,22 @@ body[data-active-view="standards"] .standards-mitre-card { grid-column: 2 / span
     display: flex;
     flex-direction: column;
   }
+  .dashboard-grid.overview-layout .ca-policy-card {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .dashboard-grid.overview-layout .secure-score-card {
+    grid-column: 2;
+    grid-row: 2;
+  }
   .dashboard-grid.overview-layout .exposure-card {
     grid-column: 3;
     grid-row: 2;
   }
-  .dashboard-grid.overview-layout .software-card {
-    grid-column: 1;
-    grid-row: 3;
-  }
-  .dashboard-grid.overview-layout .secure-score-card {
-    grid-column: 3;
-    grid-row: 3;
-  }
-  .dashboard-grid.overview-layout .ca-policy-card {
-    grid-column: 2;
-    grid-row: 3;
-  }
-  .dashboard-grid.overview-layout .vuln-main-card .card-body {
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-  }
-  .dashboard-grid.overview-layout .vuln-main-card .vuln-list-wrap {
-    margin-top: 16px;
-    flex: 1;
-    min-height: 0;
-  }
-  .dashboard-grid.overview-layout .vuln-main-card .vuln-list {
-    max-height: none;
+  .dashboard-grid.overview-layout .device-mix-card,
+  .dashboard-grid.overview-layout .secure-score-card,
+  .dashboard-grid.overview-layout .exposure-card {
     height: 100%;
-  }
-  .dashboard-grid.overview-layout .device-type-card,
-  .dashboard-grid.overview-layout .os-card {
-    height: 100%;
-  }
-  .dashboard-grid.overview-layout .device-type-card .card-body,
-  .dashboard-grid.overview-layout .os-card .card-body {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    overflow-y: auto;
   }
   .dashboard-grid.overview-layout .risk-matrix-card .card-body {
     flex: 1;
