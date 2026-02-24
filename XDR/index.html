@@ -1541,6 +1541,33 @@ function getEndpointPatchRefsForVulnerability(cveId) {
   return Array.from(byPatch.values());
 }
 
+function getDevicesForEndpointCve(cveId) {
+  const targetId = extractCveId(cveId);
+  if (!targetId) return [];
+  const byName = new Map(devices.map(d => [normalizeDeviceKey(d.name), d]));
+  const hits = new Map();
+
+  liveEndpointPatchData.forEach((patches, deviceKey) => {
+    if (!Array.isArray(patches) || !patches.length) return;
+    const hasCve = patches.some(ref => extractCveId(ref.cveId) === targetId);
+    if (!hasCve) return;
+    const normalizedKey = normalizeDeviceKey(deviceKey);
+    const direct = byName.get(normalizedKey);
+    if (direct) {
+      hits.set(normalizeDeviceKey(direct.name), direct);
+      return;
+    }
+    const short = normalizedKey.split('.')[0];
+    const fallback = devices.find(d => {
+      const n = normalizeDeviceKey(d.name);
+      return n === normalizedKey || n.split('.')[0] === short;
+    });
+    if (fallback) hits.set(normalizeDeviceKey(fallback.name), fallback);
+  });
+
+  return Array.from(hits.values());
+}
+
 function applyLiveDefenderMachines(machines) {
   if (!Array.isArray(machines) || !machines.length) return false;
 
@@ -1615,6 +1642,7 @@ function applyLiveDefenderMachineVulnerabilities(rows) {
   if (!Array.isArray(rows) || !rows.length) return false;
 
   const nextMap = new Map();
+  const cveAggregate = new Map();
 
   rows.forEach((row, idx) => {
     const rawName = row.machineName || row.computerDnsName || row.deviceName || row.hostname || '';
@@ -1669,9 +1697,52 @@ function applyLiveDefenderMachineVulnerabilities(rows) {
     const existing = nextMap.get(deviceKey) || [];
     patchRefs.forEach(ref => existing.push(ref));
     nextMap.set(deviceKey, existing);
+
+    if (cveId) {
+      const agg = cveAggregate.get(cveId) || {
+        id: cveId,
+        title: row.name || row.title || row.vulnerabilityName || 'Endpoint vulnerability',
+        severity: defenderSeverityToVulnSeverity(row.severity || row.vulnerabilitySeverityLevel || row.severityLevel),
+        cvss: Number(row.cvssScore) || 6.5,
+        software: row.productName || row.softwareName || matchedDevice?.os || 'Operating system',
+        published: (row.publishedOn || row.firstSeen || row.createdOn || new Date().toISOString()).slice(0, 10),
+        exploited: Boolean(row.exploitVerified || row.publicExploit || row.isExploited),
+        _devices: new Set()
+      };
+      agg._devices.add(deviceKey);
+      cveAggregate.set(cveId, agg);
+    }
   });
 
   liveEndpointPatchData = nextMap;
+  if (cveAggregate.size) {
+    cveAggregate.forEach(agg => {
+      const affectedDevices = agg._devices.size;
+      const existingIdx = vulnerabilities.findIndex(v => String(v.id || '').toUpperCase() === agg.id);
+      if (existingIdx >= 0) {
+        const base = vulnerabilities[existingIdx];
+        vulnerabilities[existingIdx] = {
+          ...base,
+          affectedDevices: Math.max(Number(base.affectedDevices || 0), affectedDevices),
+          software: base.software || agg.software,
+          cvss: Number(base.cvss || 0) || agg.cvss,
+          severity: base.severity || agg.severity,
+          exploited: Boolean(base.exploited || agg.exploited)
+        };
+      } else {
+        vulnerabilities.push({
+          id: agg.id,
+          title: agg.title,
+          severity: agg.severity || 'High',
+          cvss: agg.cvss,
+          affectedDevices,
+          software: agg.software,
+          published: agg.published,
+          exploited: agg.exploited
+        });
+      }
+    });
+  }
   return nextMap.size > 0;
 }
 
@@ -2552,6 +2623,9 @@ function mapVulnerabilitiesForDevice(device) {
 }
 
 function getRelatedDevicesForVulnerability(vuln) {
+  const endpointMapped = getDevicesForEndpointCve(vuln?.id);
+  if (endpointMapped.length) return endpointMapped;
+
   const swNorm = vuln.software.toLowerCase();
   return devices.filter(device => {
     const osNorm = device.os.toLowerCase();
@@ -2657,7 +2731,7 @@ function renderThreatWorkbench() {
   }
 
   container.innerHTML = `${guidanceBlock}${ranked.map(item => `
-    <article class="remediation-item" onclick="${threatWorkbenchMode === 'monitor' ? 'openThreatRelevanceDetail' : 'openRemediationDetail'}('${item.vuln.id}')">
+    <article class="remediation-item" onclick="${threatWorkbenchMode === 'monitor' ? 'openThreatRelevanceDetail' : 'openRemediationDetail'}('${encodeURIComponent(item.vuln.id)}')">
       <div class="remediation-head">
         <div class="remediation-title">${item.vuln.id}</div>
         <span class="prio-tag ${threatWorkbenchMode === 'monitor' ? 'p3' : item.priority.toLowerCase()}">${item.triage.label}</span>
@@ -2686,79 +2760,33 @@ function renderMissingPatchesCard() {
   const vulnById = new Map(filteredVulns.map(v => [v.id, v]));
   const defaultVuln = filteredVulns[0] || vulnerabilities[0] || null;
 
-  if (liveEndpointPatchData.size) {
-    liveEndpointPatchData.forEach((patches, deviceKey) => {
-      if (!Array.isArray(patches) || !patches.length) return;
-      patches.forEach(ref => {
-        const cveId = extractCveId(ref.cveId || '');
-        const vuln = cveId ? vulnById.get(cveId) : null;
-        if (!vuln && cveId && filteredVulns.length) return;
-
-        const model = remediationPriority(vuln || defaultVuln || {
-          id: cveId || 'UNKNOWN',
-          title: 'Endpoint-reported missing update',
-          cvss: 6.5,
-          exploited: false,
-          affectedDevices: 1,
-          software: ref.target || 'Operating system'
-        });
-        const key = `${ref.kb}__${ref.target}`;
-        const published = vuln ? toDateSafe(vuln.published) : null;
-        const existing = patchMap.get(key) || {
-          kb: ref.kb,
-          target: ref.target,
-          note: ref.note || 'Endpoint-reported missing security update',
-          priority: model.priority,
-          score: 0,
-          reductionEstimate: 0,
-          maxCvss: 0,
-          affectedDevices: 0,
-          vulnCount: 0,
-          exploitedCount: 0,
-          primaryVulnId: vuln?.id || defaultVuln?.id || '',
-          oldestPublished: published,
-          latestPublished: published,
-          action: model.action,
-          _deviceSet: new Set(),
-          _vulnSet: new Set()
-        };
-
-        if (priorityWeight[model.priority] > priorityWeight[existing.priority]) existing.priority = model.priority;
-        if (model.score > existing.score) {
-          existing.score = model.score;
-          existing.primaryVulnId = vuln?.id || existing.primaryVulnId;
-          existing.action = model.action;
-        }
-
-        existing.reductionEstimate = Math.min(35, existing.reductionEstimate + model.reductionEstimate);
-        existing.maxCvss = Math.max(existing.maxCvss, Number(vuln?.cvss || 0));
-        existing._deviceSet.add(deviceKey);
-        if (vuln?.id) existing._vulnSet.add(vuln.id);
-        if (vuln?.exploited) existing.exploitedCount += 1;
-
-        if (published) {
-          if (!existing.oldestPublished || published < existing.oldestPublished) existing.oldestPublished = published;
-          if (!existing.latestPublished || published > existing.latestPublished) existing.latestPublished = published;
-        }
-
-        patchMap.set(key, existing);
-      });
-    });
+  if (!liveEndpointPatchData.size) {
+    container.innerHTML = '<div style="font-size:12px;color:var(--text-muted);">No endpoint missing patch data is available yet. Connect Defender endpoint sources to populate this card.</div>';
+    return;
   }
 
-  if (!patchMap.size) filteredVulns.forEach(vuln => {
-    const model = remediationPriority(vuln);
-    const patchRefs = (KB_PATCH_MAP[vuln.id] && KB_PATCH_MAP[vuln.id].length)
-      ? KB_PATCH_MAP[vuln.id]
-      : [{ kb: `Patch for ${vuln.software}`, target: vuln.software, note: 'Vendor security update required' }];
-
-    patchRefs.forEach(ref => {
+  liveEndpointPatchData.forEach((patches, deviceKey) => {
+    if (!Array.isArray(patches) || !patches.length) return;
+    patches.forEach(ref => {
+      const cveId = extractCveId(ref.cveId || '');
+      const vuln = cveId ? vulnById.get(cveId) : null;
+      const derivedVuln = vuln || {
+        id: cveId || `PATCH-${String(ref.kb || 'UNKNOWN').replace(/\s+/g, '-')}`,
+        title: `Endpoint-reported missing update${cveId ? ` (${cveId})` : ''}`,
+        cvss: 6.5,
+        exploited: false,
+        affectedDevices: 1,
+        software: ref.target || 'Operating system',
+        severity: 'High',
+        published: new Date().toISOString().slice(0, 10)
+      };
+      const model = remediationPriority(derivedVuln);
       const key = `${ref.kb}__${ref.target}`;
-      const published = toDateSafe(vuln.published);
+      const published = toDateSafe(derivedVuln.published);
       const existing = patchMap.get(key) || {
         kb: ref.kb,
         target: ref.target,
-        note: ref.note || 'Security update required',
+        note: ref.note || 'Endpoint-reported missing security update',
         priority: model.priority,
         score: 0,
         reductionEstimate: 0,
@@ -2766,24 +2794,26 @@ function renderMissingPatchesCard() {
         affectedDevices: 0,
         vulnCount: 0,
         exploitedCount: 0,
-        primaryVulnId: vuln.id,
+        primaryVulnId: derivedVuln.id || defaultVuln?.id || '',
         oldestPublished: published,
         latestPublished: published,
-        action: model.action
+        action: model.action,
+        _deviceSet: new Set(),
+        _vulnSet: new Set()
       };
 
       if (priorityWeight[model.priority] > priorityWeight[existing.priority]) existing.priority = model.priority;
       if (model.score > existing.score) {
         existing.score = model.score;
-        existing.primaryVulnId = vuln.id;
+        existing.primaryVulnId = derivedVuln.id || existing.primaryVulnId;
         existing.action = model.action;
       }
 
       existing.reductionEstimate = Math.min(35, existing.reductionEstimate + model.reductionEstimate);
-      existing.maxCvss = Math.max(existing.maxCvss, Number(vuln.cvss) || 0);
-      existing.affectedDevices += Number(vuln.affectedDevices) || 0;
-      existing.vulnCount += 1;
-      existing.exploitedCount += vuln.exploited ? 1 : 0;
+      existing.maxCvss = Math.max(existing.maxCvss, Number(derivedVuln.cvss || 0));
+      existing._deviceSet.add(deviceKey);
+      if (derivedVuln?.id) existing._vulnSet.add(derivedVuln.id);
+      if (derivedVuln?.exploited) existing.exploitedCount += 1;
 
       if (published) {
         if (!existing.oldestPublished || published < existing.oldestPublished) existing.oldestPublished = published;
@@ -3147,50 +3177,7 @@ function getMissingOsPatchesForDevice(device, providedMappedVulns = null) {
     });
     return Array.from(deduped.values());
   }
-
-  const osNorm = String(device?.os || '').toLowerCase();
-  const mappedVulns = Array.isArray(providedMappedVulns) ? providedMappedVulns : mapVulnerabilitiesForDevice(device);
-  const missingOsPatches = new Map();
-
-  mappedVulns.forEach(vuln => {
-    (KB_PATCH_MAP[vuln.id] || []).forEach(patch => {
-      const target = String(patch.target || '').toLowerCase();
-      const isOsPatchTarget = target.includes('windows') || target.includes('server') || target.includes('ubuntu') || target.includes('linux') || target.includes('mac') || target.includes('ios') || target.includes('android');
-      if (!isOsPatchTarget) return;
-
-      let match = false;
-      if (osNorm.includes('windows') && target.includes('windows')) {
-        match = true;
-        if (target.includes('11') && !osNorm.includes('11')) match = false;
-        if (target.includes('10') && !osNorm.includes('10')) match = false;
-      } else if (osNorm.includes('server') && target.includes('server')) {
-        match = true;
-      } else if (osNorm.includes('ubuntu') && target.includes('ubuntu')) {
-        match = true;
-      } else if (osNorm.includes('linux') && target.includes('linux')) {
-        match = true;
-      } else if (osNorm.includes('mac') && target.includes('mac')) {
-        match = true;
-      } else if (osNorm.includes('ios') && target.includes('ios')) {
-        match = true;
-      } else if (osNorm.includes('android') && target.includes('android')) {
-        match = true;
-      }
-      if (!match) return;
-
-      const key = `${patch.kb}::${patch.target}`;
-      if (!missingOsPatches.has(key)) {
-        missingOsPatches.set(key, {
-          kb: patch.kb,
-          target: patch.target,
-          note: patch.note,
-          cveId: vuln.id
-        });
-      }
-    });
-  });
-
-  return Array.from(missingOsPatches.values());
+  return [];
 }
 
 function getFilteredDevicesForInventory() {
@@ -5940,12 +5927,13 @@ function openVulnDetail(cveId) {
 }
 
 function openThreatRelevanceDetail(cveId) {
-  const vuln = vulnerabilities.find(v => v.id === cveId);
+  const decodedId = decodeUriComponentSafe(cveId);
+  const vuln = vulnerabilities.find(v => v.id === decodedId);
   if (!vuln) return;
 
   const { score, relatedDevices, avgRisk } = threatRelevanceScore(vuln);
   const endpointKbPatches = getEndpointPatchRefsForVulnerability(vuln.id);
-  const kbPatches = endpointKbPatches.length ? endpointKbPatches : (KB_PATCH_MAP[vuln.id] || []);
+  const kbPatches = endpointKbPatches;
   const playbook = remediationPlaybook(vuln);
   const topDevices = relatedDevices
     .sort((a, b) => b.riskScore - a.riskScore || b.vulns - a.vulns)
@@ -5995,12 +5983,7 @@ function openThreatRelevanceDetail(cveId) {
                 <div style="font-size:11px;color:var(--text-muted);">${item.note}${item.affectedDevices ? ` · ${item.affectedDevices} endpoint${item.affectedDevices === 1 ? '' : 's'}` : ''}</div>
               </div>
             `).join('')
-          : `
-              <div style="font-size:12px;color:var(--text-muted);line-height:1.6;">
-                No KB mapped in local model. Validate exact package in Microsoft Security Update Guide:
-                <a href="https://msrc.microsoft.com/update-guide/" target="_blank" rel="noopener noreferrer">msrc.microsoft.com/update-guide</a>
-              </div>
-            `
+          : '<div style="font-size:12px;color:var(--text-muted);line-height:1.6;">No endpoint patch evidence returned for this CVE.</div>'
       }
     </div>
     <div class="detail-section">
@@ -6015,13 +5998,14 @@ function openThreatRelevanceDetail(cveId) {
 }
 
 function openRemediationDetail(cveId) {
-  const vuln = vulnerabilities.find(v => v.id === cveId);
+  const decodedId = decodeUriComponentSafe(cveId);
+  const vuln = vulnerabilities.find(v => v.id === decodedId);
   if (!vuln) return;
 
   const details = remediationPriority(vuln);
   const playbook = remediationPlaybook(vuln);
   const endpointKbPatches = getEndpointPatchRefsForVulnerability(vuln.id);
-  const kbPatches = endpointKbPatches.length ? endpointKbPatches : (KB_PATCH_MAP[vuln.id] || []);
+  const kbPatches = endpointKbPatches;
   const impacted = details.relatedDevices
     .sort((a, b) => b.riskScore - a.riskScore || b.vulns - a.vulns)
     .slice(0, 10);
@@ -6067,12 +6051,7 @@ function openRemediationDetail(cveId) {
                 <div style="font-size:11px;color:var(--text-muted);">${item.note}${item.affectedDevices ? ` · ${item.affectedDevices} endpoint${item.affectedDevices === 1 ? '' : 's'}` : ''}</div>
               </div>
             `).join('')
-          : `
-              <div style="font-size:12px;color:var(--text-muted);line-height:1.6;">
-                No KB mapped in local model. Validate exact package in Microsoft Security Update Guide:
-                <a href="https://msrc.microsoft.com/update-guide/" target="_blank" rel="noopener noreferrer">msrc.microsoft.com/update-guide</a>
-              </div>
-            `
+          : '<div style="font-size:12px;color:var(--text-muted);line-height:1.6;">No endpoint patch evidence returned for this CVE.</div>'
       }
     </div>
     <div class="detail-section">
