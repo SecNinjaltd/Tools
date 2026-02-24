@@ -27,16 +27,14 @@ const DEFENDER_CONNECT_SCOPE_CANDIDATES = [
     'https://api.securitycenter.microsoft.com/Vulnerability.Read.All',
     'https://api.securitycenter.microsoft.com/Software.Read.All',
     'https://api.securitycenter.microsoft.com/Score.Read.All',
-    'https://api.securitycenter.microsoft.com/SecurityRecommendation.Read.All',
-    'https://api.securitycenter.microsoft.com/SecurityConfiguration.Read.All'
+    'https://api.securitycenter.microsoft.com/SecurityRecommendation.Read.All'
   ],
   [
     'https://api.securitycenter.microsoft.com/Machine.Read',
     'https://api.securitycenter.microsoft.com/Vulnerability.Read',
     'https://api.securitycenter.microsoft.com/Software.Read',
     'https://api.securitycenter.microsoft.com/Score.Read',
-    'https://api.securitycenter.microsoft.com/SecurityRecommendation.Read',
-    'https://api.securitycenter.microsoft.com/SecurityConfiguration.Read'
+    'https://api.securitycenter.microsoft.com/SecurityRecommendation.Read'
   ],
   ['https://api.securitycenter.microsoft.com/.default']
 ];
@@ -317,7 +315,6 @@ function showConnectInfo() {
         <span style="color:var(--chart-2);">Software.Read.All</span> <span style="color:var(--text-muted);font-size:9px;">— Software inventory</span><br>
         <span style="color:var(--chart-2);">Score.Read.All</span> <span style="color:var(--text-muted);font-size:9px;">— Exposure &amp; Secure Score</span><br>
         <span style="color:var(--chart-2);">SecurityRecommendation.Read.All</span> <span style="color:var(--text-muted);font-size:9px;">— Top remediation recommendations</span><br>
-        <span style="color:var(--chart-2);">SecurityConfiguration.Read.All</span> <span style="color:var(--text-muted);font-size:9px;">— Secure configuration assessment</span><br>
         <span style="color:var(--chart-2);">AdvancedQuery.Read.All</span> <span style="color:var(--text-muted);font-size:9px;">— KQL advanced hunting</span>
       </div>
     </div>
@@ -459,13 +456,19 @@ async function attemptConnect() {
     const loadWarnings = loaded.errors.length
       ? `<br>Some endpoints failed: ${loaded.errors.slice(0, 2).map(err => escapeHtml(err)).join(' | ')}`
       : '';
+    const avStats = (window.liveDefenderAvInfoStats && typeof window.liveDefenderAvInfoStats === 'object')
+      ? window.liveDefenderAvInfoStats
+      : null;
+    const avStatsHint = avStats
+      ? `<br>Defender AV info rows: ${Number(avStats.rows || 0).toLocaleString()} · matched devices: ${Number(avStats.matched || 0).toLocaleString()} · rows with version fields: ${Number(avStats.versioned || 0).toLocaleString()}`
+      : '';
     const noRowsHint = loaded.noRows ? '<br>Authenticated successfully, but endpoints returned 0 rows for mapped datasets.' : '';
     const defenderScopeHint = defenderScopeUsed ? `<br>Defender scopes used: <code>${escapeHtml(defenderScopeUsed)}</code>` : '';
     const graphScopeHint = `<br>Graph scopes used: <code>${escapeHtml(graphToken.scopes.join(', '))}</code>`;
     const defenderTokenInfo = defenderTokenResponse ? ` Defender token expires ${defenderExpiresOn}.` : '';
 
     lastConnectedContext = { tenantId, clientId };
-    status.innerHTML = `<span style="color:var(--status-compliant);">Connected as ${escapeHtml(account?.username || 'authenticated user')}. Live data loaded from: ${escapeHtml(loaded.sources.join(', '))}. Graph token expires ${escapeHtml(graphExpiresOn)}.${escapeHtml(defenderTokenInfo)} Auto-refresh every ${Math.round(AUTO_REFRESH_MS / 60000)} minutes.${escapeHtml(defenderWarning)}${graphScopeHint}${defenderScopeHint}${noRowsHint}${loadWarnings}</span>`;
+    status.innerHTML = `<span style="color:var(--status-compliant);">Connected as ${escapeHtml(account?.username || 'authenticated user')}. Live data loaded from: ${escapeHtml(loaded.sources.join(', '))}. Graph token expires ${escapeHtml(graphExpiresOn)}.${escapeHtml(defenderTokenInfo)} Auto-refresh every ${Math.round(AUTO_REFRESH_MS / 60000)} minutes.${escapeHtml(defenderWarning)}${graphScopeHint}${defenderScopeHint}${avStatsHint}${noRowsHint}${loadWarnings}</span>`;
     setAuthBanner('', false);
     startAutoRefresh();
   } catch (err) {
@@ -549,9 +552,12 @@ async function refreshTenantData(options = {}) {
       graphToken.token.accessToken,
       defenderTokenResponse ? defenderTokenResponse.accessToken : null
     );
+    const avStats = (window.liveDefenderAvInfoStats && typeof window.liveDefenderAvInfoStats === 'object')
+      ? window.liveDefenderAvInfoStats
+      : null;
 
     if (overlayStatus && !suppressStatusUpdates) {
-      overlayStatus.innerHTML = `<span style="color:var(--status-compliant);">Refresh complete. Updated from: ${escapeHtml(loaded.sources.join(', '))}${loaded.noRows ? ' (0 rows returned)' : ''}.</span>`;
+      overlayStatus.innerHTML = `<span style="color:var(--status-compliant);">Refresh complete. Updated from: ${escapeHtml(loaded.sources.join(', '))}${loaded.noRows ? ' (0 rows returned)' : ''}.${avStats ? ` AV info rows ${Number(avStats.rows || 0).toLocaleString()}, matched ${Number(avStats.matched || 0).toLocaleString()}, versioned ${Number(avStats.versioned || 0).toLocaleString()}.` : ''}${loaded.errors && loaded.errors.length ? ` Endpoint errors: ${escapeHtml(loaded.errors.slice(0, 2).join(' | '))}` : ''}</span>`;
     }
     setAuthBanner('', false);
   } catch (err) {
