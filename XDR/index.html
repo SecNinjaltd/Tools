@@ -135,6 +135,7 @@
         </div>
       </div>
       <div class="card-body">
+        <div id="appConnectorHealth" style="margin-bottom:10px;"></div>
         <div class="app-grid" id="appGrid"></div>
       </div>
     </div>
@@ -352,40 +353,6 @@
             </div>
           </section>
         </div>
-      </div>
-    </div>
-
-    <!-- Vulnerability Severity -->
-    <div class="card vuln-severity-card" data-views="threat,overview">
-      <div class="card-header">
-        <div class="card-title">
-          <span class="icon">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1L14.5 13H1.5L8 1Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8 6V9M8 11V11.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-          </span>
-          Vulnerability Severity
-        </div>
-        <div class="card-actions">
-          <button class="card-action-btn active" id="vulnViewSummaryBtn" type="button">Summary</button>
-          <button class="card-action-btn" id="vulnViewByOsBtn" type="button">By OS</button>
-        </div>
-      </div>
-      <div class="card-body">
-        <div class="vuln-severity-grid" id="vulnSeverityGrid"></div>
-      </div>
-    </div>
-
-    <!-- Vulnerability List -->
-    <div class="card vuln-list-card" data-views="threat,overview">
-      <div class="card-header">
-        <div class="card-title">
-          <span class="icon">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1L14.5 13H1.5L8 1Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8 6V9M8 11V11.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-          </span>
-          Vulnerability List
-        </div>
-      </div>
-      <div class="card-body">
-        <div class="vuln-list" id="vulnList"></div>
       </div>
     </div>
 
@@ -1060,6 +1027,13 @@ let liveSecurityRecommendations = [];
 let liveSecureConfigByDevice = new Map();
 let liveDefenderAvInfoStats = { rows: 0, matched: 0, versioned: 0 };
 window.liveDefenderAvInfoStats = liveDefenderAvInfoStats;
+let softwareConnectorHealth = {
+  mode: 'mock',
+  lastUpdated: null,
+  defenderSoftware: { status: 'not-run', rows: 0, message: 'Connector not queried yet.' },
+  defenderMachineVulns: { status: 'not-run', rows: 0, message: 'Connector not queried yet.' }
+};
+window.softwareConnectorHealth = softwareConnectorHealth;
 const DEFENDER_PROXY_STORAGE_KEY = 'xdr_defender_proxy_base_url';
 let defenderProxyBaseUrl = '';
 let defenderCorsBlocked = false;
@@ -1140,6 +1114,48 @@ function isDefenderDirectApiBlocked() {
 function isStaticHostedXdrSite() {
   const host = String(window.location.hostname || '').toLowerCase();
   return host === 'tools.security-ninja.com' || host.endsWith('.github.io');
+}
+
+function updateSoftwareConnectorHealth({ defenderAccessToken, defenderApiAccess, settledByKey }) {
+  const next = {
+    mode: defenderAccessToken ? 'live' : 'mock',
+    lastUpdated: new Date().toISOString(),
+    defenderSoftware: { status: 'not-run', rows: 0, message: 'Connector not queried in this cycle.' },
+    defenderMachineVulns: { status: 'not-run', rows: 0, message: 'Connector not queried in this cycle.' }
+  };
+
+  const markBlocked = (message) => {
+    next.defenderSoftware = { status: 'blocked', rows: 0, message };
+    next.defenderMachineVulns = { status: 'blocked', rows: 0, message };
+  };
+
+  if (!defenderAccessToken) {
+    const msg = 'No Defender token available for this refresh cycle.';
+    next.defenderSoftware = { status: 'no-token', rows: 0, message: msg };
+    next.defenderMachineVulns = { status: 'no-token', rows: 0, message: msg };
+  } else if (defenderApiAccess && defenderApiAccess.blocked) {
+    markBlocked(defenderApiAccess.message || getDefenderCorsBlockMessage());
+  } else {
+    ['defenderSoftware', 'defenderMachineVulns'].forEach((key) => {
+      const result = settledByKey ? settledByKey[key] : null;
+      if (!result) return;
+      if (result.status === 'fulfilled') {
+        const rows = Array.isArray(result.value) ? result.value.length : 0;
+        next[key] = {
+          status: rows > 0 ? 'ok' : 'empty',
+          rows,
+          message: rows > 0 ? `Returned ${rows} row(s).` : 'Connector call succeeded but returned 0 rows.'
+        };
+        return;
+      }
+      const message = String(result.reason?.message || 'request failed');
+      const blocked = /cors|access-control-allow-origin|preflight|failed to fetch/i.test(message);
+      next[key] = { status: blocked ? 'blocked' : 'error', rows: 0, message };
+    });
+  }
+
+  softwareConnectorHealth = next;
+  window.softwareConnectorHealth = next;
 }
 
 async function canUseDefenderApiFromBrowser(accessToken) {
@@ -2472,6 +2488,8 @@ function applyLiveAlerts(alerts) {
 async function loadLiveTenantData(graphAccessToken, defenderAccessToken) {
   const tasks = [];
   const runtimeWarnings = [];
+  const settledByKey = {};
+  let defenderApiAccess = { ok: false, blocked: false };
 
   if (graphAccessToken) {
     tasks.push(
@@ -2482,7 +2500,7 @@ async function loadLiveTenantData(graphAccessToken, defenderAccessToken) {
   }
 
   if (defenderAccessToken) {
-    const defenderApiAccess = await canUseDefenderApiFromBrowser(defenderAccessToken);
+    defenderApiAccess = await canUseDefenderApiFromBrowser(defenderAccessToken);
     if (defenderApiAccess.ok) {
       tasks.push(
         { key: 'defenderMachines', run: () => defenderGetAll('https://api.security.microsoft.com/api/machines?$top=300', defenderAccessToken, 10) },
@@ -2500,6 +2518,12 @@ async function loadLiveTenantData(graphAccessToken, defenderAccessToken) {
   }
 
   if (!tasks.length) {
+    updateSoftwareConnectorHealth({
+      defenderAccessToken: Boolean(defenderAccessToken),
+      defenderApiAccess,
+      settledByKey
+    });
+    rerenderDashboard();
     if (runtimeWarnings.length) {
       throw new Error(runtimeWarnings[0]);
     }
@@ -2513,6 +2537,7 @@ async function loadLiveTenantData(graphAccessToken, defenderAccessToken) {
 
   settled.forEach((result, idx) => {
     const key = tasks[idx].key;
+    settledByKey[key] = result;
     if (result.status === 'fulfilled') {
       resultsByKey[key] = result.value;
       succeeded.push(key);
@@ -2542,19 +2567,20 @@ async function loadLiveTenantData(graphAccessToken, defenderAccessToken) {
   if (updated.graphDevices || updated.defenderMachines || updated.defenderDeviceAvInfo) summarizeDeviceDistributions();
   if (updated.defenderMachineVulns || updated.defenderMachines) syncDeviceVulnCountsFromEndpointEvidence();
 
-  // Software inventory priority chain — each level only runs if the previous produced no usable rows
+  // Software inventory priority chain (endpoint-only) — no recommendations/tenant fallback.
+  // Reset stale mock rows once live auth has run; only endpoint connectors can repopulate.
+  softwareInventory.splice(0, softwareInventory.length);
   if (resultsByKey.defenderSoftware) {
     updated.defenderSoftware = applyLiveDefenderSoftware(resultsByKey.defenderSoftware);
   }
   if (!updated.defenderSoftware && resultsByKey.defenderMachineVulns) {
     updated.defenderSoftware = applySoftwareInventoryFromMachineVulns(resultsByKey.defenderMachineVulns);
   }
-  if (!updated.defenderSoftware && resultsByKey.defenderRecommendations) {
-    updated.defenderSoftware = !!applySoftwareInventoryFromRecommendations(resultsByKey.defenderRecommendations);
-  }
-  if (!updated.defenderSoftware) {
-    updated.defenderSoftware = applySoftwareInventoryFromLiveVulnerabilityModel();
-  }
+  updateSoftwareConnectorHealth({
+    defenderAccessToken: Boolean(defenderAccessToken),
+    defenderApiAccess,
+    settledByKey
+  });
   rerenderDashboard();
 
   const sourceLabels = {
@@ -5091,6 +5117,7 @@ function openPolicyDetailFromList(policyName) {
 function renderAppGrid() {
   const container = document.getElementById('appGrid');
   if (!container) return;
+  renderSoftwareConnectorHealth();
 
   const normalizeAppToken = (value) => String(value || '')
     .toLowerCase()
@@ -5114,6 +5141,10 @@ function renderAppGrid() {
 
   container.style.gridTemplateColumns = '1fr';
   const rows = softwareInventory.map(app => ({ app, severity: appSeverityFor(app.name) }));
+  const corsBlocked = (typeof window.isDefenderCorsBlocked === 'function') && window.isDefenderCorsBlocked();
+  const emptyMessage = corsBlocked
+    ? 'No endpoint software data is available because Defender API calls are blocked from static hosting. Configure Defender API Proxy Base URL in Connect Tenant.'
+    : 'No vulnerable software rows were returned from endpoint connectors (/api/Software and /api/vulnerabilities/machinesVulnerabilities).';
 
   container.innerHTML = rows.length
     ? rows.map(({ app, severity }) => `
@@ -5134,7 +5165,51 @@ function renderAppGrid() {
         </div>
       </div>
     `).join('')
-    : `<div style="padding:10px 0;font-size:12px;color:var(--text-muted);">No software inventory data available from live sources.</div>`;
+    : `<div style="padding:10px 0;font-size:12px;color:var(--text-muted);">${emptyMessage}</div>`;
+}
+
+function renderSoftwareConnectorHealth() {
+  const host = document.getElementById('appConnectorHealth');
+  if (!host) return;
+
+  const esc = typeof window.escapeHtml === 'function'
+    ? window.escapeHtml
+    : (value) => String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+
+  const mapStatus = (entry) => {
+    const status = String(entry?.status || 'unknown');
+    const rows = Number(entry?.rows || 0);
+    if (status === 'ok') return { label: `LIVE · ${rows}`, color: 'var(--status-compliant)' };
+    if (status === 'empty') return { label: 'LIVE · 0', color: 'var(--status-warning)' };
+    if (status === 'blocked') return { label: 'BLOCKED', color: 'var(--severity-high)' };
+    if (status === 'error') return { label: 'ERROR', color: 'var(--severity-high)' };
+    if (status === 'no-token') return { label: 'NO TOKEN', color: 'var(--text-muted)' };
+    return { label: 'NOT RUN', color: 'var(--text-muted)' };
+  };
+
+  const software = softwareConnectorHealth?.defenderSoftware || {};
+  const machineVulns = softwareConnectorHealth?.defenderMachineVulns || {};
+  const softwareStatus = mapStatus(software);
+  const machineVulnStatus = mapStatus(machineVulns);
+  const updatedAt = softwareConnectorHealth?.lastUpdated
+    ? new Date(softwareConnectorHealth.lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    : 'n/a';
+
+  host.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:8px 10px;border:1px solid var(--border-subtle);border-radius:8px;background:var(--bg-elevated);">
+      <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.7px;">Connector Health</div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <span title="${esc(software.message || '')}" style="font-size:10px;font-family:'JetBrains Mono',monospace;padding:3px 6px;border-radius:999px;border:1px solid ${softwareStatus.color};color:${softwareStatus.color};">/api/Software · ${softwareStatus.label}</span>
+        <span title="${esc(machineVulns.message || '')}" style="font-size:10px;font-family:'JetBrains Mono',monospace;padding:3px 6px;border-radius:999px;border:1px solid ${machineVulnStatus.color};color:${machineVulnStatus.color};">/api/vulnerabilities/machinesVulnerabilities · ${machineVulnStatus.label}</span>
+      </div>
+      <div style="font-size:10px;color:var(--text-muted);font-family:'JetBrains Mono',monospace;">Updated ${updatedAt}</div>
+    </div>
+  `;
 }
 
 function setupSoftwareViewInteractions() {
@@ -7383,8 +7458,6 @@ window.addEventListener('resize', () => {
 // ===== INIT =====
 function rerenderDashboard() {
   renderExecutiveSummary();
-  renderVulnSeverityPanel();
-  renderVulnList();
   renderDeviceTypeSummary();
   renderDeviceOsSummary();
   renderDeviceTypeChart();
