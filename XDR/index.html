@@ -40,6 +40,17 @@
       <span id="dataModeLabel">MOCK DATA</span>
     </div>
     <button class="theme-toggle-btn btn-help-icon" type="button" onclick="openHelpPanel()" aria-label="Open help" title="Open help">?</button>
+    <div style="position:relative;">
+      <button class="customize-menu-btn" type="button" id="customizeMenuBtn" aria-expanded="false" aria-label="Customize dashboard">Customize</button>
+      <div class="customize-dropdown" id="customizeDropdown">
+        <label class="customize-option"><input type="checkbox" data-ui-option="toprow" checked> Executive Summary Row</label>
+        <label class="customize-option"><input type="checkbox" data-ui-option="overview" checked> Overview</label>
+        <label class="customize-option"><input type="checkbox" data-ui-option="devices" checked> Devices</label>
+        <label class="customize-option"><input type="checkbox" data-ui-option="policies" checked> Policies</label>
+        <label class="customize-option"><input type="checkbox" data-ui-option="threat" checked> Vulnerabilities</label>
+        <label class="customize-option"><input type="checkbox" data-ui-option="standards" checked> Standards</label>
+      </div>
+    </div>
     <div class="connect-tenant-wrap">
       <button class="btn-connect" onclick="showConnectInfo()">Connect Tenant</button>
       <div class="portal-version">Portal ver 1.14</div>
@@ -341,6 +352,62 @@
             </div>
           </section>
         </div>
+      </div>
+    </div>
+
+    <!-- Vulnerability Severity -->
+    <div class="card vuln-severity-card" data-views="threat,overview">
+      <div class="card-header">
+        <div class="card-title">
+          <span class="icon">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1L14.5 13H1.5L8 1Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8 6V9M8 11V11.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </span>
+          Vulnerability Severity
+        </div>
+        <div class="card-actions">
+          <button class="card-action-btn active" id="vulnViewSummaryBtn" type="button">Summary</button>
+          <button class="card-action-btn" id="vulnViewByOsBtn" type="button">By OS</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="vuln-severity-grid" id="vulnSeverityGrid"></div>
+      </div>
+    </div>
+
+    <!-- Vulnerability List -->
+    <div class="card vuln-list-card" data-views="threat,overview">
+      <div class="card-header">
+        <div class="card-title">
+          <span class="icon">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1L14.5 13H1.5L8 1Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8 6V9M8 11V11.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </span>
+          Vulnerability List
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="vuln-list" id="vulnList"></div>
+      </div>
+    </div>
+
+    <!-- Remediation Queue -->
+    <div class="card span-2 remediation-queue-card" data-views="threat">
+      <div class="card-header">
+        <div class="card-title">
+          <span class="icon">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1L14 4V8C14 11.3137 11.3137 14 8 14C4.68629 14 2 11.3137 2 8V4L8 1Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M5.5 8L7.4 9.9L10.8 6.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+          Remediation Queue
+        </div>
+        <div class="card-actions">
+          <button class="card-action-btn active" id="remediationActionableBtn" type="button">Actionable</button>
+          <button class="card-action-btn" id="remediationReductionBtn" type="button">By Reduction</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;">
+          Prioritised remediation actions ranked by actionable impact or estimated risk-score reduction.
+        </div>
+        <div class="remediation-queue-list" id="remediationQueueList"></div>
       </div>
     </div>
 
@@ -7157,6 +7224,7 @@ function rerenderDashboard() {
   renderDeviceOsChart();
   renderThreatWorkbench();
   renderMissingPatchesCard();
+  renderRemediationQueue();
   renderRiskMatrix();
   renderSecureScoreChart();
   renderDeviceTable();
