@@ -39,6 +39,11 @@ const DEFENDER_CONNECT_SCOPE_CANDIDATES = [
   ['https://api.securitycenter.microsoft.com/.default']
 ];
 
+// Optional testing defaults for this hosted dashboard.
+// Set these to your tenant/app IDs to avoid typing them in the connect form.
+const DEFAULT_TENANT_ID = 'bf994893-2b60-40c3-8da4-37d2c9c0543f';
+const DEFAULT_CLIENT_ID = '925b39c5-73d8-4a81-ab16-50266b583e3b';
+
 // Optional hard override if you want to force an exact redirect URI.
 // Example: 'https://tools.security-ninja.com/XDR/'
 const REDIRECT_URI_OVERRIDE = '';
@@ -284,6 +289,8 @@ function showConnectInfo() {
   const overlay = document.getElementById('detailOverlay');
   const title = document.getElementById('detailTitle');
   const body = document.getElementById('detailBody');
+  const defaultTenantId = String(window.__XDR_DEFAULT_TENANT_ID__ || DEFAULT_TENANT_ID || '').trim();
+  const defaultClientId = String(window.__XDR_DEFAULT_CLIENT_ID__ || DEFAULT_CLIENT_ID || '').trim();
   const defenderProxyBase = (typeof window.getDefenderProxyBaseUrl === 'function')
     ? String(window.getDefenderProxyBaseUrl() || '')
     : '';
@@ -386,11 +393,11 @@ function showConnectInfo() {
       <div style="display:flex;flex-direction:column;gap:10px;">
         <div>
           <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px;">Tenant ID</label>
-          <input type="text" id="tenantIdInput" placeholder="e.g. 72f988bf-86f1-41af-91ab-2d7cd011db47" style="width:100%;padding:8px 12px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-family:'JetBrains Mono',monospace;font-size:12px;outline:none;" onfocus="this.style.borderColor='var(--accent-ninja)'" onblur="this.style.borderColor='var(--border)'">
+          <input type="text" id="tenantIdInput" value="${escapeHtml(defaultTenantId)}" placeholder="e.g. 72f988bf-86f1-41af-91ab-2d7cd011db47" style="width:100%;padding:8px 12px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-family:'JetBrains Mono',monospace;font-size:12px;outline:none;" onfocus="this.style.borderColor='var(--accent-ninja)'" onblur="this.style.borderColor='var(--border)'">
         </div>
         <div>
           <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px;">Application (Client) ID</label>
-          <input type="text" id="clientIdInput" placeholder="e.g. 1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d" style="width:100%;padding:8px 12px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-family:'JetBrains Mono',monospace;font-size:12px;outline:none;" onfocus="this.style.borderColor='var(--accent-ninja)'" onblur="this.style.borderColor='var(--border)'">
+          <input type="text" id="clientIdInput" value="${escapeHtml(defaultClientId)}" placeholder="e.g. 1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d" style="width:100%;padding:8px 12px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-family:'JetBrains Mono',monospace;font-size:12px;outline:none;" onfocus="this.style.borderColor='var(--accent-ninja)'" onblur="this.style.borderColor='var(--border)'">
         </div>
         <div>
           <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px;">Defender API Proxy Base URL (optional)</label>
@@ -408,8 +415,10 @@ function showConnectInfo() {
 }
 
 async function attemptConnect() {
-  const tenantId = document.getElementById('tenantIdInput').value.trim();
-  const clientId = document.getElementById('clientIdInput').value.trim();
+  const tenantInputEl = document.getElementById('tenantIdInput');
+  const clientInputEl = document.getElementById('clientIdInput');
+  const tenantId = String(tenantInputEl?.value || window.__XDR_DEFAULT_TENANT_ID__ || DEFAULT_TENANT_ID || '').trim();
+  const clientId = String(clientInputEl?.value || window.__XDR_DEFAULT_CLIENT_ID__ || DEFAULT_CLIENT_ID || '').trim();
   const proxyInput = document.getElementById('defenderProxyBaseInput');
   const defenderProxyBase = proxyInput ? proxyInput.value.trim() : '';
   const status = document.getElementById('connectStatus');
