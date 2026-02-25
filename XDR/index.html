@@ -1891,32 +1891,45 @@ function applyLiveDefenderMachineVulnerabilities(rows) {
 function applyLiveDefenderSoftware(softwareRows) {
   if (!Array.isArray(softwareRows) || !softwareRows.length) return false;
 
+  // Matches both friendly names ("Windows 10") and Defender's underscore format ("windows_10")
   const isOperatingSystemInventoryName = (value) => {
     const text = String(value || '').toLowerCase().trim();
     if (!text) return false;
     return (
-      /^windows(\s|$)/.test(text) ||
-      /^windows server/.test(text) ||
-      /^macos(\s|$)/.test(text) ||
-      /^ios(\s|$)/.test(text) ||
-      /^android(\s|$)/.test(text) ||
-      /^ubuntu(\s|$)/.test(text) ||
-      /^debian(\s|$)/.test(text) ||
-      /^centos(\s|$)/.test(text) ||
-      /^red hat(\s|$)/.test(text) ||
-      /^rhel(\s|$)/.test(text) ||
-      /^linux(\s|$)/.test(text)
+      /^windows([_\s]|$)/.test(text) ||
+      /^windows[_\s]server/.test(text) ||
+      /^macos([_\s]|$)/.test(text) ||
+      /^ios([_\s]|$)/.test(text) ||
+      /^android([_\s]|$)/.test(text) ||
+      /^ubuntu([_\s]|$)/.test(text) ||
+      /^debian([_\s]|$)/.test(text) ||
+      /^centos([_\s]|$)/.test(text) ||
+      /^red[_\s]hat([_\s]|$)/.test(text) ||
+      /^rhel([_\s]|$)/.test(text) ||
+      /^linux([_\s]|$)/.test(text)
     );
+  };
+
+  // Convert Defender underscore format ("microsoft_edge") to display format ("Microsoft Edge")
+  const normalizeName = (raw) => String(raw || '')
+    .replace(/[_-]/g, ' ')
+    .replace(/\b\w/g, c => c.toUpperCase())
+    .trim();
+
+  // Extract version from Defender id field ("vendor-_-name-_-version") when not present directly
+  const versionFromId = (id) => {
+    const parts = String(id || '').split('-_-');
+    return parts.length >= 3 ? parts[parts.length - 1] : '';
   };
 
   const mapped = softwareRows
     .filter(s => !isOperatingSystemInventoryName(s.name || s.softwareName))
     .map((s, idx) => ({
-      name: s.name || s.softwareName || `Software ${idx + 1}`,
-      vendor: s.vendor || s.publisher || 'Unknown vendor',
+      name: normalizeName(s.name || s.softwareName || `Software ${idx + 1}`),
+      vendor: normalizeName(s.vendor || s.publisher || 'Unknown vendor'),
       devices: Number(s.deviceCount || s.exposedMachines || s.machinesCount || 0),
-      vulns: Number(s.vulnerabilitiesCount || s.cveCount || s.weaknesses || 0),
-      version: s.version || s.softwareVersion || 'n/a'
+      vulns: Number(s.vulnerabilitiesCount || s.vulnerabilities || s.cveCount || s.weaknesses || 0),
+      version: s.version || s.softwareVersion || versionFromId(s.id) || 'n/a'
     }))
     .sort((a, b) => b.vulns - a.vulns || b.devices - a.devices)
     .slice(0, 24);
@@ -1959,23 +1972,30 @@ function applySoftwareInventoryFromRecommendations(rows) {
 function applySoftwareInventoryFromMachineVulns(rows) {
   if (!Array.isArray(rows) || !rows.length) return false;
 
+  // Matches both friendly names ("Windows 10") and Defender's underscore format ("windows_10")
   const isOperatingSystemInventoryName = (value) => {
     const text = String(value || '').toLowerCase().trim();
     if (!text) return false;
     return (
-      /^windows(\s|$)/.test(text) ||
-      /^windows server/.test(text) ||
-      /^macos(\s|$)/.test(text) ||
-      /^ios(\s|$)/.test(text) ||
-      /^android(\s|$)/.test(text) ||
-      /^ubuntu(\s|$)/.test(text) ||
-      /^debian(\s|$)/.test(text) ||
-      /^centos(\s|$)/.test(text) ||
-      /^red hat(\s|$)/.test(text) ||
-      /^rhel(\s|$)/.test(text) ||
-      /^linux(\s|$)/.test(text)
+      /^windows([_\s]|$)/.test(text) ||
+      /^windows[_\s]server/.test(text) ||
+      /^macos([_\s]|$)/.test(text) ||
+      /^ios([_\s]|$)/.test(text) ||
+      /^android([_\s]|$)/.test(text) ||
+      /^ubuntu([_\s]|$)/.test(text) ||
+      /^debian([_\s]|$)/.test(text) ||
+      /^centos([_\s]|$)/.test(text) ||
+      /^red[_\s]hat([_\s]|$)/.test(text) ||
+      /^rhel([_\s]|$)/.test(text) ||
+      /^linux([_\s]|$)/.test(text)
     );
   };
+
+  // Convert Defender underscore format ("microsoft_edge") to display format ("Microsoft Edge")
+  const normalizeName = (raw) => String(raw || '')
+    .replace(/[_-]/g, ' ')
+    .replace(/\b\w/g, c => c.toUpperCase())
+    .trim();
 
   const summary = new Map();
   rows.forEach((row, idx) => {
@@ -1983,8 +2003,8 @@ function applySoftwareInventoryFromMachineVulns(rows) {
     if (!name || isOperatingSystemInventoryName(name)) return;
     const key = name.toLowerCase();
     const existing = summary.get(key) || {
-      name,
-      vendor: String(row.vendor || row.publisher || 'Unknown vendor'),
+      name: normalizeName(name),
+      vendor: normalizeName(String(row.vendor || row.publisher || 'Unknown vendor')),
       version: String(row.productVersion || row.softwareVersion || row.version || 'n/a'),
       machines: new Set(),
       cves: new Set()
@@ -2284,18 +2304,22 @@ async function loadLiveTenantData(graphAccessToken, defenderAccessToken) {
     defenderVulns: (resultsByKey.defenderVulns && !resultsByKey.defenderMachineVulns)
       ? applyLiveDefenderVulnerabilities(resultsByKey.defenderVulns)
       : false,
-    defenderSoftware: resultsByKey.defenderSoftware ? applyLiveDefenderSoftware(resultsByKey.defenderSoftware) : false,
+    defenderSoftware: false, // resolved via priority chain below
     defenderExposure: resultsByKey.defenderExposure ? applyLiveExposureScore(resultsByKey.defenderExposure) : false
   };
 
   if (updated.graphDevices || updated.defenderMachines || updated.defenderDeviceAvInfo) summarizeDeviceDistributions();
   if (updated.defenderMachineVulns || updated.defenderMachines) syncDeviceVulnCountsFromEndpointEvidence();
-  if (updated.defenderSoftware && resultsByKey.defenderSoftware) {
-    applyLiveDefenderSoftware(resultsByKey.defenderSoftware);
-  } else if (resultsByKey.defenderMachineVulns && applySoftwareInventoryFromMachineVulns(resultsByKey.defenderMachineVulns)) {
-    // Fallback to machine-vulnerability evidence when /Software has no usable rows.
-  } else if (resultsByKey.defenderRecommendations) {
-    applySoftwareInventoryFromRecommendations(resultsByKey.defenderRecommendations);
+
+  // Software inventory priority chain — each level only runs if the previous produced no usable rows
+  if (resultsByKey.defenderSoftware) {
+    updated.defenderSoftware = applyLiveDefenderSoftware(resultsByKey.defenderSoftware);
+  }
+  if (!updated.defenderSoftware && resultsByKey.defenderMachineVulns) {
+    updated.defenderSoftware = applySoftwareInventoryFromMachineVulns(resultsByKey.defenderMachineVulns);
+  }
+  if (!updated.defenderSoftware && resultsByKey.defenderRecommendations) {
+    updated.defenderSoftware = !!applySoftwareInventoryFromRecommendations(resultsByKey.defenderRecommendations);
   }
   rerenderDashboard();
 
