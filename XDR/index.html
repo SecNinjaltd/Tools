@@ -1121,6 +1121,9 @@ function getDefenderFetchTargetUrl(url) {
 }
 
 function getDefenderCorsBlockMessage() {
+  if (!defenderProxyBaseUrl && isStaticHostedXdrSite()) {
+    return 'Defender API requests skipped on static hosting. Configure Defender API Proxy Base URL in Connect Tenant to enable endpoint datasets.';
+  }
   return defenderCorsBlockMessage || 'Defender API requests skipped: browser CORS policy blocked direct calls. Configure a same-origin backend proxy for Defender endpoints.';
 }
 
@@ -1134,9 +1137,23 @@ function isDefenderDirectApiBlocked() {
   return Boolean(defenderCorsBlocked && !defenderProxyBaseUrl);
 }
 
+function isStaticHostedXdrSite() {
+  const host = String(window.location.hostname || '').toLowerCase();
+  return host === 'tools.security-ninja.com' || host.endsWith('.github.io');
+}
+
 async function canUseDefenderApiFromBrowser(accessToken) {
   if (!accessToken) return { ok: false, blocked: false };
   if (defenderProxyBaseUrl) return { ok: true, blocked: false };
+
+  if (isStaticHostedXdrSite()) {
+    const message = 'Defender API requests skipped on static hosting. Configure Defender API Proxy Base URL in Connect Tenant to enable endpoint datasets.';
+    defenderCorsBlocked = true;
+    defenderCorsBlockMessage = message;
+    window.defenderApiCorsBlocked = true;
+    return { ok: false, blocked: true, message };
+  }
+
   if (isDefenderDirectApiBlocked()) return { ok: false, blocked: true, message: getDefenderCorsBlockMessage() };
 
   try {
@@ -1187,6 +1204,9 @@ async function graphGetAll(url, accessToken, maxPages = 10) {
 
 async function fetchDefenderWithDomainFallback(url, accessToken) {
   if (!url) throw new Error('Defender API URL is required.');
+  if (!defenderProxyBaseUrl && isStaticHostedXdrSite()) {
+    throw new Error(getDefenderCorsBlockMessage());
+  }
   if (isDefenderDirectApiBlocked()) {
     throw new Error(getDefenderCorsBlockMessage());
   }
