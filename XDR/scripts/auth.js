@@ -1,4 +1,7 @@
+const CONNECT_LOGIN_SCOPES = ['openid', 'profile', 'offline_access'];
+
 const GRAPH_CONNECT_SCOPE_CANDIDATES = [
+  ['https://graph.microsoft.com/.default'],
   [
     'https://graph.microsoft.com/SecurityAlert.Read.All',
     'https://graph.microsoft.com/ThreatHunting.Read.All',
@@ -22,21 +25,40 @@ const GRAPH_CONNECT_SCOPE_CANDIDATES = [
 const GRAPH_CONNECT_SCOPES = GRAPH_CONNECT_SCOPE_CANDIDATES[0];
 
 const DEFENDER_CONNECT_SCOPE_CANDIDATES = [
+  ['https://api.security.microsoft.com/.default'],
+  ['https://api.securitycenter.microsoft.com/.default'],
+  [
+    'https://api.security.microsoft.com/Machine.Read.All',
+    'https://api.security.microsoft.com/Vulnerability.Read.All',
+    'https://api.security.microsoft.com/Software.Read.All',
+    'https://api.security.microsoft.com/Score.Read.All',
+    'https://api.security.microsoft.com/SecurityRecommendation.Read.All',
+    'https://api.security.microsoft.com/SecurityConfiguration.Read.All'
+  ],
   [
     'https://api.securitycenter.microsoft.com/Machine.Read.All',
     'https://api.securitycenter.microsoft.com/Vulnerability.Read.All',
     'https://api.securitycenter.microsoft.com/Software.Read.All',
     'https://api.securitycenter.microsoft.com/Score.Read.All',
-    'https://api.securitycenter.microsoft.com/SecurityRecommendation.Read.All'
+    'https://api.securitycenter.microsoft.com/SecurityRecommendation.Read.All',
+    'https://api.securitycenter.microsoft.com/SecurityConfiguration.Read.All'
+  ],
+  [
+    'https://api.security.microsoft.com/Machine.Read',
+    'https://api.security.microsoft.com/Vulnerability.Read',
+    'https://api.security.microsoft.com/Software.Read',
+    'https://api.security.microsoft.com/Score.Read',
+    'https://api.security.microsoft.com/SecurityRecommendation.Read',
+    'https://api.security.microsoft.com/SecurityConfiguration.Read'
   ],
   [
     'https://api.securitycenter.microsoft.com/Machine.Read',
     'https://api.securitycenter.microsoft.com/Vulnerability.Read',
     'https://api.securitycenter.microsoft.com/Software.Read',
     'https://api.securitycenter.microsoft.com/Score.Read',
-    'https://api.securitycenter.microsoft.com/SecurityRecommendation.Read'
-  ],
-  ['https://api.securitycenter.microsoft.com/.default']
+    'https://api.securitycenter.microsoft.com/SecurityRecommendation.Read',
+    'https://api.securitycenter.microsoft.com/SecurityConfiguration.Read'
+  ]
 ];
 
 // Optional testing defaults for this hosted dashboard.
@@ -209,46 +231,53 @@ async function acquireTokenWithFallback(app, account, scopes) {
   }
 }
 
+function isScopeConfigurationError(err) {
+  const message = String((err && err.message) || '').toLowerCase();
+  const errorCode = String((err && err.errorCode) || '').toLowerCase();
+  const subError = String((err && err.subError) || '').toLowerCase();
+  return message.includes('invalid_scope')
+    || message.includes('aadsts70011')
+    || message.includes('aadsts650053')
+    || message.includes('scope')
+    || errorCode.includes('invalid_scope')
+    || subError.includes('invalid_scope');
+}
+
+async function acquireTokenFromCandidates(app, account, candidates) {
+  let lastErr = null;
+
+  for (const scopes of candidates) {
+    try {
+      const token = await app.acquireTokenSilent({ scopes, account });
+      return { token, scopes };
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+
+  for (const scopes of candidates) {
+    try {
+      const token = await acquireTokenWithFallback(app, account, scopes);
+      return { token, scopes };
+    } catch (err) {
+      lastErr = err;
+      if (isScopeConfigurationError(err)) continue;
+    }
+  }
+
+  throw lastErr || new Error('Unable to acquire token for configured scopes.');
+}
+
 async function acquireTokenSilentOnly(app, account, scopes) {
   return app.acquireTokenSilent({ scopes, account });
 }
 
 async function acquireDefenderToken(app, account) {
-  let lastSilentErr = null;
-  for (const scopes of DEFENDER_CONNECT_SCOPE_CANDIDATES) {
-    try {
-      const token = await app.acquireTokenSilent({ scopes, account });
-      return { token, scopes };
-    } catch (err) {
-      lastSilentErr = err;
-    }
-  }
-  const primaryScopes = DEFENDER_CONNECT_SCOPE_CANDIDATES[0];
-  try {
-    const token = await acquireTokenWithFallback(app, account, primaryScopes);
-    return { token, scopes: primaryScopes };
-  } catch (interactiveErr) {
-    throw interactiveErr || lastSilentErr || new Error('Unable to acquire Defender API token for configured scopes.');
-  }
+  return acquireTokenFromCandidates(app, account, DEFENDER_CONNECT_SCOPE_CANDIDATES);
 }
 
 async function acquireGraphToken(app, account) {
-  let lastSilentErr = null;
-  for (const scopes of GRAPH_CONNECT_SCOPE_CANDIDATES) {
-    try {
-      const token = await app.acquireTokenSilent({ scopes, account });
-      return { token, scopes };
-    } catch (err) {
-      lastSilentErr = err;
-    }
-  }
-  const primaryScopes = GRAPH_CONNECT_SCOPE_CANDIDATES[0];
-  try {
-    const token = await acquireTokenWithFallback(app, account, primaryScopes);
-    return { token, scopes: primaryScopes };
-  } catch (interactiveErr) {
-    throw interactiveErr || lastSilentErr || new Error('Unable to acquire Graph token for configured scopes.');
-  }
+  return acquireTokenFromCandidates(app, account, GRAPH_CONNECT_SCOPE_CANDIDATES);
 }
 
 async function acquireGraphTokenSilent(app, account) {
@@ -450,9 +479,7 @@ async function attemptConnect() {
   try {
     const app = await getOrCreateMsalInstance(tenantId, clientId);
 
-    const loginResponse = await app.loginPopup({
-      scopes: GRAPH_CONNECT_SCOPES
-    });
+    const loginResponse = await app.loginPopup({ scopes: CONNECT_LOGIN_SCOPES });
 
     const account = loginResponse.account || app.getActiveAccount() || app.getAllAccounts()[0];
     if (account) app.setActiveAccount(account);
@@ -510,10 +537,19 @@ async function attemptConnect() {
     startAutoRefresh();
   } catch (err) {
     const message = err && err.message ? err.message : 'Authentication failed.';
+    const errorCode = String((err && err.errorCode) || '');
     const isSpaClientTypeError =
       message.includes('AADSTS9002326') ||
       message.includes('9002326') ||
       message.toLowerCase().includes('cross-origin token redemption');
+    const invalidScopeHint = isScopeConfigurationError(err)
+      ? `
+      <br><br><strong>Scope/permission mismatch detected.</strong>
+      <br>1) Ensure Defender/Graph permissions are granted in the same app registration.
+      <br>2) Grant admin consent after adding permissions.
+      <br>3) For browser (MSAL SPA), prefer delegated permissions or use a backend proxy for application permissions.
+      `
+      : '';
     const hint = message.includes('MSAL library not loaded')
       ? ' Check internet access, browser/content-blockers, CSP policy, and that this page is served over http/https (not restricted local mode).'
       : '';
@@ -526,7 +562,8 @@ async function attemptConnect() {
       <br>4) In API permissions, grant admin consent, then retry.
       `
       : '';
-    status.innerHTML = `<span style="color:var(--severity-high);">Connection failed: ${escapeHtml(message)}.${escapeHtml(hint)}${spaHint}</span>`;
+    const codeHint = errorCode ? `<br>Error code: <code>${escapeHtml(errorCode)}</code>` : '';
+    status.innerHTML = `<span style="color:var(--severity-high);">Connection failed: ${escapeHtml(message)}.${escapeHtml(hint)}${codeHint}${spaHint}${invalidScopeHint}</span>`;
     if (/interaction_required|login_required|consent_required/i.test(message)) {
       setAuthBanner('Interactive sign-in is required. Reconnect tenant to continue securely.', true);
       setDataModeLabel('SESSION EXPIRED');
