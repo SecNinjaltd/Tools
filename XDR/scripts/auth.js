@@ -68,6 +68,14 @@ function setAuthBanner(message, show = true) {
   banner.classList.toggle('visible', Boolean(show && message));
 }
 
+function isCorsRelatedErrorText(value) {
+  const text = String(value || '').toLowerCase();
+  return text.includes('browser cors policy')
+    || text.includes('access-control-allow-origin')
+    || text.includes('response to preflight request')
+    || text.includes('failed to fetch');
+}
+
 function resolveRedirectUri() {
   if (REDIRECT_URI_OVERRIDE) {
     return REDIRECT_URI_OVERRIDE;
@@ -276,6 +284,9 @@ function showConnectInfo() {
   const overlay = document.getElementById('detailOverlay');
   const title = document.getElementById('detailTitle');
   const body = document.getElementById('detailBody');
+  const defenderProxyBase = (typeof window.getDefenderProxyBaseUrl === 'function')
+    ? String(window.getDefenderProxyBaseUrl() || '')
+    : '';
 
   title.textContent = 'Connect to Microsoft Tenant';
   body.innerHTML = `
@@ -344,9 +355,11 @@ function showConnectInfo() {
       <div class="detail-section-title">Hosting &amp; Authentication</div>
       <div style="font-size:12px;color:var(--text-secondary);line-height:1.8;">
         <strong style="color:var(--text-primary);">Option A — Browser-Only (MSAL.js)</strong><br>
-        The user authenticates via MSAL.js with their Microsoft 365 credentials. The dashboard acquires tokens for both <em>Microsoft Graph</em> and <em>WindowsDefenderATP</em> resource scopes. Data flows directly from the APIs to the browser — no backend server, no data leaves the customer's control.<br><br>
+        The user authenticates via MSAL.js with their Microsoft 365 credentials. The dashboard acquires tokens for both <em>Microsoft Graph</em> and <em>WindowsDefenderATP</em> resource scopes. Data flows directly from the APIs to the browser.<br><br>
         <strong style="color:var(--text-primary);">Option B — Backend Proxy (Recommended for Production)</strong><br>
-        A lightweight Azure App Service or Azure Static Web Apps API handles the OAuth2 client credentials flow, acquires tokens for both API resources, caches responses, and serves aggregated data to the frontend. Avoids Graph API rate limits and allows scheduled data refresh.<br><br>
+        A lightweight Azure App Service or Azure Static Web Apps API handles OAuth token handling, acquires tokens for both API resources, caches responses, and serves aggregated data to the frontend. This also avoids browser CORS blocks on Defender endpoints and allows scheduled refresh.<br><br>
+        <strong style="color:var(--text-primary);">Current deployment note</strong><br>
+        This dashboard is hosted on GitHub Pages at <span style="font-family:'JetBrains Mono',monospace;color:var(--text-primary);">https://tools.security-ninja.com/XDR/</span>. GitHub Pages is static hosting only and cannot run the Defender proxy/API runtime itself. Use an external backend/proxy (for example Azure Function, App Service, or APIM) and enter its base URL in the connect panel.<br><br>
         <span style="color:var(--text-muted);font-size:11px;">Both options require a tenant admin to grant admin consent for the application permissions listed above.</span>
       </div>
     </div>
@@ -379,6 +392,11 @@ function showConnectInfo() {
           <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px;">Application (Client) ID</label>
           <input type="text" id="clientIdInput" placeholder="e.g. 1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d" style="width:100%;padding:8px 12px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-family:'JetBrains Mono',monospace;font-size:12px;outline:none;" onfocus="this.style.borderColor='var(--accent-ninja)'" onblur="this.style.borderColor='var(--border)'">
         </div>
+        <div>
+          <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px;">Defender API Proxy Base URL (optional)</label>
+          <input type="text" id="defenderProxyBaseInput" value="${escapeHtml(defenderProxyBase)}" placeholder="/api/defender or https://proxy.contoso.com/defender" style="width:100%;padding:8px 12px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-family:'JetBrains Mono',monospace;font-size:12px;outline:none;" onfocus="this.style.borderColor='var(--accent-ninja)'" onblur="this.style.borderColor='var(--border)'">
+          <div style="font-size:10px;color:var(--text-muted);margin-top:5px;line-height:1.5;">Use this when direct browser calls to Defender endpoints are blocked by CORS. Leave blank for direct mode.</div>
+        </div>
         <button onclick="attemptConnect()" style="padding:10px 20px;background:var(--accent-ninja);color:var(--bg-primary);border:none;border-radius:6px;font-weight:700;font-size:13px;font-family:inherit;cursor:pointer;margin-top:4px;transition:var(--transition);" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
           Authenticate with Microsoft
         </button>
@@ -392,6 +410,8 @@ function showConnectInfo() {
 async function attemptConnect() {
   const tenantId = document.getElementById('tenantIdInput').value.trim();
   const clientId = document.getElementById('clientIdInput').value.trim();
+  const proxyInput = document.getElementById('defenderProxyBaseInput');
+  const defenderProxyBase = proxyInput ? proxyInput.value.trim() : '';
   const status = document.getElementById('connectStatus');
 
   if (authInProgress) {
@@ -414,6 +434,9 @@ async function attemptConnect() {
   status.innerHTML = '<span style="color:var(--text-secondary);">Authenticating with Microsoft...</span>';
   setAuthBanner('', false);
   authInProgress = true;
+  if (typeof window.setDefenderProxyBaseUrl === 'function') {
+    window.setDefenderProxyBaseUrl(defenderProxyBase);
+  }
 
   try {
     const app = await getOrCreateMsalInstance(tenantId, clientId);
@@ -466,9 +489,14 @@ async function attemptConnect() {
     const defenderScopeHint = defenderScopeUsed ? `<br>Defender scopes used: <code>${escapeHtml(defenderScopeUsed)}</code>` : '';
     const graphScopeHint = `<br>Graph scopes used: <code>${escapeHtml(graphToken.scopes.join(', '))}</code>`;
     const defenderTokenInfo = defenderTokenResponse ? ` Defender token expires ${defenderExpiresOn}.` : '';
+    const proxyHint = defenderProxyBase ? `<br>Defender proxy base: <code>${escapeHtml(defenderProxyBase)}</code>` : '';
+    const corsWarnings = loaded.errors.filter(err => isCorsRelatedErrorText(err));
+    const corsHint = corsWarnings.length
+      ? '<br><strong>Defender API CORS block detected.</strong> For GitHub Pages hosting, add an external Defender proxy/API endpoint and set it in this panel.'
+      : '';
 
     lastConnectedContext = { tenantId, clientId };
-    status.innerHTML = `<span style="color:var(--status-compliant);">Connected as ${escapeHtml(account?.username || 'authenticated user')}. Live data loaded from: ${escapeHtml(loaded.sources.join(', '))}. Graph token expires ${escapeHtml(graphExpiresOn)}.${escapeHtml(defenderTokenInfo)} Auto-refresh every ${Math.round(AUTO_REFRESH_MS / 60000)} minutes.${escapeHtml(defenderWarning)}${graphScopeHint}${defenderScopeHint}${avStatsHint}${noRowsHint}${loadWarnings}</span>`;
+    status.innerHTML = `<span style="color:var(--status-compliant);">Connected as ${escapeHtml(account?.username || 'authenticated user')}. Live data loaded from: ${escapeHtml(loaded.sources.join(', '))}. Graph token expires ${escapeHtml(graphExpiresOn)}.${escapeHtml(defenderTokenInfo)} Auto-refresh every ${Math.round(AUTO_REFRESH_MS / 60000)} minutes.${escapeHtml(defenderWarning)}${graphScopeHint}${defenderScopeHint}${proxyHint}${avStatsHint}${noRowsHint}${corsHint}${loadWarnings}</span>`;
     setAuthBanner('', false);
     startAutoRefresh();
   } catch (err) {

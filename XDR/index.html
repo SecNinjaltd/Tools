@@ -1060,6 +1060,10 @@ let liveSecurityRecommendations = [];
 let liveSecureConfigByDevice = new Map();
 let liveDefenderAvInfoStats = { rows: 0, matched: 0, versioned: 0 };
 window.liveDefenderAvInfoStats = liveDefenderAvInfoStats;
+const DEFENDER_PROXY_STORAGE_KEY = 'xdr_defender_proxy_base_url';
+let defenderProxyBaseUrl = '';
+let defenderCorsBlocked = false;
+let defenderCorsBlockMessage = '';
 let hasLiveVulnerabilityBaseline = false;
 let standardsDetailModel = { cis: {}, nist: {}, identity: {}, nis2: {} };
 let exposureTrendPoints = [];
@@ -1068,6 +1072,91 @@ let exposureTrendSignature = '';
 let autoRefreshTimer = null;
 const AUTO_REFRESH_MS = 5 * 60 * 1000;
 let authInProgress = false;
+
+function isLikelyCorsFetchError(err) {
+  const text = String(err && err.message ? err.message : err || '').toLowerCase();
+  return text.includes('failed to fetch')
+    || text.includes('networkerror')
+    || text.includes('load failed')
+    || text.includes('cors')
+    || text.includes('access-control-allow-origin');
+}
+
+function loadDefenderProxyBaseUrl() {
+  try {
+    const fromWindow = String(window.__XDR_DEFENDER_PROXY_BASE_URL__ || '').trim();
+    const fromStorage = String(localStorage.getItem(DEFENDER_PROXY_STORAGE_KEY) || '').trim();
+    defenderProxyBaseUrl = fromWindow || fromStorage || '';
+  } catch (_err) {
+    defenderProxyBaseUrl = String(window.__XDR_DEFENDER_PROXY_BASE_URL__ || '').trim();
+  }
+}
+
+function setDefenderProxyBaseUrl(value = '') {
+  defenderProxyBaseUrl = String(value || '').trim().replace(/\/+$/, '');
+  try {
+    if (defenderProxyBaseUrl) localStorage.setItem(DEFENDER_PROXY_STORAGE_KEY, defenderProxyBaseUrl);
+    else localStorage.removeItem(DEFENDER_PROXY_STORAGE_KEY);
+  } catch (_err) {
+    // Ignore storage exceptions in restrictive browser modes.
+  }
+  defenderCorsBlocked = false;
+  defenderCorsBlockMessage = '';
+  window.defenderApiCorsBlocked = false;
+}
+
+function getDefenderProxyBaseUrl() {
+  return defenderProxyBaseUrl;
+}
+
+function getDefenderFetchTargetUrl(url) {
+  if (!defenderProxyBaseUrl) return url;
+  try {
+    const parsed = new URL(String(url || ''));
+    return `${defenderProxyBaseUrl}${parsed.pathname}${parsed.search}`;
+  } catch (_err) {
+    const path = String(url || '').replace(/^\/+/, '');
+    return `${defenderProxyBaseUrl}/${path}`;
+  }
+}
+
+function getDefenderCorsBlockMessage() {
+  return defenderCorsBlockMessage || 'Defender API requests skipped: browser CORS policy blocked direct calls. Configure a same-origin backend proxy for Defender endpoints.';
+}
+
+function markDefenderCorsBlocked(err) {
+  defenderCorsBlocked = true;
+  defenderCorsBlockMessage = `Defender API requests skipped: browser CORS policy blocked direct calls (${String(err && err.message ? err.message : 'Failed to fetch')}). Configure a same-origin backend proxy for Defender endpoints.`;
+  window.defenderApiCorsBlocked = true;
+}
+
+function isDefenderDirectApiBlocked() {
+  return Boolean(defenderCorsBlocked && !defenderProxyBaseUrl);
+}
+
+async function canUseDefenderApiFromBrowser(accessToken) {
+  if (!accessToken) return { ok: false, blocked: false };
+  if (defenderProxyBaseUrl) return { ok: true, blocked: false };
+  if (isDefenderDirectApiBlocked()) return { ok: false, blocked: true, message: getDefenderCorsBlockMessage() };
+
+  try {
+    await fetchDefenderWithDomainFallback('https://api.security.microsoft.com/api/machines?$top=1', accessToken);
+    return { ok: true, blocked: false };
+  } catch (err) {
+    const msg = String(err && err.message ? err.message : '');
+    if (isLikelyCorsFetchError(err) || /browser c(o)?rs policy/i.test(msg)) {
+      markDefenderCorsBlocked(err);
+      return { ok: false, blocked: true, message: getDefenderCorsBlockMessage() };
+    }
+    // Non-CORS failures can still be endpoint-specific; keep trying other Defender endpoints.
+    return { ok: true, blocked: false };
+  }
+}
+
+window.setDefenderProxyBaseUrl = setDefenderProxyBaseUrl;
+window.getDefenderProxyBaseUrl = getDefenderProxyBaseUrl;
+window.isDefenderCorsBlocked = () => isDefenderDirectApiBlocked();
+loadDefenderProxyBaseUrl();
 
 async function graphGetAll(url, accessToken, maxPages = 10) {
   let nextUrl = url;
@@ -1097,12 +1186,21 @@ async function graphGetAll(url, accessToken, maxPages = 10) {
 }
 
 async function fetchDefenderWithDomainFallback(url, accessToken) {
+  if (!url) throw new Error('Defender API URL is required.');
+  if (isDefenderDirectApiBlocked()) {
+    throw new Error(getDefenderCorsBlockMessage());
+  }
+
   const doFetch = async (targetUrl) => fetch(targetUrl, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
       Accept: 'application/json'
     }
   });
+
+  if (defenderProxyBaseUrl) {
+    return doFetch(getDefenderFetchTargetUrl(url));
+  }
 
   const alternateUrl = String(url || '').includes('api.security.microsoft.com')
     ? String(url).replace('api.security.microsoft.com', 'api.securitycenter.microsoft.com')
@@ -1113,12 +1211,20 @@ async function fetchDefenderWithDomainFallback(url, accessToken) {
   try {
     return await doFetch(url);
   } catch (primaryErr) {
+    if (isLikelyCorsFetchError(primaryErr)) {
+      markDefenderCorsBlocked(primaryErr);
+      throw new Error(getDefenderCorsBlockMessage());
+    }
     if (!alternateUrl || alternateUrl === url) {
       throw primaryErr;
     }
     try {
       return await doFetch(alternateUrl);
-    } catch (_secondaryErr) {
+    } catch (secondaryErr) {
+      if (isLikelyCorsFetchError(secondaryErr)) {
+        markDefenderCorsBlocked(secondaryErr);
+        throw new Error(getDefenderCorsBlockMessage());
+      }
       throw primaryErr;
     }
   }
@@ -2099,6 +2205,35 @@ function applySoftwareInventoryFromMachineVulns(rows) {
   return true;
 }
 
+function applySoftwareInventoryFromLiveVulnerabilityModel() {
+  if (!hasLiveVulnerabilityBaseline || !Array.isArray(vulnerabilities) || !vulnerabilities.length) return false;
+
+  const summary = new Map();
+  vulnerabilities.forEach((vuln, idx) => {
+    const name = String(vuln.software || '').trim();
+    if (!name) return;
+    const key = name.toLowerCase();
+    const existing = summary.get(key) || {
+      name,
+      vendor: name.toLowerCase().includes('microsoft') ? 'Microsoft' : 'Tenant telemetry',
+      version: 'n/a',
+      vulns: 0,
+      devices: 0
+    };
+    existing.vulns += 1;
+    existing.devices += Number(vuln.affectedDevices || 0);
+    summary.set(key, existing);
+  });
+
+  const mapped = Array.from(summary.values())
+    .sort((a, b) => b.vulns - a.vulns || b.devices - a.devices)
+    .slice(0, 24);
+
+  if (!mapped.length) return false;
+  softwareInventory.splice(0, softwareInventory.length, ...mapped);
+  return true;
+}
+
 function applyLiveSecurityRecommendations(rows) {
   if (!Array.isArray(rows) || !rows.length) return false;
 
@@ -2316,6 +2451,7 @@ function applyLiveAlerts(alerts) {
 
 async function loadLiveTenantData(graphAccessToken, defenderAccessToken) {
   const tasks = [];
+  const runtimeWarnings = [];
 
   if (graphAccessToken) {
     tasks.push(
@@ -2326,25 +2462,33 @@ async function loadLiveTenantData(graphAccessToken, defenderAccessToken) {
   }
 
   if (defenderAccessToken) {
-    tasks.push(
-      { key: 'defenderMachines', run: () => defenderGetAll('https://api.security.microsoft.com/api/machines?$top=300', defenderAccessToken, 10) },
-      { key: 'defenderDeviceAvInfo', run: () => defenderGetAll('https://api.security.microsoft.com/api/deviceavinfo?$top=2000', defenderAccessToken, 20) },
-      { key: 'defenderRecommendations', run: () => defenderGetAll('https://api.security.microsoft.com/api/recommendations?$top=500', defenderAccessToken, 20) },
-      { key: 'defenderSecureConfigs', run: () => defenderGetAll('https://api.security.microsoft.com/api/machines/SecureConfigurationsAssessmentByMachine?$top=2000', defenderAccessToken, 20) },
-      { key: 'defenderVulns', run: () => defenderGetAll('https://api.security.microsoft.com/api/vulnerabilities?$top=300', defenderAccessToken, 10) },
-      { key: 'defenderMachineVulns', run: () => defenderGetAll('https://api.security.microsoft.com/api/vulnerabilities/machinesVulnerabilities?$top=500', defenderAccessToken, 20) },
-      { key: 'defenderSoftware', run: () => defenderGetAll('https://api.security.microsoft.com/api/Software?$top=300', defenderAccessToken, 10) },
-      { key: 'defenderExposure', run: () => defenderGetJson('https://api.security.microsoft.com/api/exposureScore', defenderAccessToken) }
-    );
+    const defenderApiAccess = await canUseDefenderApiFromBrowser(defenderAccessToken);
+    if (defenderApiAccess.ok) {
+      tasks.push(
+        { key: 'defenderMachines', run: () => defenderGetAll('https://api.security.microsoft.com/api/machines?$top=300', defenderAccessToken, 10) },
+        { key: 'defenderDeviceAvInfo', run: () => defenderGetAll('https://api.security.microsoft.com/api/deviceavinfo?$top=2000', defenderAccessToken, 20) },
+        { key: 'defenderRecommendations', run: () => defenderGetAll('https://api.security.microsoft.com/api/recommendations?$top=500', defenderAccessToken, 20) },
+        { key: 'defenderSecureConfigs', run: () => defenderGetAll('https://api.security.microsoft.com/api/machines/SecureConfigurationsAssessmentByMachine?$top=2000', defenderAccessToken, 20) },
+        { key: 'defenderVulns', run: () => defenderGetAll('https://api.security.microsoft.com/api/vulnerabilities?$top=300', defenderAccessToken, 10) },
+        { key: 'defenderMachineVulns', run: () => defenderGetAll('https://api.security.microsoft.com/api/vulnerabilities/machinesVulnerabilities?$top=500', defenderAccessToken, 20) },
+        { key: 'defenderSoftware', run: () => defenderGetAll('https://api.security.microsoft.com/api/Software?$top=300', defenderAccessToken, 10) },
+        { key: 'defenderExposure', run: () => defenderGetJson('https://api.security.microsoft.com/api/exposureScore', defenderAccessToken) }
+      );
+    } else if (defenderApiAccess.blocked) {
+      runtimeWarnings.push(defenderApiAccess.message || getDefenderCorsBlockMessage());
+    }
   }
 
   if (!tasks.length) {
+    if (runtimeWarnings.length) {
+      throw new Error(runtimeWarnings[0]);
+    }
     throw new Error('No API tokens available for Graph or Defender resources.');
   }
 
   const settled = await Promise.allSettled(tasks.map(t => t.run()));
   const resultsByKey = {};
-  const errors = [];
+  const errors = [...runtimeWarnings];
   const succeeded = [];
 
   settled.forEach((result, idx) => {
@@ -2387,6 +2531,9 @@ async function loadLiveTenantData(graphAccessToken, defenderAccessToken) {
   }
   if (!updated.defenderSoftware && resultsByKey.defenderRecommendations) {
     updated.defenderSoftware = !!applySoftwareInventoryFromRecommendations(resultsByKey.defenderRecommendations);
+  }
+  if (!updated.defenderSoftware) {
+    updated.defenderSoftware = applySoftwareInventoryFromLiveVulnerabilityModel();
   }
   rerenderDashboard();
 
