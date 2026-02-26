@@ -1,1 +1,2319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zero Trust Interactive Diagram Builder</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #e8f2fb;
+      --card: #ffffff;
+      --card-soft: #f8fbff;
+      --border: #d6e2ef;
+      --border-strong: #b8cbe0;
+      --text: #13263c;
+      --text-muted: #5b7693;
+      --brand-900: #0b1726;
+      --brand-700: #1e3a5a;
+      --brand-500: #2b5d89;
+      --brand-100: #d8e7f7;
+      --ok: #0f8a4a;
+      --warn: #f0a11a;
+      --bad: #be2643;
+      --info: #2470c6;
+      --shadow: 0 10px 30px rgba(14, 40, 66, 0.12);
+      --radius: 12px;
+      --radius-sm: 8px;
+      --transition: 0.2s ease;
+    }
 
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background:
+        radial-gradient(circle at 8% 0%, rgba(52, 126, 195, 0.18) 0%, rgba(230,240,250,0) 36%),
+        radial-gradient(circle at 100% 100%, rgba(20, 148, 130, 0.16) 0%, rgba(219,234,254,0) 42%),
+        radial-gradient(circle at 50% 100%, rgba(177, 95, 47, 0.14) 0%, rgba(177,95,47,0) 34%),
+        var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 60;
+      border-bottom: 1px solid #20486c;
+      background: linear-gradient(135deg, #0b1726 0%, #142b44 48%, #1f3e61 100%);
+      padding: 10px 22px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .topbar h1 {
+      color: #edf5fc;
+      font-size: 20px;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+
+    .topbar p {
+      color: #bdd2e7;
+      font-size: 12px;
+      margin-top: 2px;
+    }
+
+    .status-pill {
+      border: 1px solid rgba(170, 198, 224, 0.5);
+      color: #d5e6f6;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      border-radius: 999px;
+      padding: 7px 12px;
+      white-space: nowrap;
+      background: rgba(255,255,255,0.08);
+    }
+
+    .shell {
+      padding: 18px;
+      max-width: 1700px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+
+    .card {
+      background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+      border: 1px solid #bed2e7;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .card-head {
+      background: linear-gradient(135deg, #183e61 0%, #245a87 60%, #2d6ea2 100%);
+      border-bottom: 1px solid #2f6b9a;
+      padding: 11px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.2px;
+      color: #ecf4fc;
+      text-transform: uppercase;
+    }
+
+    .card-subtitle {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .card-head .card-subtitle {
+      color: #c9deef;
+    }
+
+    .section-principles {
+      background: linear-gradient(180deg, #f7fbff 0%, #eef6ff 100%);
+      border-color: #9fc0df;
+    }
+
+    .section-principles .card-head {
+      background: linear-gradient(135deg, #1d4570 0%, #2d6aa1 55%, #3f86c7 100%);
+    }
+
+    .panel-library {
+      background: linear-gradient(180deg, #f7fbff 0%, #edf5ff 100%);
+      border-color: #aac6e1;
+    }
+
+    .panel-library .card-head {
+      background: linear-gradient(135deg, #134663 0%, #1e6a88 56%, #2d8ea8 100%);
+      border-bottom-color: #3b89a7;
+    }
+
+    .panel-library .panel-body {
+      background: linear-gradient(180deg, #f3f9ff 0%, #e8f3ff 100%);
+    }
+
+    .panel-diagram {
+      background: linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%);
+      border-color: #adbee8;
+    }
+
+    .panel-diagram .card-head {
+      background: linear-gradient(135deg, #263f72 0%, #36599a 56%, #4972bd 100%);
+      border-bottom-color: #5e7fc7;
+    }
+
+    .panel-diagram .diagram-wrap {
+      background: linear-gradient(180deg, #f3f7ff 0%, #ebf3ff 100%);
+    }
+
+    .panel-flyout {
+      background: linear-gradient(180deg, #fffaf6 0%, #fff4ea 100%);
+      border-color: #e7c8ab;
+    }
+
+    .panel-flyout .card-head {
+      background: linear-gradient(135deg, #6f3413 0%, #9d4b1b 58%, #bf6b2f 100%);
+      border-bottom-color: #c17a4d;
+    }
+
+    .panel-flyout .insight {
+      background: linear-gradient(180deg, #fff9f1 0%, #fff0df 100%);
+    }
+
+    .panel-mitre {
+      background: linear-gradient(180deg, #fff7f9 0%, #ffeff4 100%);
+      border-color: #e8b8c5;
+    }
+
+    .panel-mitre .card-head {
+      background: linear-gradient(135deg, #6e1f3d 0%, #8f2f53 58%, #b0466d 100%);
+      border-bottom-color: #b85d7f;
+    }
+
+    .panel-mitre .panel-body {
+      background: linear-gradient(180deg, #fff7fa 0%, #ffedf3 100%);
+    }
+
+    .panel-license {
+      background: linear-gradient(180deg, #fffaf2 0%, #fff4df 100%);
+      border-color: #e4c99a;
+    }
+
+    .panel-license .card-head {
+      background: linear-gradient(135deg, #6a430f 0%, #8e5e16 58%, #b07a27 100%);
+      border-bottom-color: #ba8742;
+    }
+
+    .panel-license .panel-body {
+      background: linear-gradient(180deg, #fffaf0 0%, #fff1dc 100%);
+    }
+
+    .panel-sources {
+      background: linear-gradient(180deg, #f5fcfa 0%, #ebf8f2 100%);
+      border-color: #a9d4c4;
+    }
+
+    .panel-sources .card-head {
+      background: linear-gradient(135deg, #0f4b3d 0%, #1f6e5d 58%, #2f907e 100%);
+      border-bottom-color: #3f9582;
+    }
+
+    .panel-sources .source-list {
+      background: linear-gradient(180deg, #f4fcf8 0%, #e8f6f0 100%);
+    }
+
+    .principles {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0;
+      padding: 0;
+      border-top: 1px solid #9fc0df;
+    }
+
+    .principle-btn {
+      border: 0;
+      border-right: 1px solid #b8cfe3;
+      border-radius: 0;
+      background: linear-gradient(160deg, #ffffff 0%, #eef6ff 100%);
+      padding: 12px;
+      text-align: left;
+      cursor: pointer;
+      transition: var(--transition);
+      position: relative;
+      min-height: 98px;
+    }
+
+    .principle-btn:last-child {
+      border-right: 0;
+    }
+
+    .principle-btn:hover {
+      border-color: #8eb4dd;
+      transform: translateY(-1px);
+    }
+
+    .principle-btn.active {
+      border-color: #1f5f97;
+      box-shadow: 0 0 0 2px rgba(31,95,151,0.2);
+      background: linear-gradient(160deg, #e4f1ff 0%, #f2f8ff 100%);
+    }
+
+    .principle-btn[data-principle='verify_explicitly'] {
+      background: linear-gradient(160deg, #f5faff 0%, #e8f3ff 100%);
+    }
+
+    .principle-btn[data-principle='least_privilege'] {
+      background: linear-gradient(160deg, #f8fcff 0%, #ebf7f3 100%);
+    }
+
+    .principle-btn[data-principle='assume_breach'] {
+      background: linear-gradient(160deg, #fff8fb 0%, #fff0f6 100%);
+    }
+
+    .principle-btn h3 {
+      font-size: 14px;
+      color: #103356;
+      margin-bottom: 5px;
+    }
+
+    .principle-btn p {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.4;
+      padding-right: 4px;
+    }
+
+    .progress-track {
+      margin-top: 9px;
+      height: 6px;
+      border-radius: 999px;
+      background: #dce8f4;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #2e6da3, #3d8fd0);
+      border-radius: 999px;
+      transition: width 0.2s ease;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 320px minmax(0, 1fr) 380px;
+      gap: 14px;
+    }
+
+    .panel-body {
+      padding: 12px;
+    }
+
+    .level-builder {
+      background: linear-gradient(180deg, #eef7ff 0%, #e6f2ff 100%);
+      border: 1px solid #b4cbe2;
+      border-radius: var(--radius-sm);
+      padding: 10px;
+      margin-bottom: 10px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .segmented {
+      display: inline-flex;
+      width: 100%;
+      border: 1px solid var(--border-strong);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .segment {
+      border: 0;
+      background: #f3f8fe;
+      color: #264664;
+      flex: 1;
+      padding: 8px 6px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .segment + .segment {
+      border-left: 1px solid var(--border-strong);
+    }
+
+    .segment.active {
+      color: #ffffff;
+      background: linear-gradient(135deg, #22507b 0%, #2a6aa2 100%);
+    }
+
+    .builder-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .btn {
+      border: 1px solid #2c5f8f;
+      background: linear-gradient(135deg, #245987 0%, #2a6aa2 100%);
+      color: #f4f8fc;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn.secondary {
+      background: #ffffff;
+      color: #244869;
+      border-color: var(--border-strong);
+    }
+
+    .btn:hover { transform: translateY(-1px); }
+
+    .control-list {
+      display: grid;
+      gap: 8px;
+      max-height: 66vh;
+      overflow: auto;
+      padding-right: 2px;
+    }
+
+    .control-card {
+      border: 1px solid #bfd3e7;
+      background: linear-gradient(160deg, #ffffff 0%, #edf6ff 100%);
+      border-radius: 10px;
+      padding: 10px;
+      display: grid;
+      gap: 7px;
+      cursor: grab;
+    }
+
+    .control-card:active { cursor: grabbing; }
+
+    .control-card.selected {
+      border-color: #4e9d77;
+      box-shadow: 0 0 0 2px rgba(15,138,74,0.2);
+      background: linear-gradient(160deg, #f6fffb 0%, #eaf9f2 100%);
+    }
+
+    .control-card.level-basic {
+      border-left: 5px solid #2e7fc1;
+    }
+
+    .control-card.level-advanced {
+      border-left: 5px solid #18a187;
+    }
+
+    .control-card.level-expert {
+      border-left: 5px solid #b34b75;
+    }
+
+    .control-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: flex-start;
+    }
+
+    .control-name {
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.35;
+      color: #123458;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border: 1px solid;
+      text-transform: uppercase;
+      letter-spacing: 0.2px;
+      white-space: nowrap;
+    }
+
+    .badge.basic { color: #2e628f; border-color: #8eb6db; background: #ecf5fe; }
+    .badge.advanced { color: #8a5812; border-color: #f0c88a; background: #fff7eb; }
+    .badge.expert { color: #7d2040; border-color: #df9db3; background: #fff1f5; }
+
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    .mini-chip {
+      border: 1px solid #d2e0ee;
+      background: #f4f8fc;
+      color: #45627f;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+    }
+
+    .control-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.35;
+    }
+
+    .control-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .card-btn {
+      border: 1px solid #7ea7cc;
+      background: linear-gradient(180deg, #ffffff 0%, #edf5ff 100%);
+      color: #1d476c;
+      border-radius: 7px;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 5px 7px;
+      cursor: pointer;
+      flex: 1;
+    }
+
+    .card-btn:hover {
+      background: linear-gradient(180deg, #f2f8ff 0%, #e2efff 100%);
+    }
+
+    .diagram-wrap {
+      padding: 12px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .journey-banner {
+      border: 1px solid #95b4de;
+      background: linear-gradient(155deg, #dfeeff 0%, #eef5ff 100%);
+      border-radius: 10px;
+      padding: 10px;
+      display: grid;
+      gap: 5px;
+    }
+
+    .journey-banner h3 {
+      font-size: 14px;
+      color: #143b63;
+    }
+
+    .journey-banner p {
+      font-size: 12px;
+      color: #4b6784;
+      line-height: 1.4;
+    }
+
+    .diagram-stage {
+      position: relative;
+      border: 1px solid #aec7df;
+      border-radius: 12px;
+      overflow: hidden;
+      min-height: 520px;
+      background:
+        radial-gradient(circle at 50% 52%, rgba(207, 225, 244, 0.65) 0%, rgba(207, 225, 244, 0.1) 34%, transparent 54%),
+        linear-gradient(155deg, #eff6fd 0%, #e7f0fa 42%, #f2f8fe 100%);
+    }
+
+    .zt-constellation {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .zt-orbit {
+      position: absolute;
+      border-radius: 999px;
+      border: 1px solid rgba(57, 101, 143, 0.24);
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .zt-orbit.orbit-outer { width: 78%; height: 74%; }
+    .zt-orbit.orbit-inner { width: 43%; height: 41%; border-color: rgba(57, 101, 143, 0.3); }
+
+    .zt-core {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 220px;
+      min-height: 120px;
+      border-radius: 16px;
+      border: 1px solid rgba(29, 71, 110, 0.45);
+      background: linear-gradient(160deg, #163757 0%, #21507a 46%, #2d6a9f 100%);
+      box-shadow: 0 8px 28px rgba(31, 86, 132, 0.22);
+      color: #f1f7fe;
+      display: grid;
+      gap: 5px;
+      align-content: center;
+      padding: 12px;
+      text-align: center;
+    }
+
+    .zt-core h3 {
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: 0.2px;
+    }
+
+    .zt-core p {
+      font-size: 10px;
+      line-height: 1.4;
+      color: #d4e6f6;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .zt-link {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 18%;
+      height: 2px;
+      background: linear-gradient(90deg, rgba(77, 132, 183, 0.1), rgba(59, 113, 163, 0.68), rgba(77, 132, 183, 0.1));
+      transform-origin: left center;
+      pointer-events: none;
+    }
+
+    .zt-link.link-identity { transform: rotate(-148deg); }
+    .zt-link.link-endpoint { transform: rotate(148deg); }
+    .zt-link.link-data { transform: rotate(-32deg); }
+    .zt-link.link-network { transform: rotate(32deg); }
+
+    .zone {
+      position: absolute;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.6);
+      padding: 10px;
+      cursor: pointer;
+      transition: var(--transition);
+      min-height: 92px;
+      display: grid;
+      gap: 6px;
+      color: #ffffff;
+      box-shadow: 0 10px 24px rgba(25, 66, 101, 0.16);
+      z-index: 2;
+    }
+
+    .zone:hover,
+    .zone.active {
+      transform: translateY(-2px);
+      box-shadow:
+        0 14px 28px rgba(22, 62, 96, 0.2),
+        0 0 0 2px rgba(255,255,255,0.35);
+    }
+
+    .zone.drag-over {
+      box-shadow:
+        0 14px 30px rgba(15,138,74,0.24),
+        0 0 0 3px rgba(15,138,74,0.36);
+    }
+
+    .zone.heat-high { outline: 2px solid rgba(190, 38, 67, 0.62); }
+    .zone.heat-medium { outline: 2px solid rgba(240, 161, 26, 0.62); }
+    .zone.heat-low { outline: 2px solid rgba(15, 138, 74, 0.5); }
+
+    .zone h4 {
+      font-size: 12px;
+      color: #ffffff;
+      text-shadow: 0 1px 0 rgba(0,0,0,0.15);
+    }
+
+    .zone-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+      font-size: 10px;
+      color: rgba(244, 250, 255, 0.92);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .zone-track {
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.24);
+      overflow: hidden;
+    }
+
+    .zone-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.86), rgba(255,255,255,0.58));
+      width: 0;
+      transition: width 0.2s ease;
+    }
+
+    .zone.identity {
+      top: 12%;
+      left: 8%;
+      width: 30%;
+      background: linear-gradient(155deg, #1e6ca3 0%, #2f88be 52%, #45a7db 100%);
+    }
+
+    .zone.endpoint {
+      top: 65%;
+      left: 8%;
+      width: 30%;
+      background: linear-gradient(155deg, #0f7f79 0%, #1e9b92 55%, #3bb8aa 100%);
+    }
+
+    .zone.network {
+      top: 65%;
+      left: 62%;
+      width: 30%;
+      background: linear-gradient(155deg, #b45f14 0%, #cf7b1e 54%, #e89c34 100%);
+    }
+
+    .zone.data {
+      top: 12%;
+      left: 62%;
+      width: 30%;
+      background: linear-gradient(155deg, #8b3f63 0%, #a24f7b 54%, #be6e96 100%);
+    }
+
+    .diagram-legend {
+      border-top: 1px dashed #c8d9ea;
+      padding-top: 9px;
+      font-size: 11px;
+      color: #557390;
+      line-height: 1.5;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .summary-card {
+      border: 1px solid #b8cde4;
+      border-radius: 9px;
+      background: linear-gradient(180deg, #ffffff 0%, #eff6ff 100%);
+      padding: 8px;
+      display: grid;
+      gap: 3px;
+    }
+
+    .summary-card.area-identity {
+      border-color: #88b8dd;
+      background: linear-gradient(180deg, #f2f9ff 0%, #e3f1ff 100%);
+    }
+
+    .summary-card.area-endpoint {
+      border-color: #86cdc1;
+      background: linear-gradient(180deg, #f1fffb 0%, #e4f8f2 100%);
+    }
+
+    .summary-card.area-network {
+      border-color: #dfba83;
+      background: linear-gradient(180deg, #fffaf1 0%, #ffefd9 100%);
+    }
+
+    .summary-card.area-data {
+      border-color: #d1a4b6;
+      background: linear-gradient(180deg, #fff6fa 0%, #ffeaf2 100%);
+    }
+
+    .summary-card .name {
+      font-size: 11px;
+      color: #4c6988;
+    }
+
+    .summary-card .value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 16px;
+      font-weight: 800;
+      color: #13395e;
+    }
+
+    .insight {
+      display: grid;
+      gap: 10px;
+      padding: 12px;
+      max-height: calc(100vh - 190px);
+      overflow: auto;
+    }
+
+    .insight-block {
+      border: 1px solid #d6b18a;
+      border-radius: 10px;
+      padding: 10px;
+      background: linear-gradient(180deg, #fffdf9 0%, #fff6ea 100%);
+      display: grid;
+      gap: 7px;
+    }
+
+    .insight-block h3 {
+      font-size: 12px;
+      color: #13395f;
+      text-transform: uppercase;
+      letter-spacing: 0.2px;
+    }
+
+    .insight-text {
+      font-size: 12px;
+      color: #4e6986;
+      line-height: 1.45;
+    }
+
+    .detail-list {
+      display: grid;
+      gap: 6px;
+    }
+
+    .detail-item {
+      border: 1px solid #dcc0a0;
+      border-radius: 8px;
+      padding: 8px;
+      background: linear-gradient(180deg, #ffffff 0%, #fff9f2 100%);
+      display: grid;
+      gap: 5px;
+    }
+
+    .detail-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .detail-title {
+      font-size: 12px;
+      color: #1a3f63;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+
+    .text-btn {
+      border: 1px solid #c39b74;
+      background: #fff5ea;
+      color: #8a4f1e;
+      border-radius: 6px;
+      padding: 2px 6px;
+      font-size: 10px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .mitre-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: flex-start;
+      border: 1px solid #e2bfd0;
+      border-radius: 7px;
+      padding: 7px;
+      background: linear-gradient(180deg, #fffafd 0%, #fff3f8 100%);
+      font-size: 11px;
+    }
+
+    .mitre-row .left {
+      color: #183b60;
+      line-height: 1.35;
+    }
+
+    .mitre-row .right {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      white-space: nowrap;
+      padding-top: 2px;
+      color: #607f9d;
+    }
+
+    .mitre-row.covered {
+      border-color: rgba(15,138,74,0.45);
+      background: rgba(15,138,74,0.05);
+    }
+
+    .mitre-row.uncovered {
+      border-color: rgba(190,38,67,0.35);
+      background: rgba(190,38,67,0.04);
+    }
+
+    .license-list {
+      display: grid;
+      gap: 7px;
+    }
+
+    .license-item {
+      border: 1px solid #dfc08d;
+      border-radius: 8px;
+      background: linear-gradient(180deg, #fffefa 0%, #fff7e8 100%);
+      padding: 8px;
+      display: grid;
+      gap: 4px;
+    }
+
+    .license-name {
+      font-size: 12px;
+      font-weight: 700;
+      color: #183e62;
+    }
+
+    .license-model {
+      font-size: 10px;
+      color: #617f9c;
+      font-family: 'JetBrains Mono', monospace;
+      text-transform: uppercase;
+    }
+
+    .license-note {
+      font-size: 11px;
+      color: #4f6c88;
+      line-height: 1.35;
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .coverage-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+
+    .coverage-table th,
+    .coverage-table td {
+      border: 1px solid #d2e1ef;
+      padding: 6px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .coverage-table th {
+      background: linear-gradient(135deg, #7a2347 0%, #9d345f 100%);
+      color: #fbeef3;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .coverage-table td {
+      background: rgba(255, 255, 255, 0.78);
+    }
+
+    .state-ok { color: var(--ok); font-weight: 700; }
+    .state-bad { color: var(--bad); font-weight: 700; }
+
+    .source-list {
+      display: grid;
+      gap: 6px;
+      padding: 10px;
+      max-height: 280px;
+      overflow: auto;
+    }
+
+    .source-link {
+      border: 1px solid #a9d4c4;
+      border-radius: 8px;
+      padding: 8px;
+      font-size: 11px;
+      line-height: 1.35;
+      text-decoration: none;
+      color: #0f4e41;
+      background: linear-gradient(180deg, #fcfffe 0%, #edf8f3 100%);
+      display: block;
+    }
+
+    .source-link:hover {
+      border-color: #5ea78e;
+      background: linear-gradient(180deg, #f3fff9 0%, #e4f5ee 100%);
+    }
+
+    .source-link span {
+      display: block;
+      margin-top: 3px;
+      color: #5f7e9a;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 18px;
+      right: 18px;
+      background: #103152;
+      color: #edf5fd;
+      border: 1px solid #2f618f;
+      border-radius: 8px;
+      font-size: 12px;
+      padding: 9px 12px;
+      box-shadow: var(--shadow);
+      opacity: 0;
+      transform: translateY(8px);
+      pointer-events: none;
+      transition: var(--transition);
+      max-width: 320px;
+      z-index: 80;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(9, 25, 40, 0.55);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      z-index: 90;
+    }
+
+    .modal-backdrop.show { display: flex; }
+
+    .modal {
+      width: min(760px, 100%);
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 16px 40px rgba(16, 40, 63, 0.18);
+      overflow: hidden;
+    }
+
+    .modal-head {
+      background: #edf5fc;
+      border-bottom: 1px solid var(--border);
+      padding: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .modal-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: #13395e;
+    }
+
+    .icon-btn {
+      border: 1px solid #b2c8de;
+      background: #ffffff;
+      color: #204c73;
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .modal-body {
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .hint {
+      font-size: 11px;
+      color: #2b4f70;
+      border: 1px dashed #86afd3;
+      background: linear-gradient(180deg, #edf6ff 0%, #e2effd 100%);
+      border-radius: 8px;
+      padding: 8px;
+      line-height: 1.4;
+    }
+
+    @media (max-width: 1400px) {
+      .layout { grid-template-columns: 290px minmax(0, 1fr) 340px; }
+      .zone { min-height: 82px; }
+      .zt-core { width: 200px; min-height: 110px; }
+    }
+
+    @media (max-width: 1180px) {
+      .layout { grid-template-columns: 1fr; }
+      .insight { max-height: none; }
+      .control-list { max-height: none; }
+      .diagram-stage { min-height: 460px; }
+      .zt-core { width: 190px; min-height: 105px; }
+      .footer-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 760px) {
+      .topbar { padding: 10px 12px; }
+      .topbar h1 { font-size: 17px; }
+      .status-pill { font-size: 10px; padding: 6px 9px; }
+      .shell { padding: 10px; }
+      .principles { grid-template-columns: 1fr; }
+      .principle-btn { border-right: 0; border-bottom: 1px solid #b8cfe3; }
+      .principle-btn:last-child { border-bottom: 0; }
+      .summary-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .zone { min-height: 74px; padding: 7px; }
+      .zone h4 { font-size: 11px; }
+      .zt-orbit.orbit-outer { width: 88%; height: 80%; }
+      .zt-orbit.orbit-inner { width: 47%; height: 46%; }
+      .zt-core { width: 165px; min-height: 96px; padding: 9px; }
+      .zt-core h3 { font-size: 13px; }
+      .zt-core p { font-size: 9px; }
+      .zt-link { width: 24%; }
+      .zone.identity { top: 8%; left: 5%; width: 43%; }
+      .zone.endpoint { top: 70%; left: 5%; width: 43%; }
+      .zone.data { top: 8%; left: 52%; width: 43%; }
+      .zone.network { top: 70%; left: 52%; width: 43%; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>Microsoft Zero Trust Interactive Diagram Builder</h1>
+      <p>Click or drag controls to the diagram zones to move from basic to expert posture with MITRE and license context.</p>
+    </div>
+    <div class="status-pill" id="statusPill">Validated with Microsoft Learn references · 2026-02-26</div>
+  </header>
+
+  <main class="shell">
+    <section class="card section-principles">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Three Zero Trust Principles</div>
+          <div class="card-subtitle">Filter the control library by principle focus</div>
+        </div>
+        <div class="card-subtitle" id="principleCoverage">Coverage: 0 / 0 controls</div>
+      </div>
+      <div class="principles" id="principleButtons"></div>
+    </section>
+
+    <section class="layout">
+      <article class="card panel-library">
+        <div class="card-head">
+          <div>
+            <div class="card-title">Control Library</div>
+            <div class="card-subtitle">Drag to a matching zone or tap Add</div>
+          </div>
+          <div class="card-subtitle" id="libraryCounter">0 controls</div>
+        </div>
+        <div class="panel-body">
+          <div class="level-builder">
+            <div style="font-size:12px;color:#476582;line-height:1.4;">Build maturity path:</div>
+            <div class="segmented" id="levelSegments">
+              <button class="segment active" data-level="basic" type="button">Basic</button>
+              <button class="segment" data-level="advanced" type="button">Advanced</button>
+              <button class="segment" data-level="expert" type="button">Expert</button>
+            </div>
+            <div class="builder-actions">
+              <button class="btn" id="applyBlueprintBtn" type="button">Apply Level Blueprint</button>
+              <button class="btn secondary" id="resetBlueprintBtn" type="button">Reset All Controls</button>
+            </div>
+            <div class="hint" id="builderHint"></div>
+          </div>
+
+          <div class="control-list" id="controlList"></div>
+        </div>
+      </article>
+
+      <article class="card panel-diagram">
+        <div class="card-head">
+          <div>
+            <div class="card-title">Interactive Microsoft Zero Trust Diagram</div>
+            <div class="card-subtitle">Click any zone for flyout details and MITRE threat gaps</div>
+          </div>
+          <div class="card-subtitle" id="overallPosture">Posture 0%</div>
+        </div>
+
+        <div class="diagram-wrap">
+          <div class="journey-banner" id="journeyBanner"></div>
+
+          <div class="diagram-stage" id="diagramStage">
+            <div class="zt-constellation" aria-hidden="true">
+              <div class="zt-orbit orbit-outer"></div>
+              <div class="zt-orbit orbit-inner"></div>
+              <div class="zt-link link-identity"></div>
+              <div class="zt-link link-endpoint"></div>
+              <div class="zt-link link-data"></div>
+              <div class="zt-link link-network"></div>
+              <div class="zt-core">
+                <h3>Zero Trust Core</h3>
+                <p>VERIFY EXPLICITLY<br>LEAST PRIVILEGE<br>ASSUME BREACH</p>
+              </div>
+            </div>
+
+            <button class="zone identity" data-area="identity" type="button">
+              <h4>Identity</h4>
+              <div class="zone-meta"><span class="zone-level">Foundational</span><span class="zone-score">0%</span></div>
+              <div class="zone-track"><div class="zone-fill"></div></div>
+            </button>
+
+            <button class="zone endpoint" data-area="endpoint" type="button">
+              <h4>Endpoints & Applications</h4>
+              <div class="zone-meta"><span class="zone-level">Foundational</span><span class="zone-score">0%</span></div>
+              <div class="zone-track"><div class="zone-fill"></div></div>
+            </button>
+
+            <button class="zone network" data-area="network" type="button">
+              <h4>Network & Infrastructure</h4>
+              <div class="zone-meta"><span class="zone-level">Foundational</span><span class="zone-score">0%</span></div>
+              <div class="zone-track"><div class="zone-fill"></div></div>
+            </button>
+
+            <button class="zone data" data-area="data" type="button">
+              <h4>Data</h4>
+              <div class="zone-meta"><span class="zone-level">Foundational</span><span class="zone-score">0%</span></div>
+              <div class="zone-track"><div class="zone-fill"></div></div>
+            </button>
+          </div>
+
+          <div class="summary-grid" id="summaryGrid"></div>
+
+          <div class="diagram-legend">
+            Native interactive recreation inspired by Microsoft Zero Trust visual model, mapped to Microsoft Learn controls, MITRE ATT&amp;CK references, and licensing guidance.
+          </div>
+        </div>
+      </article>
+
+      <aside class="card panel-flyout">
+        <div class="card-head">
+          <div>
+            <div class="card-title">Zone Flyout</div>
+            <div class="card-subtitle" id="flyoutTitle">Identity</div>
+          </div>
+          <div class="card-subtitle" id="flyoutScore">0%</div>
+        </div>
+
+        <div class="insight" id="insightPanel"></div>
+      </aside>
+    </section>
+
+    <section class="footer-grid">
+      <article class="card panel-mitre">
+        <div class="card-head">
+          <div>
+            <div class="card-title">MITRE ATT&amp;CK Coverage Matrix</div>
+            <div class="card-subtitle">Technique-level coverage from selected controls</div>
+          </div>
+          <div class="card-subtitle" id="mitreCoverageSummary">0% coverage</div>
+        </div>
+        <div class="panel-body">
+          <table class="coverage-table">
+            <thead>
+              <tr>
+                <th>Domain</th>
+                <th>Technique</th>
+                <th>Status</th>
+                <th>Mapped Controls</th>
+              </tr>
+            </thead>
+            <tbody id="mitreTableBody"></tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="card panel-license">
+        <div class="card-head">
+          <div>
+            <div class="card-title">Licensing Requirements</div>
+            <div class="card-subtitle">Computed from selected controls (minimum references)</div>
+          </div>
+          <div class="card-subtitle" id="licenseCount">0 licenses</div>
+        </div>
+        <div class="panel-body" style="display:grid;gap:10px;">
+          <div class="license-list" id="licenseList"></div>
+          <div class="hint" id="licenseHint"></div>
+        </div>
+      </article>
+    </section>
+
+    <section class="card panel-sources">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Official Microsoft Sources</div>
+          <div class="card-subtitle">Used to ground controls, MITRE mapping context, and licensing logic</div>
+        </div>
+      </div>
+      <div class="source-list" id="sourceList"></div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <div class="modal-backdrop" id="controlModalBackdrop" role="dialog" aria-modal="true" aria-labelledby="controlModalTitle">
+    <div class="modal">
+      <div class="modal-head">
+        <div class="modal-title" id="controlModalTitle">Control detail</div>
+        <button class="icon-btn" type="button" id="closeModalBtn">X</button>
+      </div>
+      <div class="modal-body" id="controlModalBody"></div>
+    </div>
+  </div>
+
+  <script>
+    const PRINCIPLES = {
+      all: {
+        id: 'all',
+        label: 'All Principles',
+        summary: 'Show all controls across the Zero Trust model.'
+      },
+      verify_explicitly: {
+        id: 'verify_explicitly',
+        label: 'Verify Explicitly',
+        summary: 'Authenticate and authorize each request using identity, device, location, app, and risk signals.'
+      },
+      least_privilege: {
+        id: 'least_privilege',
+        label: 'Use Least Privilege',
+        summary: 'Minimize access rights with just-in-time and just-enough privileges and scoped sessions.'
+      },
+      assume_breach: {
+        id: 'assume_breach',
+        label: 'Assume Breach',
+        summary: 'Reduce blast radius with segmentation, telemetry, detections, and fast response playbooks.'
+      }
+    };
+
+    const AREAS = {
+      identity: {
+        id: 'identity',
+        name: 'Identity',
+        beginner: 'Identity is the first gate. If sign-in trust is weak, every downstream control is bypassed.',
+        riskPrompt: 'Highest risk when MFA, conditional access, and privileged access controls are incomplete.'
+      },
+      endpoint: {
+        id: 'endpoint',
+        name: 'Endpoints & Applications',
+        beginner: 'Endpoints and app sessions are where attackers execute payloads and steal tokens.',
+        riskPrompt: 'Risk rises when unmanaged devices or risky sessions can access business apps and data.'
+      },
+      network: {
+        id: 'network',
+        name: 'Network & Infrastructure',
+        beginner: 'Network and infrastructure controls limit lateral movement and contain breaches.',
+        riskPrompt: 'Risk rises when private app access and encrypted traffic inspection are not enforced.'
+      },
+      data: {
+        id: 'data',
+        name: 'Data',
+        beginner: 'Data controls keep sensitive information protected even when users or devices are compromised.',
+        riskPrompt: 'Risk rises when DLP and endpoint/browser protections do not block high-risk exfiltration paths.'
+      }
+    };
+
+    const LICENSES = {
+      entra_p1: {
+        name: 'Microsoft Entra ID P1',
+        model: 'Per User',
+        note: 'Required for Conditional Access. Also a prerequisite for several Global Secure Access capabilities.',
+        source: 'entra_ca_license'
+      },
+      entra_p2: {
+        name: 'Microsoft Entra ID P2',
+        model: 'Per User',
+        note: 'Required for risk-based Conditional Access and Microsoft Entra ID Protection workflows.',
+        source: 'entra_id_protection'
+      },
+      entra_suite: {
+        name: 'Microsoft Entra Suite / Private or Internet Access SKU',
+        model: 'Per User',
+        note: 'Required for Microsoft Entra Private Access and full Internet Access features (with P1/P2 prerequisite).',
+        source: 'global_secure_access_license'
+      },
+      included_security_defaults: {
+        name: 'Security Defaults (included)',
+        model: 'Included',
+        note: 'Baseline identity protections are available for all customers without extra license cost.',
+        source: 'security_defaults'
+      },
+      intune_p1: {
+        name: 'Microsoft Intune Plan 1',
+        model: 'Per User',
+        note: 'Needed for compliance policy and endpoint security policy baselines in this journey.',
+        source: 'intune_license'
+      },
+      mde_p1: {
+        name: 'Microsoft Defender for Endpoint Plan 1',
+        model: 'Per User',
+        note: 'Baseline endpoint threat protection and core endpoint controls.',
+        source: 'mde_license'
+      },
+      mde_p2: {
+        name: 'Microsoft Defender for Endpoint Plan 2',
+        model: 'Per User',
+        note: 'Advanced EDR/auto remediation/ASR maturity controls.',
+        source: 'mde_license'
+      },
+      mdca: {
+        name: 'Microsoft Defender for Cloud Apps',
+        model: 'Per User',
+        note: 'Required for Conditional Access App Control session governance (with Entra P1 prerequisite).',
+        source: 'mdca_license'
+      },
+      purview_dlp_e3: {
+        name: 'Microsoft Purview DLP Core Rights (E3/E5/Business Premium paths)',
+        model: 'Per User',
+        note: 'Covers core DLP for Exchange Online, SharePoint Online, and OneDrive in supported plans.',
+        source: 'purview_dlp_core'
+      },
+      purview_dlp_e5: {
+        name: 'Microsoft Purview Advanced DLP Rights (E5 / Purview Suite)',
+        model: 'Per User',
+        note: 'Needed for Endpoint DLP and advanced DLP scenarios such as Teams chat protections.',
+        source: 'purview_endpoint_dlp'
+      },
+      azure_firewall_premium: {
+        name: 'Azure Firewall Premium',
+        model: 'Consumption',
+        note: 'Azure consumption-based network inspection control for advanced segmentation and TLS inspection scenarios.',
+        source: 'azure_firewall_zt'
+      },
+      defender_cspm: {
+        name: 'Defender CSPM (paid plan)',
+        model: 'Consumption',
+        note: 'Required for advanced attack path analysis/risk prioritization above foundational CSPM.',
+        source: 'defender_cspm'
+      },
+      sentinel: {
+        name: 'Microsoft Sentinel',
+        model: 'Consumption',
+        note: 'SIEM/SOAR billed by data analysis and storage tiers; used here for ATT&CK coverage and detections.',
+        source: 'sentinel_billing'
+      }
+    };
+
+    const SOURCES = {
+      microsoft_zt_page: {
+        title: 'Microsoft Security: Zero Trust',
+        url: 'https://www.microsoft.com/en-gb/security/business/zero-trust'
+      },
+      entra_ca_license: {
+        title: 'Microsoft Entra licensing - Conditional Access',
+        url: 'https://learn.microsoft.com/entra/fundamentals/licensing#microsoft-entra-conditional-access'
+      },
+      security_defaults: {
+        title: 'Security defaults in Microsoft Entra ID',
+        url: 'https://learn.microsoft.com/entra/fundamentals/security-defaults'
+      },
+      entra_id_protection: {
+        title: 'Microsoft Entra licensing - ID Protection (P2)',
+        url: 'https://learn.microsoft.com/entra/fundamentals/licensing#microsoft-entra-id-protection'
+      },
+      intune_license: {
+        title: 'Microsoft Intune licensing',
+        url: 'https://learn.microsoft.com/intune/intune-service/fundamentals/licenses'
+      },
+      mde_license: {
+        title: 'Defender for Endpoint licensing requirements',
+        url: 'https://learn.microsoft.com/defender-endpoint/microsoft-defender-endpoint-mac-prerequisites#prerequisites,-installation,-and-configuration-instructions'
+      },
+      mdca_license: {
+        title: 'Microsoft Defender for Cloud Apps service description',
+        url: 'https://learn.microsoft.com/office365/servicedescriptions/microsoft-365-service-descriptions/microsoft-365-tenantlevel-services-licensing-guidance/microsoft-defender-service-description#microsoft-defender-for-cloud-apps'
+      },
+      global_secure_access_license: {
+        title: 'Global Secure Access licensing overview',
+        url: 'https://learn.microsoft.com/entra/global-secure-access/overview-what-is-global-secure-access#licensing-overview'
+      },
+      purview_dlp_core: {
+        title: 'Microsoft Purview DLP core licensing',
+        url: 'https://learn.microsoft.com/office365/servicedescriptions/microsoft-365-service-descriptions/microsoft-365-tenantlevel-services-licensing-guidance/microsoft-purview-service-description#microsoft-purview-data-loss-prevention-data-loss-prevention-dlp-for-exchange-online,-sharepoint-online,-and-onedrive-for-business'
+      },
+      purview_endpoint_dlp: {
+        title: 'Microsoft Purview Endpoint DLP licensing',
+        url: 'https://learn.microsoft.com/office365/servicedescriptions/microsoft-365-service-descriptions/microsoft-365-tenantlevel-services-licensing-guidance/microsoft-purview-service-description#microsoft-data-loss-prevention-endpoint-data-loss-protection-dlp'
+      },
+      defender_cspm: {
+        title: 'Defender for Cloud CSPM plan options',
+        url: 'https://learn.microsoft.com/azure/defender-for-cloud/concept-cloud-security-posture-management'
+      },
+      azure_firewall_zt: {
+        title: 'Zero Trust network guidance with Azure Firewall Premium',
+        url: 'https://learn.microsoft.com/security/zero-trust/azure-infrastructure-networking#step-1-secure-azure-firewall-premium'
+      },
+      sentinel_mitre: {
+        title: 'Microsoft Sentinel MITRE ATT&CK coverage',
+        url: 'https://learn.microsoft.com/azure/sentinel/mitre-coverage'
+      },
+      sentinel_billing: {
+        title: 'Microsoft Sentinel pricing and billing model',
+        url: 'https://learn.microsoft.com/azure/sentinel/billing'
+      }
+    };
+
+    const CONTROLS = [
+      {
+        id: 'id_security_defaults',
+        area: 'identity',
+        level: 'basic',
+        name: 'Security Defaults Baseline',
+        description: 'Enable baseline MFA and legacy authentication blocking where conditional access is not yet deployed.',
+        principles: ['verify_explicitly', 'assume_breach'],
+        licenses: ['included_security_defaults'],
+        techniques: ['T1110', 'T1078'],
+        products: ['Security defaults', 'Microsoft Entra ID']
+      },
+      {
+        id: 'id_ca_auth_strength',
+        area: 'identity',
+        level: 'basic',
+        name: 'Conditional Access + Auth Strength',
+        description: 'Enforce phishing-resistant or strong MFA for key apps and admin paths.',
+        principles: ['verify_explicitly', 'least_privilege'],
+        licenses: ['entra_p1'],
+        techniques: ['T1078', 'T1556'],
+        products: ['Microsoft Entra Conditional Access']
+      },
+      {
+        id: 'id_pim_jit',
+        area: 'identity',
+        level: 'advanced',
+        name: 'Privileged Identity Management (JIT)',
+        description: 'Require just-in-time role activation and approval for privileged roles.',
+        principles: ['least_privilege', 'assume_breach'],
+        licenses: ['entra_p2'],
+        techniques: ['T1078', 'T1098'],
+        products: ['Microsoft Entra PIM']
+      },
+      {
+        id: 'id_risk_policies',
+        area: 'identity',
+        level: 'advanced',
+        name: 'Risk-Based Conditional Access',
+        description: 'Use user/sign-in risk to force stronger auth or block access automatically.',
+        principles: ['verify_explicitly', 'assume_breach'],
+        licenses: ['entra_p2'],
+        techniques: ['T1110', 'T1078'],
+        products: ['Microsoft Entra ID Protection']
+      },
+      {
+        id: 'id_identity_governance',
+        area: 'identity',
+        level: 'expert',
+        name: 'Continuous Access Reviews & Role Hygiene',
+        description: 'Operationalize frequent access review cycles and privileged role entitlement cleanup.',
+        principles: ['least_privilege', 'assume_breach'],
+        licenses: ['entra_p2'],
+        techniques: ['T1098', 'T1078'],
+        products: ['Microsoft Entra ID Governance', 'PIM']
+      },
+      {
+        id: 'ep_device_compliance',
+        area: 'endpoint',
+        level: 'basic',
+        name: 'Device Compliance + Access Gate',
+        description: 'Require compliant devices for access to core apps and admin workloads.',
+        principles: ['verify_explicitly', 'least_privilege'],
+        licenses: ['intune_p1', 'entra_p1'],
+        techniques: ['T1204', 'T1078'],
+        products: ['Microsoft Intune', 'Conditional Access']
+      },
+      {
+        id: 'ep_mde_onboarding',
+        area: 'endpoint',
+        level: 'basic',
+        name: 'Defender for Endpoint Baseline',
+        description: 'Onboard endpoints for threat protection telemetry and baseline endpoint controls.',
+        principles: ['assume_breach'],
+        licenses: ['mde_p1'],
+        techniques: ['T1059', 'T1204'],
+        products: ['Microsoft Defender for Endpoint']
+      },
+      {
+        id: 'ep_edr_advanced',
+        area: 'endpoint',
+        level: 'advanced',
+        name: 'Advanced EDR + Automated Remediation',
+        description: 'Enable deeper investigation and automatic response to endpoint incidents.',
+        principles: ['assume_breach'],
+        licenses: ['mde_p2'],
+        techniques: ['T1059', 'T1547'],
+        products: ['Microsoft Defender for Endpoint Plan 2']
+      },
+      {
+        id: 'ep_mdca_session_control',
+        area: 'endpoint',
+        level: 'advanced',
+        name: 'Conditional Access App Control Sessions',
+        description: 'Apply real-time session controls for risky app sessions on unmanaged or high-risk contexts.',
+        principles: ['verify_explicitly', 'least_privilege'],
+        licenses: ['mdca', 'entra_p1'],
+        techniques: ['T1218', 'T1078'],
+        products: ['Microsoft Defender for Cloud Apps']
+      },
+      {
+        id: 'ep_asr_expert',
+        area: 'endpoint',
+        level: 'expert',
+        name: 'Attack Surface Reduction Hardening',
+        description: 'Scale advanced endpoint hardening baselines and ASR policy tuning across high-value assets.',
+        principles: ['assume_breach', 'least_privilege'],
+        licenses: ['mde_p2'],
+        techniques: ['T1059', 'T1218'],
+        products: ['Microsoft Defender for Endpoint Plan 2']
+      },
+      {
+        id: 'nw_microsoft_traffic',
+        area: 'network',
+        level: 'basic',
+        name: 'Microsoft Traffic Profile Protections',
+        description: 'Apply identity-aware routing and conditional access signals for Microsoft service traffic.',
+        principles: ['verify_explicitly'],
+        licenses: ['entra_p1'],
+        techniques: ['T1071', 'T1021'],
+        products: ['Microsoft Entra Global Secure Access']
+      },
+      {
+        id: 'nw_private_access',
+        area: 'network',
+        level: 'advanced',
+        name: 'Private Access (ZTNA)',
+        description: 'Replace broad VPN exposure with app-level private access policies.',
+        principles: ['least_privilege', 'assume_breach'],
+        licenses: ['entra_p1', 'entra_suite'],
+        techniques: ['T1021', 'T1090'],
+        products: ['Microsoft Entra Private Access']
+      },
+      {
+        id: 'nw_internet_access',
+        area: 'network',
+        level: 'advanced',
+        name: 'Internet Access (SSE Policy Layer)',
+        description: 'Apply internet and SaaS traffic controls with identity-aware enforcement.',
+        principles: ['verify_explicitly', 'assume_breach'],
+        licenses: ['entra_p1', 'entra_suite'],
+        techniques: ['T1071', 'T1090'],
+        products: ['Microsoft Entra Internet Access']
+      },
+      {
+        id: 'nw_firewall_premium',
+        area: 'network',
+        level: 'expert',
+        name: 'Azure Firewall Premium Inspection',
+        description: 'Implement TLS inspection and advanced network controls for segmentation and breach containment.',
+        principles: ['assume_breach'],
+        licenses: ['azure_firewall_premium'],
+        techniques: ['T1046', 'T1021'],
+        products: ['Azure Firewall Premium']
+      },
+      {
+        id: 'nw_cspm_attack_path',
+        area: 'network',
+        level: 'expert',
+        name: 'Defender CSPM Attack Path Analysis',
+        description: 'Use graph-based attack path and risk prioritization to close lateral movement routes.',
+        principles: ['assume_breach', 'least_privilege'],
+        licenses: ['defender_cspm'],
+        techniques: ['T1046', 'T1078'],
+        products: ['Microsoft Defender for Cloud']
+      },
+      {
+        id: 'dt_core_dlp',
+        area: 'data',
+        level: 'basic',
+        name: 'Core DLP for Exchange/SharePoint/OneDrive',
+        description: 'Inspect and protect sensitive data in mail and M365 collaboration stores.',
+        principles: ['verify_explicitly', 'assume_breach'],
+        licenses: ['purview_dlp_e3'],
+        techniques: ['T1567', 'T1537'],
+        products: ['Microsoft Purview DLP']
+      },
+      {
+        id: 'dt_labeling_foundation',
+        area: 'data',
+        level: 'basic',
+        name: 'Data Classification and Labeling Foundation',
+        description: 'Establish classification and handling rules that DLP and session controls can enforce.',
+        principles: ['least_privilege', 'verify_explicitly'],
+        licenses: ['purview_dlp_e3'],
+        techniques: ['T1005', 'T1567'],
+        products: ['Microsoft Purview Information Protection']
+      },
+      {
+        id: 'dt_endpoint_dlp',
+        area: 'data',
+        level: 'advanced',
+        name: 'Endpoint DLP',
+        description: 'Extend DLP controls to user endpoints to block copy/move/upload exfiltration paths.',
+        principles: ['assume_breach', 'least_privilege'],
+        licenses: ['purview_dlp_e5'],
+        techniques: ['T1567', 'T1041'],
+        products: ['Microsoft Purview Endpoint DLP']
+      },
+      {
+        id: 'dt_teams_dlp',
+        area: 'data',
+        level: 'advanced',
+        name: 'Teams Chat and Channel DLP',
+        description: 'Detect and block sensitive data oversharing in Teams communications.',
+        principles: ['verify_explicitly', 'assume_breach'],
+        licenses: ['purview_dlp_e5'],
+        techniques: ['T1537', 'T1567'],
+        products: ['Microsoft Purview DLP for Teams']
+      },
+      {
+        id: 'dt_browser_dlp',
+        area: 'data',
+        level: 'expert',
+        name: 'Browser DLP / Inline Protection to Cloud Apps',
+        description: 'Apply inline browser controls for sensitive uploads/downloads to cloud apps.',
+        principles: ['least_privilege', 'assume_breach'],
+        licenses: ['purview_dlp_e5', 'mdca'],
+        techniques: ['T1567', 'T1537'],
+        products: ['Microsoft Purview Browser DLP', 'Defender for Cloud Apps']
+      },
+      {
+        id: 'soc_sentinel_mitre',
+        area: 'data',
+        level: 'expert',
+        name: 'SOC MITRE Coverage and Correlation',
+        description: 'Map detections to ATT&CK and close data-focused detection gaps using Sentinel analytics.',
+        principles: ['assume_breach'],
+        licenses: ['sentinel'],
+        techniques: ['T1041', 'T1567'],
+        products: ['Microsoft Sentinel']
+      }
+    ];
+
+    const MITRE = {
+      identity: [
+        { id: 'T1078', name: 'Valid Accounts', tactic: 'Initial Access / Persistence' },
+        { id: 'T1110', name: 'Brute Force', tactic: 'Credential Access' },
+        { id: 'T1556', name: 'Modify Authentication Process', tactic: 'Credential Access / Defense Evasion' },
+        { id: 'T1098', name: 'Account Manipulation', tactic: 'Persistence / Privilege Escalation' }
+      ],
+      endpoint: [
+        { id: 'T1059', name: 'Command and Scripting Interpreter', tactic: 'Execution' },
+        { id: 'T1204', name: 'User Execution', tactic: 'Execution' },
+        { id: 'T1218', name: 'Signed Binary Proxy Execution', tactic: 'Defense Evasion' },
+        { id: 'T1547', name: 'Boot or Logon Autostart Execution', tactic: 'Persistence' }
+      ],
+      network: [
+        { id: 'T1021', name: 'Remote Services', tactic: 'Lateral Movement' },
+        { id: 'T1046', name: 'Network Service Discovery', tactic: 'Discovery' },
+        { id: 'T1071', name: 'Application Layer Protocol', tactic: 'Command and Control' },
+        { id: 'T1090', name: 'Proxy', tactic: 'Command and Control' }
+      ],
+      data: [
+        { id: 'T1005', name: 'Data from Local System', tactic: 'Collection' },
+        { id: 'T1537', name: 'Transfer Data to Cloud Account', tactic: 'Exfiltration' },
+        { id: 'T1567', name: 'Exfiltration Over Web Service', tactic: 'Exfiltration' },
+        { id: 'T1041', name: 'Exfiltration Over C2 Channel', tactic: 'Exfiltration' }
+      ]
+    };
+
+    const LEVEL_RANK = { basic: 1, advanced: 2, expert: 3 };
+
+    const state = {
+      selectedControls: new Set(),
+      activePrinciple: 'all',
+      activeArea: 'identity',
+      targetLevel: 'basic'
+    };
+
+    const el = {
+      principleButtons: document.getElementById('principleButtons'),
+      principleCoverage: document.getElementById('principleCoverage'),
+      levelSegments: document.getElementById('levelSegments'),
+      applyBlueprintBtn: document.getElementById('applyBlueprintBtn'),
+      resetBlueprintBtn: document.getElementById('resetBlueprintBtn'),
+      builderHint: document.getElementById('builderHint'),
+      controlList: document.getElementById('controlList'),
+      libraryCounter: document.getElementById('libraryCounter'),
+      journeyBanner: document.getElementById('journeyBanner'),
+      summaryGrid: document.getElementById('summaryGrid'),
+      overallPosture: document.getElementById('overallPosture'),
+      flyoutTitle: document.getElementById('flyoutTitle'),
+      flyoutScore: document.getElementById('flyoutScore'),
+      insightPanel: document.getElementById('insightPanel'),
+      mitreTableBody: document.getElementById('mitreTableBody'),
+      mitreCoverageSummary: document.getElementById('mitreCoverageSummary'),
+      licenseList: document.getElementById('licenseList'),
+      licenseHint: document.getElementById('licenseHint'),
+      licenseCount: document.getElementById('licenseCount'),
+      sourceList: document.getElementById('sourceList'),
+      toast: document.getElementById('toast'),
+      modalBackdrop: document.getElementById('controlModalBackdrop'),
+      modalTitle: document.getElementById('controlModalTitle'),
+      modalBody: document.getElementById('controlModalBody'),
+      closeModalBtn: document.getElementById('closeModalBtn')
+    };
+
+    function getControlById(controlId) {
+      return CONTROLS.find((control) => control.id === controlId);
+    }
+
+    function getControlsByArea(areaId) {
+      return CONTROLS.filter((control) => control.area === areaId);
+    }
+
+    function getSelectedByArea(areaId) {
+      return getControlsByArea(areaId).filter((control) => state.selectedControls.has(control.id));
+    }
+
+    function showToast(message) {
+      el.toast.textContent = message;
+      el.toast.classList.add('show');
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => el.toast.classList.remove('show'), 1800);
+    }
+
+    function areaScore(areaId) {
+      const areaControls = getControlsByArea(areaId);
+      if (!areaControls.length) return 0;
+      const selected = getSelectedByArea(areaId).length;
+      return Math.round((selected / areaControls.length) * 100);
+    }
+
+    function areaMaturity(areaId) {
+      const basicControls = getControlsByArea(areaId).filter((c) => c.level === 'basic');
+      const advancedControls = getControlsByArea(areaId).filter((c) => c.level === 'advanced');
+      const expertControls = getControlsByArea(areaId).filter((c) => c.level === 'expert');
+
+      const hasBasic = basicControls.every((c) => state.selectedControls.has(c.id));
+      const hasAdvanced = advancedControls.every((c) => state.selectedControls.has(c.id));
+      const hasExpert = expertControls.every((c) => state.selectedControls.has(c.id));
+
+      if (hasBasic && hasAdvanced && hasExpert) return 'Expert';
+      if (hasBasic && hasAdvanced) return 'Advanced';
+      if (hasBasic) return 'Basic';
+      return 'Foundational';
+    }
+
+    function areaHeat(areaId) {
+      const score = areaScore(areaId);
+      if (score >= 75) return 'low';
+      if (score >= 40) return 'medium';
+      return 'high';
+    }
+
+    function overallScore() {
+      const areas = Object.keys(AREAS);
+      const sum = areas.reduce((total, areaId) => total + areaScore(areaId), 0);
+      return Math.round(sum / areas.length);
+    }
+
+    function relevantControls() {
+      if (state.activePrinciple === 'all') return CONTROLS;
+      return CONTROLS.filter((control) => control.principles.includes(state.activePrinciple));
+    }
+
+    function principleProgress(principleId) {
+      if (principleId === 'all') {
+        const totalAll = CONTROLS.length;
+        const selectedAll = CONTROLS.filter((control) => state.selectedControls.has(control.id)).length;
+        return { selected: selectedAll, total: totalAll, pct: totalAll ? Math.round((selectedAll / totalAll) * 100) : 0 };
+      }
+
+      const pool = CONTROLS.filter((control) => control.principles.includes(principleId));
+      const selected = pool.filter((control) => state.selectedControls.has(control.id)).length;
+      const total = pool.length;
+      return { selected, total, pct: total ? Math.round((selected / total) * 100) : 0 };
+    }
+
+    function renderPrinciples() {
+      el.principleButtons.innerHTML = Object.values(PRINCIPLES).map((principle) => {
+        const progress = principleProgress(principle.id);
+        const active = principle.id === state.activePrinciple ? 'active' : '';
+
+        return `
+          <button class="principle-btn ${active}" data-principle="${principle.id}" type="button">
+            <h3>${principle.label}</h3>
+            <p>${principle.summary}</p>
+            <div class="progress-track"><div class="progress-fill" style="width:${progress.pct}%"></div></div>
+            <div class="card-subtitle" style="margin-top:6px;">${progress.selected}/${progress.total} controls mapped</div>
+          </button>
+        `;
+      }).join('');
+
+      const allProgress = principleProgress(state.activePrinciple);
+      el.principleCoverage.textContent = `Coverage: ${allProgress.selected} / ${allProgress.total} controls`;
+
+      el.principleButtons.querySelectorAll('.principle-btn').forEach((button) => {
+        button.addEventListener('click', () => {
+          state.activePrinciple = button.getAttribute('data-principle');
+          renderAll();
+        });
+      });
+    }
+
+    function renderBuilderHint() {
+      const hints = {
+        basic: 'Basic level applies foundational controls first: secure sign-in, device compliance, core DLP, and primary network safeguards.',
+        advanced: 'Advanced level adds adaptive/risk-based controls, session governance, and stronger endpoint/data enforcement.',
+        expert: 'Expert level adds attack-path reduction, deep telemetry-driven controls, and advanced exfiltration controls.'
+      };
+      el.builderHint.textContent = hints[state.targetLevel];
+    }
+
+    function renderControlLibrary() {
+      const visible = relevantControls().sort((a, b) => LEVEL_RANK[a.level] - LEVEL_RANK[b.level]);
+      el.libraryCounter.textContent = `${visible.length} controls`;
+
+      el.controlList.innerHTML = visible.map((control) => {
+        const selected = state.selectedControls.has(control.id) ? 'selected' : '';
+        const productChips = control.products.slice(0, 2).map((product) => `<span class="mini-chip">${product}</span>`).join('');
+        const principleChips = control.principles.map((principleId) => `<span class="mini-chip">${PRINCIPLES[principleId].label}</span>`).join('');
+
+        return `
+          <article class="control-card level-${control.level} ${selected}" draggable="true" data-control-id="${control.id}">
+            <div class="control-top">
+              <div class="control-name">${control.name}</div>
+              <span class="badge ${control.level}">${control.level}</span>
+            </div>
+            <div class="chip-row">${productChips}</div>
+            <div class="chip-row">${principleChips}</div>
+            <div class="control-desc">${control.description}</div>
+            <div class="control-actions">
+              <button class="card-btn" type="button" data-action="add" data-control-id="${control.id}">Add</button>
+              <button class="card-btn" type="button" data-action="view" data-control-id="${control.id}">Details</button>
+            </div>
+          </article>
+        `;
+      }).join('');
+
+      el.controlList.querySelectorAll('.control-card').forEach((card) => {
+        card.addEventListener('dragstart', (event) => {
+          event.dataTransfer.setData('text/plain', card.getAttribute('data-control-id'));
+        });
+      });
+
+      el.controlList.querySelectorAll('[data-action="add"]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const controlId = button.getAttribute('data-control-id');
+          const control = getControlById(controlId);
+          if (!control) return;
+          state.selectedControls.add(control.id);
+          state.activeArea = control.area;
+          showToast(`${control.name} added to ${AREAS[control.area].name}`);
+          renderAll();
+        });
+      });
+
+      el.controlList.querySelectorAll('[data-action="view"]').forEach((button) => {
+        button.addEventListener('click', () => openControlModal(button.getAttribute('data-control-id')));
+      });
+    }
+
+    function setupZones() {
+      document.querySelectorAll('.zone').forEach((zone) => {
+        const areaId = zone.getAttribute('data-area');
+
+        zone.addEventListener('click', () => {
+          state.activeArea = areaId;
+          renderAll();
+        });
+
+        zone.addEventListener('dragover', (event) => {
+          event.preventDefault();
+          zone.classList.add('drag-over');
+        });
+
+        zone.addEventListener('dragleave', () => {
+          zone.classList.remove('drag-over');
+        });
+
+        zone.addEventListener('drop', (event) => {
+          event.preventDefault();
+          zone.classList.remove('drag-over');
+          const controlId = event.dataTransfer.getData('text/plain');
+          const control = getControlById(controlId);
+          if (!control) return;
+
+          if (control.area !== areaId) {
+            showToast(`This control belongs in ${AREAS[control.area].name}`);
+            return;
+          }
+
+          if (state.selectedControls.has(control.id)) {
+            showToast('Control already mapped');
+            return;
+          }
+
+          state.selectedControls.add(control.id);
+          state.activeArea = areaId;
+          showToast(`${control.name} mapped`);
+          renderAll();
+        });
+      });
+    }
+
+    function renderZones() {
+      document.querySelectorAll('.zone').forEach((zone) => {
+        const areaId = zone.getAttribute('data-area');
+        const score = areaScore(areaId);
+        const maturity = areaMaturity(areaId);
+
+        zone.classList.toggle('active', state.activeArea === areaId);
+        zone.classList.remove('heat-high', 'heat-medium', 'heat-low');
+        zone.classList.add(`heat-${areaHeat(areaId)}`);
+
+        const levelEl = zone.querySelector('.zone-level');
+        const scoreEl = zone.querySelector('.zone-score');
+        const fillEl = zone.querySelector('.zone-fill');
+
+        levelEl.textContent = maturity;
+        scoreEl.textContent = `${score}%`;
+        fillEl.style.width = `${score}%`;
+      });
+
+      const score = overallScore();
+      el.overallPosture.textContent = `Posture ${score}%`;
+    }
+
+    function renderJourneyBanner() {
+      const area = AREAS[state.activeArea];
+      const selectedCount = getSelectedByArea(state.activeArea).length;
+      const totalCount = getControlsByArea(state.activeArea).length;
+      const score = areaScore(state.activeArea);
+      const maturity = areaMaturity(state.activeArea);
+
+      el.journeyBanner.innerHTML = `
+        <h3>${area.name} Journey</h3>
+        <p>${area.beginner}</p>
+        <p><strong>Current maturity:</strong> ${maturity} (${score}%) · ${selectedCount}/${totalCount} controls implemented.</p>
+      `;
+    }
+
+    function renderSummaryGrid() {
+      el.summaryGrid.innerHTML = Object.values(AREAS).map((area) => {
+        const score = areaScore(area.id);
+        const maturity = areaMaturity(area.id);
+        return `
+          <div class="summary-card area-${area.id}">
+            <div class="name">${area.name}</div>
+            <div class="value">${score}%</div>
+            <div class="card-subtitle">${maturity}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function controlsRequiredForNextLevel(areaId) {
+      const selected = getSelectedByArea(areaId).map((control) => control.id);
+
+      const ordered = ['basic', 'advanced', 'expert'];
+      for (const level of ordered) {
+        const needed = getControlsByArea(areaId).filter((control) => control.level === level && !selected.includes(control.id));
+        if (needed.length > 0) return { level, controls: needed };
+      }
+      return { level: 'expert', controls: [] };
+    }
+
+    function coverageForTechnique(areaId, techniqueId) {
+      const hits = getSelectedByArea(areaId).filter((control) => control.techniques.includes(techniqueId));
+      return {
+        covered: hits.length > 0,
+        controls: hits
+      };
+    }
+
+    function renderInsightPanel() {
+      const area = AREAS[state.activeArea];
+      const areaControls = getSelectedByArea(state.activeArea);
+      const next = controlsRequiredForNextLevel(state.activeArea);
+      const score = areaScore(state.activeArea);
+
+      const selectedMarkup = areaControls.length
+        ? areaControls.map((control) => `
+            <div class="detail-item">
+              <div class="detail-top">
+                <div class="detail-title">${control.name}</div>
+                <button class="text-btn" type="button" data-action="remove" data-control-id="${control.id}">Remove</button>
+              </div>
+              <div class="card-subtitle">${control.level.toUpperCase()} · ${control.products.join(' + ')}</div>
+              <div class="insight-text">${control.description}</div>
+            </div>
+          `).join('')
+        : '<div class="insight-text">No controls mapped yet. Start with two <strong>Basic</strong> controls for this zone.</div>';
+
+      const nextMarkup = next.controls.length
+        ? next.controls.map((control) => `
+            <div class="detail-item">
+              <div class="detail-title">${control.name}</div>
+              <div class="insight-text">${control.description}</div>
+              <button class="text-btn" type="button" data-action="quick-add" data-control-id="${control.id}" style="margin-top:4px;width:max-content;">Add this control</button>
+            </div>
+          `).join('')
+        : '<div class="insight-text">All controls in this zone are implemented at expert depth.</div>';
+
+      const mitreMarkup = MITRE[state.activeArea].map((technique) => {
+        const coverage = coverageForTechnique(state.activeArea, technique.id);
+        const cls = coverage.covered ? 'covered' : 'uncovered';
+        const status = coverage.covered ? 'Mitigated by selected controls' : 'No mapped control selected';
+        return `
+          <div class="mitre-row ${cls}">
+            <div class="left"><strong>${technique.id}</strong> ${technique.name}<br>${technique.tactic}</div>
+            <div class="right">${status}</div>
+          </div>
+        `;
+      }).join('');
+
+      const areaLicenses = new Set();
+      areaControls.forEach((control) => control.licenses.forEach((licenseId) => areaLicenses.add(licenseId)));
+      const areaLicenseMarkup = areaLicenses.size
+        ? Array.from(areaLicenses).map((licenseId) => {
+            const license = LICENSES[licenseId];
+            return `
+              <div class="license-item">
+                <div class="license-name">${license.name}</div>
+                <div class="license-model">${license.model}</div>
+                <div class="license-note">${license.note}</div>
+              </div>
+            `;
+          }).join('')
+        : '<div class="insight-text">No license requirements yet because no controls are selected for this zone.</div>';
+
+      el.flyoutTitle.textContent = area.name;
+      el.flyoutScore.textContent = `${score}% · ${areaMaturity(state.activeArea)}`;
+
+      el.insightPanel.innerHTML = `
+        <section class="insight-block">
+          <h3>What This Zone Means</h3>
+          <div class="insight-text">${area.beginner}</div>
+          <div class="insight-text"><strong>Risk focus:</strong> ${area.riskPrompt}</div>
+        </section>
+
+        <section class="insight-block">
+          <h3>Selected Controls</h3>
+          <div class="detail-list">${selectedMarkup}</div>
+        </section>
+
+        <section class="insight-block">
+          <h3>Next Step To Reach ${next.level.toUpperCase()}</h3>
+          <div class="detail-list">${nextMarkup}</div>
+        </section>
+
+        <section class="insight-block">
+          <h3>MITRE Threat Context</h3>
+          <div class="detail-list">${mitreMarkup}</div>
+        </section>
+
+        <section class="insight-block">
+          <h3>Licenses For This Zone</h3>
+          <div class="license-list">${areaLicenseMarkup}</div>
+        </section>
+      `;
+
+      el.insightPanel.querySelectorAll('[data-action="remove"]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const controlId = button.getAttribute('data-control-id');
+          state.selectedControls.delete(controlId);
+          renderAll();
+        });
+      });
+
+      el.insightPanel.querySelectorAll('[data-action="quick-add"]').forEach((button) => {
+        button.addEventListener('click', () => {
+          state.selectedControls.add(button.getAttribute('data-control-id'));
+          renderAll();
+        });
+      });
+    }
+
+    function renderMitreTable() {
+      const rows = [];
+      Object.keys(MITRE).forEach((areaId) => {
+        MITRE[areaId].forEach((technique) => {
+          const coverage = coverageForTechnique(areaId, technique.id);
+          rows.push({
+            area: AREAS[areaId].name,
+            technique,
+            coverage
+          });
+        });
+      });
+
+      const coveredCount = rows.filter((row) => row.coverage.covered).length;
+      const coveragePct = rows.length ? Math.round((coveredCount / rows.length) * 100) : 0;
+      el.mitreCoverageSummary.textContent = `${coveragePct}% coverage (${coveredCount}/${rows.length})`;
+
+      el.mitreTableBody.innerHTML = rows.map((row) => {
+        const mappedControls = row.coverage.covered
+          ? row.coverage.controls.map((control) => control.name).join(', ')
+          : 'None selected';
+        const statusClass = row.coverage.covered ? 'state-ok' : 'state-bad';
+        const status = row.coverage.covered ? 'Covered' : 'Gap';
+
+        return `
+          <tr>
+            <td>${row.area}</td>
+            <td><strong>${row.technique.id}</strong> ${row.technique.name}<br><span style="color:#5f7b97;">${row.technique.tactic}</span></td>
+            <td class="${statusClass}">${status}</td>
+            <td>${mappedControls}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderLicensing() {
+      const aggregate = new Map();
+
+      CONTROLS.filter((control) => state.selectedControls.has(control.id)).forEach((control) => {
+        control.licenses.forEach((licenseId) => {
+          if (!aggregate.has(licenseId)) {
+            aggregate.set(licenseId, {
+              license: LICENSES[licenseId],
+              controls: []
+            });
+          }
+          aggregate.get(licenseId).controls.push(control.name);
+        });
+      });
+
+      const entries = Array.from(aggregate.values());
+      el.licenseCount.textContent = `${entries.length} license requirement${entries.length === 1 ? '' : 's'}`;
+
+      if (!entries.length) {
+        el.licenseList.innerHTML = '<div class="insight-text">Select controls to generate a live licensing requirement summary.</div>';
+        el.licenseHint.textContent = 'Tip: Start with Basic blueprint to show minimum foundational license dependencies.';
+        return;
+      }
+
+      entries.sort((a, b) => a.license.name.localeCompare(b.license.name));
+
+      el.licenseList.innerHTML = entries.map((entry) => {
+        const source = SOURCES[entry.license.source];
+        return `
+          <div class="license-item">
+            <div class="license-name">${entry.license.name}</div>
+            <div class="license-model">${entry.license.model}</div>
+            <div class="license-note">${entry.license.note}</div>
+            <div class="card-subtitle">Mapped controls: ${entry.controls.join(', ')}</div>
+            <a class="source-link" style="margin-top:4px;padding:6px;" href="${source.url}" target="_blank" rel="noopener noreferrer">Source: ${source.title}</a>
+          </div>
+        `;
+      }).join('');
+
+      const hasConsumption = entries.some((entry) => entry.license.model.toLowerCase() === 'consumption');
+      const hasP2 = entries.some((entry) => entry.license.name.includes('P2'));
+
+      const notes = [
+        'Licensing in this tool is a minimum control-to-license mapping, not a purchasing quote.',
+        hasP2 ? 'Risk-adaptive identity controls here require Microsoft Entra ID P2.' : 'Current selection does not require Entra ID P2 controls yet.',
+        hasConsumption ? 'At least one selected control uses Azure consumption billing (budget and ingestion tuning required).' : 'Current selection is mostly user-based licensing.'
+      ];
+
+      el.licenseHint.textContent = notes.join(' ');
+    }
+
+    function renderSources() {
+      const ordered = Object.values(SOURCES);
+      el.sourceList.innerHTML = ordered.map((source) => `
+        <a class="source-link" href="${source.url}" target="_blank" rel="noopener noreferrer">
+          ${source.title}
+          <span>${source.url}</span>
+        </a>
+      `).join('');
+    }
+
+    function applyBlueprint(level) {
+      state.selectedControls.clear();
+      CONTROLS.forEach((control) => {
+        if (LEVEL_RANK[control.level] <= LEVEL_RANK[level]) {
+          state.selectedControls.add(control.id);
+        }
+      });
+      showToast(`${level.charAt(0).toUpperCase() + level.slice(1)} blueprint applied`);
+      renderAll();
+    }
+
+    function openControlModal(controlId) {
+      const control = getControlById(controlId);
+      if (!control) return;
+
+      const licenses = control.licenses.map((licenseId) => {
+        const license = LICENSES[licenseId];
+        const source = SOURCES[license.source];
+        return `
+          <div class="license-item">
+            <div class="license-name">${license.name}</div>
+            <div class="license-model">${license.model}</div>
+            <div class="license-note">${license.note}</div>
+            <a class="source-link" style="padding:6px;margin-top:5px;" href="${source.url}" target="_blank" rel="noopener noreferrer">${source.title}</a>
+          </div>
+        `;
+      }).join('');
+
+      const techniques = control.techniques.map((techniqueId) => {
+        const areaTechnique = MITRE[control.area].find((item) => item.id === techniqueId);
+        return areaTechnique
+          ? `<div class="mitre-row covered"><div class="left"><strong>${areaTechnique.id}</strong> ${areaTechnique.name}<br>${areaTechnique.tactic}</div><div class="right">Mapped</div></div>`
+          : '';
+      }).join('');
+
+      el.modalTitle.textContent = control.name;
+      el.modalBody.innerHTML = `
+        <div class="insight-text"><strong>Domain:</strong> ${AREAS[control.area].name} · <strong>Level:</strong> ${control.level.toUpperCase()}</div>
+        <div class="insight-text">${control.description}</div>
+
+        <section class="insight-block">
+          <h3>Microsoft Capabilities</h3>
+          <div class="chip-row">${control.products.map((product) => `<span class="mini-chip">${product}</span>`).join('')}</div>
+        </section>
+
+        <section class="insight-block">
+          <h3>MITRE ATT&CK References</h3>
+          <div class="detail-list">${techniques || '<div class="insight-text">No ATT&CK mapping in this control.</div>'}</div>
+        </section>
+
+        <section class="insight-block">
+          <h3>License Dependencies</h3>
+          <div class="license-list">${licenses}</div>
+        </section>
+      `;
+
+      el.modalBackdrop.classList.add('show');
+    }
+
+    function closeControlModal() {
+      el.modalBackdrop.classList.remove('show');
+    }
+
+    function renderLevelSegments() {
+      el.levelSegments.querySelectorAll('.segment').forEach((segment) => {
+        segment.classList.toggle('active', segment.getAttribute('data-level') === state.targetLevel);
+      });
+      renderBuilderHint();
+    }
+
+    function renderAll() {
+      renderPrinciples();
+      renderLevelSegments();
+      renderControlLibrary();
+      renderZones();
+      renderJourneyBanner();
+      renderSummaryGrid();
+      renderInsightPanel();
+      renderMitreTable();
+      renderLicensing();
+    }
+
+    function bindStaticEvents() {
+      el.levelSegments.querySelectorAll('.segment').forEach((segment) => {
+        segment.addEventListener('click', () => {
+          state.targetLevel = segment.getAttribute('data-level');
+          renderLevelSegments();
+        });
+      });
+
+      el.applyBlueprintBtn.addEventListener('click', () => applyBlueprint(state.targetLevel));
+      el.resetBlueprintBtn.addEventListener('click', () => {
+        state.selectedControls.clear();
+        showToast('All controls reset');
+        renderAll();
+      });
+
+      el.closeModalBtn.addEventListener('click', closeControlModal);
+      el.modalBackdrop.addEventListener('click', (event) => {
+        if (event.target === el.modalBackdrop) closeControlModal();
+      });
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') closeControlModal();
+      });
+    }
+
+    function init() {
+      renderSources();
+      setupZones();
+      bindStaticEvents();
+      renderAll();
+    }
+
+    init();
+  </script>
+</body>
+</html>
