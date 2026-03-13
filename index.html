@@ -161,6 +161,17 @@
       --cta: #1f7f6d;
     }
 
+    .tool-card--mdc {
+      --banner-start: #0d2f5a;
+      --banner-mid: #16508e;
+      --banner-end: #2471c0;
+      --banner-border: #4b88c6;
+      --tag-bg: rgba(234, 245, 255, 0.15);
+      --tag-border: rgba(172, 203, 236, 0.6);
+      --tag-text: #deeeff;
+      --cta: #1f66ad;
+    }
+
     .tool-banner {
       background: linear-gradient(135deg, var(--banner-start) 0%, var(--banner-mid) 56%, var(--banner-end) 100%);
       border-bottom: 1px solid var(--banner-border);
@@ -214,7 +225,7 @@
   <header class="topbar">
     <div>
       <h1>Security Ninja Tool Suite</h1>
-      <p>Navigation hub for Conditional Access and Zero Trust design tools</p>
+      <p>Navigation hub for Conditional Access, Defender for Cloud, and Zero Trust design tools</p>
     </div>
     <div class="status-pill">TOOLS INDEX</div>
   </header>
@@ -222,10 +233,21 @@
   <main class="shell">
     <section class="intro">
       <h2 class="intro-title">Select a tool</h2>
-      <p class="intro-text">Open one of the tools below to build Conditional Access policies, work through threat-led hardening, or create an interactive Zero Trust diagram.</p>
+      <p class="intro-text">Open one of the tools below to build Conditional Access policies, review Defender for Cloud remediation priorities, or create an interactive Zero Trust diagram.</p>
     </section>
 
     <section class="grid">
+      <a class="tool-card tool-card--mdc" href="./MDC%20Workbench/index.html">
+        <div class="tool-banner">
+          <span class="tool-tag">Defender for Cloud</span>
+          <h3 class="tool-title">MDC Workbench</h3>
+        </div>
+        <div class="tool-body">
+          <p class="tool-desc">Import Defender for Cloud exports, triage findings by severity and objective, and plan remediation actions through interactive topology and report views.</p>
+          <span class="tool-cta">Open tool -></span>
+        </div>
+      </a>
+
       <a class="tool-card tool-card--ca" href="./CA-Builder/index.html">
         <div class="tool-banner">
           <span class="tool-tag">Conditional Access</span>
@@ -258,6 +280,7 @@
           <span class="tool-cta">Open tool -></span>
         </div>
       </a>
+
     </section>
   </main>
 </body>
