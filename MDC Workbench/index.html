@@ -1582,202 +1582,6 @@ button.legend-chip.active {
   overflow: auto;
 }
 
-.policy-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: 8px;
-  row-gap: 6px;
-  margin-bottom: 10px;
-}
-
-.policy-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 2.1fr) minmax(320px, 1fr);
-  gap: 12px;
-  align-items: start;
-}
-
-.policy-wrap {
-  border: 1px solid var(--border-subtle);
-  border-radius: 10px;
-  background: var(--bg-elevated);
-  padding: 8px;
-  max-height: 72vh;
-  overflow: auto;
-}
-
-.policy-svg {
-  width: 100%;
-  min-height: 620px;
-  display: block;
-}
-
-.policy-link {
-  fill: none;
-  stroke-opacity: 0.42;
-  stroke-linecap: round;
-}
-
-.policy-node {
-  cursor: pointer;
-}
-
-.policy-node rect {
-  stroke-width: 1.1;
-  transition: stroke-width 120ms ease, fill 160ms ease, stroke 160ms ease;
-}
-
-.policy-node:hover rect {
-  stroke-width: 1.6;
-}
-
-.policy-node text {
-  font-family: 'JetBrains Mono', monospace;
-  fill: var(--text-primary);
-  font-size: 11px;
-  pointer-events: none;
-}
-
-.policy-node .policy-node-title {
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.policy-node .policy-node-subtitle {
-  font-size: 10px;
-  fill: var(--text-muted);
-}
-
-.policy-node .policy-node-state {
-  font-size: 10px;
-  font-weight: 700;
-  fill: #ffffff;
-}
-
-.policy-node .muted {
-  fill: var(--text-muted);
-  font-size: 10px;
-}
-
-.policy-summary-head {
-  border: 1px solid var(--border-subtle);
-  border-radius: 8px;
-  padding: 8px 10px;
-  background: var(--bg-elevated);
-  font-size: 11px;
-  color: var(--text-secondary);
-  line-height: 1.5;
-}
-
-.policy-kpi-grid {
-  margin-top: 8px;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px;
-}
-
-.policy-kpi {
-  border: 1px solid var(--border-subtle);
-  border-radius: 8px;
-  padding: 6px 8px;
-  background: var(--bg-card);
-}
-
-.policy-kpi .k {
-  font-size: 10px;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-}
-
-.policy-kpi .v {
-  margin-top: 2px;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.compliance-pill {
-  display: inline-flex;
-  align-items: center;
-  border-radius: 999px;
-  line-height: 1;
-  padding: 3px 8px;
-  border: 1px solid transparent;
-  font-size: 10px;
-  font-family: 'JetBrains Mono', monospace;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-}
-
-.compliance-pill.non-compliant {
-  color: #ffffff;
-  background: linear-gradient(135deg, #b10a2f 0%, #e53766 100%);
-  border-color: #8f0826;
-}
-
-.compliance-pill.partially-compliant {
-  color: #fff8e7;
-  background: linear-gradient(135deg, #b16d00 0%, #f2aa00 100%);
-  border-color: #8c5600;
-}
-
-.compliance-pill.compliant {
-  color: #ffffff;
-  background: linear-gradient(135deg, #0f8f4d 0%, #26bf73 100%);
-  border-color: #0b7a41;
-}
-
-.compliance-pill.not-applicable,
-.compliance-pill.exempt,
-.compliance-pill.unknown {
-  color: #0f2f4b;
-  background: linear-gradient(135deg, #b9d5ef 0%, #d9e9f8 100%);
-  border-color: #9ebfdd;
-}
-
-#policyComplianceLegend {
-  margin-bottom: 12px;
-}
-
-#policyDetailsList {
-  display: grid;
-  gap: 8px;
-}
-
-#policyDetailsList .simple-item {
-  line-height: 1.42;
-}
-
-.policy-row-title {
-  display: block;
-  margin-bottom: 2px;
-  color: var(--text-primary);
-  font-weight: 700;
-  font-size: 11px;
-}
-
-.policy-row-scope {
-  display: block;
-  margin-bottom: 4px;
-  color: var(--text-muted);
-  font-size: 10px;
-}
-
-.policy-row-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-}
-
-.policy-row-compliance {
-  color: var(--text-muted);
-  font-size: 10px;
-}
-
 .topology-link {
   fill: none;
   stroke: color-mix(in srgb, var(--accent-ninja) 52%, #50e6ff);
@@ -2276,7 +2080,6 @@ button.legend-chip.active {
   .tracker-grid { grid-template-columns: 1fr; }
   .sankey-svg { height: 420px; }
   .topology-layout { grid-template-columns: 1fr; }
-  .policy-layout { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 760px) {
@@ -2334,9 +2137,7 @@ button.legend-chip.active {
   <div class="topnav-center">
     <button class="topnav-tab active" type="button" data-view="overview">Overview</button>
     <button class="topnav-tab" type="button" data-view="topology">Topology</button>
-    <button class="topnav-tab" type="button" data-view="policies">Azure Policies</button>
     <button class="topnav-tab" type="button" data-view="sankey">Reports</button>
-    <button class="topnav-tab" type="button" data-view="catalog">Catalog</button>
   </div>
   <div class="topnav-right">
     <div class="topnav-status-row">
@@ -2457,7 +2258,7 @@ button.legend-chip.active {
       <div class="card-header">
         <div>
           <div class="card-title">Remediation Backlog</div>
-          <div class="card-subtitle">Sortable backlog with separated finding context fields. Plan objectives from Topology, Azure Policies, and Reports views.</div>
+          <div class="card-subtitle">Sortable backlog with separated finding context fields. Plan objectives from Topology and Reports views.</div>
         </div>
       </div>
       <div class="card-body">
@@ -2737,64 +2538,6 @@ button.legend-chip.active {
       </div>
     </section>
 
-    <section class="card span-3" data-views="policies">
-      <div class="card-header">
-        <div>
-          <div class="card-title">Azure Policies</div>
-          <div class="card-subtitle">Interactive assignment map by scope with compliance state visibility.</div>
-        </div>
-      </div>
-      <div class="card-body">
-        <div class="policy-toolbar">
-          <button class="btn-connect" type="button" id="importPolicyCsvBtn">Import Policy CSV</button>
-          <input type="file" id="policyCsvFileInput" accept=".csv,text/csv" multiple style="display:none;">
-          <label class="board-control" for="policyScopeSelect">Scope
-            <select class="board-select" id="policyScopeSelect">
-              <option value="all">All Scopes</option>
-            </select>
-          </label>
-          <label class="board-control" for="policyComplianceSelect">Compliance
-            <select class="board-select" id="policyComplianceSelect">
-              <option value="all">All States</option>
-              <option value="non-compliant">Non-compliant</option>
-              <option value="partially-compliant">Partially compliant</option>
-              <option value="compliant">Compliant</option>
-              <option value="not-applicable">Not applicable</option>
-              <option value="exempt">Exempt</option>
-              <option value="unknown">Unknown</option>
-            </select>
-          </label>
-          <label class="board-control" for="policyNodeLimitSelect">Policy Nodes
-            <select class="board-select" id="policyNodeLimitSelect">
-              <option value="40">40</option>
-              <option value="80" selected>80</option>
-              <option value="120">120</option>
-              <option value="200">200</option>
-            </select>
-          </label>
-          <label class="board-control" for="policySearchInput">Find
-            <input class="board-select board-search" id="policySearchInput" type="search" placeholder="Policy or scope...">
-          </label>
-          <button class="btn-utility" type="button" id="resetPolicyBtn" title="Clear policy filters and focus">Reset Policy View</button>
-        </div>
-        <div class="report-legend" id="policyComplianceLegend">
-          <button class="legend-chip" type="button" data-policy-compliance="non-compliant"><span class="legend-swatch" style="background:#e53766;"></span>Non-compliant</button>
-          <button class="legend-chip" type="button" data-policy-compliance="partially-compliant"><span class="legend-swatch" style="background:#f2aa00;"></span>Partially compliant</button>
-          <button class="legend-chip" type="button" data-policy-compliance="compliant"><span class="legend-swatch" style="background:#26bf73;"></span>Compliant</button>
-          <button class="legend-chip" type="button" data-policy-compliance="not-applicable"><span class="legend-swatch" style="background:#a8bfd8;"></span>Not applicable</button>
-          <button class="legend-chip" type="button" data-policy-compliance="exempt"><span class="legend-swatch" style="background:#6f8faa;"></span>Exempt</button>
-          <button class="legend-chip" type="button" data-policy-compliance="unknown"><span class="legend-swatch" style="background:#9ab1c8;"></span>Unknown</button>
-          <span class="legend-chip">Left-click scope to filter. Left-click policy to focus. Right-click any node for full assignment details.</span>
-        </div>
-        <div class="policy-layout">
-          <div class="policy-wrap">
-            <svg class="policy-svg" id="policySvg" viewBox="0 0 1100 560" role="img" aria-label="Azure policy assignment map"></svg>
-          </div>
-          <div class="simple-list topology-summary" id="policyDetailsList"></div>
-        </div>
-      </div>
-    </section>
-
     <section class="card span-3" data-views="sankey">
       <div class="card-header">
         <div>
@@ -2882,7 +2625,6 @@ button.legend-chip.active {
             <button class="help-nav-btn" type="button" data-help-target="helpDefenderExportSection">Export from Defender for Cloud</button>
             <button class="help-nav-btn" type="button" data-help-target="helpOverviewSection">Overview Workspace</button>
             <button class="help-nav-btn" type="button" data-help-target="helpTopologySection">Topology Workspace</button>
-            <button class="help-nav-btn" type="button" data-help-target="helpPoliciesSection">Azure Policies Workspace</button>
             <button class="help-nav-btn" type="button" data-help-target="helpReportsSection">Reports Workspace</button>
             <button class="help-nav-btn" type="button" data-help-target="helpTrackerSection">Tracker Files and Decisions</button>
             <button class="help-nav-btn" type="button" data-help-target="helpExportsSection">Exports and Handover</button>
@@ -2908,7 +2650,7 @@ button.legend-chip.active {
             <section class="help-section" id="helpQuickStartSection">
               <div class="help-section-title">Quick Start</div>
               <div class="help-steps">
-                <div class="help-step"><strong>1. Import data:</strong> use <span class="mono">Import CSV</span> for recommendations/security findings, then optionally <span class="mono">Import Policy CSV</span> in the Azure Policies workspace.</div>
+                <div class="help-step"><strong>1. Import data:</strong> use <span class="mono">Import CSV</span> for recommendations and security findings.</div>
                 <div class="help-step"><strong>2. Scope your triage:</strong> apply Severity chips, then refine by Subscription, Resource Type, Control, Tactic, and keyword search.</div>
                 <div class="help-step"><strong>3. Prioritize execution:</strong> use Topology and Reports nodes to set plan lane/objective decisions directly from scoped findings.</div>
                 <div class="help-step"><strong>4. Persist decisions:</strong> bind or export tracker JSON so owner, status, due date, notes, and remediation choices survive future CSV refreshes.</div>
@@ -2921,7 +2663,7 @@ button.legend-chip.active {
               <div class="help-list">
                 <div><strong>Primary file:</strong> Defender for Cloud recommendations export feeds the main findings model.</div>
                 <div><strong>Optional second file:</strong> regulatory/compliance export can be imported and merged when your operating model tracks both score and benchmark controls.</div>
-                <div><strong>Policy file:</strong> use the Azure Policies workspace importer for policy-assignment/compliance exports.</div>
+                <div><strong>Policy file:</strong> use the separate Azure Policy Viewer app for policy-assignment/compliance exports.</div>
                 <div><strong>Header support:</strong> flexible alias mapping is built in. Common fields: subscription, resource group, resource name/type, recommendation, finding, severity, controls, tactics, techniques, status, owner, due date.</div>
                 <div><strong>Blank resource group handling:</strong> empty groups are mapped to <span class="mono">Identity / Tenant Scope</span> instead of an unmapped placeholder.</div>
                 <div><strong>ID behavior:</strong> synthetic IDs are normalized and sequenced to keep stable row ordering after import.</div>
@@ -2933,7 +2675,7 @@ button.legend-chip.active {
               <div class="help-list">
                 <div><strong>Recommendations CSV (maps to Import CSV):</strong> In Azure portal go to <span class="mono">Microsoft Defender for Cloud -> Recommendations</span>, apply required filters, then choose <span class="mono">Download CSV report</span>.</div>
                 <div><strong>Regulatory Compliance CSV (optional additional Import CSV file):</strong> Go to <span class="mono">Microsoft Defender for Cloud -> Regulatory compliance</span>, select the relevant standard/scope, then use <span class="mono">Download report</span> and choose CSV.</div>
-                <div><strong>Policy compliance CSV (maps to Import Policy CSV):</strong> Export from Azure Policy compliance views (for example Compliance list exports), then import via the <span class="mono">Azure Policies</span> workspace button.</div>
+                <div><strong>Policy compliance CSV:</strong> Export from Azure Policy compliance views (for example Compliance list exports), then open it in the Azure Policy Viewer app.</div>
                 <div><strong>For very large tenants:</strong> export by subscription, management group, or severity in batches to avoid portal/export limits.</div>
                 <div><strong>Reference docs:</strong> <a href="https://learn.microsoft.com/azure/defender-for-cloud/review-security-recommendations" target="_blank" rel="noopener">Review recommendations</a>, <a href="https://learn.microsoft.com/azure/defender-for-cloud/regulatory-compliance-dashboard" target="_blank" rel="noopener">Regulatory compliance dashboard</a>, <a href="https://learn.microsoft.com/azure/defender-for-cloud/release-notes-archive" target="_blank" rel="noopener">Release notes archive (export limit notes)</a>, <a href="https://learn.microsoft.com/azure/governance/policy/how-to/get-compliance-data" target="_blank" rel="noopener">Azure Policy compliance data</a>.</div>
               </div>
@@ -2945,7 +2687,7 @@ button.legend-chip.active {
                 <div><strong>Severity strip:</strong> the top chips are global filters; the <span class="mono">All</span> chip returns full scope instantly.</div>
                 <div><strong>KPI cards:</strong> interactive cards focus specific slices such as Patch Now queue, resource type catalog, and recommendation de-duplication.</div>
                 <div><strong>Remediation Backlog:</strong> each column supports sorting and per-column filters for fast pinpointing by resource, owner, status, or recommendation.</div>
-                <div><strong>Planning model:</strong> primary remediation planning is now executed from Topology, Reports, and Azure Policies workspaces using scoped popups and objective actions.</div>
+                <div><strong>Planning model:</strong> primary remediation planning is now executed from Topology and Reports workspaces using scoped popups and objective actions.</div>
                 <div><strong>Back to default:</strong> use filter reset controls (top bar and per-workspace reset buttons) to return to the default scope quickly.</div>
               </div>
             </section>
@@ -2963,17 +2705,6 @@ button.legend-chip.active {
                 <span class="help-chip high">High</span>
                 <span class="help-chip medium">Medium</span>
                 <span class="help-chip low">Low</span>
-              </div>
-            </section>
-
-            <section class="help-section" id="helpPoliciesSection">
-              <div class="help-section-title">Azure Policies Workspace</div>
-              <div class="help-list">
-                <div><strong>Import path:</strong> use <span class="mono">Import Policy CSV</span> on this page to load policy assignment and compliance records.</div>
-                <div><strong>Core filters:</strong> Scope, Compliance state, node limits, and search combine for targeted policy triage.</div>
-                <div><strong>Interactive map:</strong> left-click to focus scopes/policies, right-click any node for full assignment details.</div>
-                <div><strong>Planning handoff:</strong> from the policy detail popup, use <span class="mono">Plan Matching Findings</span> to open the remediation planner for mapped findings in that scope.</div>
-                <div><strong>Reset action:</strong> <span class="mono">Reset Policy View</span> clears focus and restores default policy map context.</div>
               </div>
             </section>
 
@@ -3203,39 +2934,6 @@ button.legend-chip.active {
         <button class="btn-connect" type="button" id="sankeyApplyObjectiveBtn">Apply Objective</button>
       </div>
       <button class="btn-utility" type="button" id="sankeyDetailsCloseBtn">Close</button>
-    </div>
-  </form>
-</dialog>
-
-<dialog class="tracker-dialog" id="policyDetailsDialog">
-  <form class="tracker-panel" method="dialog">
-    <div class="tracker-header">
-      <div class="tracker-title" id="policyDetailsTitle">Policy Assignments</div>
-      <div class="tracker-subtitle" id="policyDetailsSubtitle">Policy assignment details in current scope.</div>
-    </div>
-    <div class="tracker-body">
-      <div class="sankey-details-table-wrap">
-        <table class="sankey-details-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Policy Name</th>
-              <th>Scope</th>
-              <th>Compliance State</th>
-              <th>Resource Compliance</th>
-              <th>Non-compliant Resources</th>
-              <th>Non-compliant Policies</th>
-              <th>Number of Policies</th>
-            </tr>
-          </thead>
-          <tbody id="policyDetailsBody"></tbody>
-        </table>
-      </div>
-    </div>
-    <div class="tracker-footer">
-      <button class="btn-utility" type="button" id="policyDetailsDownloadBtn">Download CSV</button>
-      <button class="btn-connect" type="button" id="policyPlanFindingsBtn">Plan Matching Findings</button>
-      <button class="btn-utility" type="button" id="policyDetailsCloseBtn">Close</button>
     </div>
   </form>
 </dialog>
@@ -3517,7 +3215,7 @@ button.legend-chip.active {
   ];
 
   const APP_NAME = "MDC";
-  const APP_VERSION = "1.42";
+  const APP_VERSION = "1.44";
   const APP_PRODUCT = "Microsoft Defender for Cloud";
   const APP_HEADER_TITLE = "Microsoft Defender for Cloud | Interactive Workbench";
   const IDENTITY_SCOPE_RESOURCE_GROUP = "Identity / Tenant Scope";
@@ -3595,12 +3293,6 @@ button.legend-chip.active {
     topologyResourceGroup: "all",
     topologyResourceLimit: 60,
     topologyZoom: 1,
-    policyScope: "all",
-    policyCompliance: "all",
-    policyNodeLimit: 80,
-    policySearch: "",
-    policyFocusType: "",
-    policyFocusValue: "",
     tableVisibleLimit: TABLE_INITIAL_RENDER_LIMIT,
     view: "overview",
     sortBy: "priorityScore",
@@ -3610,7 +3302,6 @@ button.legend-chip.active {
 
   const TRACKER_EXPORT_VERSION = 1;
   let findings = buildFindings(240);
-  let policyAssignments = [];
   let dataMode = "mock";
   let filtersBound = false;
   let tableSortingBound = false;
@@ -3623,7 +3314,6 @@ button.legend-chip.active {
   let tableControlsBound = false;
   let sankeyControlsBound = false;
   let topologyControlsBound = false;
-  let policyControlsBound = false;
   let recommendationExplorerBound = false;
   let resourceTypeExplorerBound = false;
   let trackerBound = false;
@@ -3635,10 +3325,6 @@ button.legend-chip.active {
   let resourceTypeExplorerRows = [];
   let resourceTypeExplorerView = "table";
   let topologyNodeRowsMap = new Map();
-  let policyNodeRowsMap = new Map();
-  let latestRenderedPolicyRows = [];
-  let policyDetailsRows = [];
-  let policyDetailsScopeTitle = "";
   let sankeyDetailsRows = [];
   let sankeyDetailsTitle = "";
   let topologyNodeOffsets = {};
@@ -4060,256 +3746,6 @@ button.legend-chip.active {
     if (severity === "medium") return 2;
     if (severity === "low") return 1;
     return 0;
-  }
-
-  function normalizeComplianceState(value) {
-    const text = toLower(String(value || "").trim());
-    if (!text) return "unknown";
-    if (text.includes("non") && text.includes("compliant")) return "non-compliant";
-    if (text.includes("partial")) return "partially-compliant";
-    if (text === "compliant" || text.includes("fully compliant")) return "compliant";
-    if (text.includes("not applicable") || text.includes("not-applicable")) return "not-applicable";
-    if (text.includes("exempt") || text.includes("waiver")) return "exempt";
-    if (text.includes("unknown")) return "unknown";
-    return "unknown";
-  }
-
-  function getComplianceRank(complianceState) {
-    const stateValue = normalizeComplianceState(complianceState);
-    if (stateValue === "non-compliant") return 6;
-    if (stateValue === "partially-compliant") return 5;
-    if (stateValue === "unknown") return 4;
-    if (stateValue === "not-applicable") return 3;
-    if (stateValue === "exempt") return 2;
-    if (stateValue === "compliant") return 1;
-    return 0;
-  }
-
-  function complianceStateFromRank(rank) {
-    if (rank >= 6) return "non-compliant";
-    if (rank >= 5) return "partially-compliant";
-    if (rank >= 4) return "unknown";
-    if (rank >= 3) return "not-applicable";
-    if (rank >= 2) return "exempt";
-    return "compliant";
-  }
-
-  function getComplianceLabel(complianceState) {
-    const stateValue = normalizeComplianceState(complianceState);
-    if (stateValue === "non-compliant") return "Non-compliant";
-    if (stateValue === "partially-compliant") return "Partially compliant";
-    if (stateValue === "compliant") return "Compliant";
-    if (stateValue === "not-applicable") return "Not applicable";
-    if (stateValue === "exempt") return "Exempt";
-    return "Unknown";
-  }
-
-  function getComplianceColor(complianceState) {
-    const stateValue = normalizeComplianceState(complianceState);
-    if (stateValue === "non-compliant") return "#e53766";
-    if (stateValue === "partially-compliant") return "#f2aa00";
-    if (stateValue === "compliant") return "#26bf73";
-    if (stateValue === "not-applicable") return "#9ab1c8";
-    if (stateValue === "exempt") return "#6f8faa";
-    return "#8ea6bf";
-  }
-
-  function getCompliancePillClass(complianceState) {
-    return `compliance-pill ${normalizeComplianceState(complianceState)}`;
-  }
-
-  function parseIntegerField(value) {
-    const digits = String(value || "").replace(/[^0-9-]/g, "");
-    const parsed = Number.parseInt(digits, 10);
-    return Number.isFinite(parsed) ? parsed : 0;
-  }
-
-  function parseComplianceRate(value) {
-    const match = String(value || "").match(/(\d+(?:\.\d+)?)\s*%/);
-    if (!match) return 0;
-    const parsed = Number.parseFloat(match[1]);
-    return Number.isFinite(parsed) ? Math.max(0, Math.min(100, parsed)) : 0;
-  }
-
-  function isPolicyAssignmentCsvRows(rows) {
-    if (!Array.isArray(rows) || !rows.length) return false;
-    const headers = rows[0].map(normalizeHeaderName);
-    const required = ["name", "scope", "compliancestate"];
-    return required.every((header) => headers.includes(header));
-  }
-
-  async function mapCsvRowsToPolicyAssignments(rows) {
-    if (!rows.length) return [];
-
-    const headerMap = new Map();
-    rows[0].map(normalizeHeaderName).forEach((header, idx) => {
-      if (!headerMap.has(header)) headerMap.set(header, idx);
-    });
-    const body = rows.slice(1);
-
-    const aliases = {
-      name: ["name", "policyname", "displayname", "policydisplayname"],
-      scope: ["scope", "assignmentscope", "subscription", "subscriptionname"],
-      complianceState: ["compliancestate", "state"],
-      resourceCompliance: ["resourcecompliance", "compliance", "resourcecompliancestate"],
-      nonCompliantResources: ["noncompliantresources", "non-compliantresources"],
-      nonCompliantPolicies: ["noncompliantpolicies", "non-compliantpolicies"],
-      numberOfPolicies: ["numberofpolicies", "policiescount", "numberofpolicydefinitions"]
-    };
-
-    function getValue(rawRow, field) {
-      const aliasList = aliases[field] || [];
-      for (let i = 0; i < aliasList.length; i += 1) {
-        const idx = headerMap.get(aliasList[i]);
-        if (idx == null || idx < 0) continue;
-        const value = rawRow[idx];
-        if (value == null) continue;
-        const text = String(value).trim();
-        if (text) return text;
-      }
-      return "";
-    }
-
-    const mapped = [];
-    for (let index = 0; index < body.length; index += 1) {
-      const raw = body[index];
-      const name = getValue(raw, "name") || "Unnamed Policy";
-      const scope = getValue(raw, "scope") || "Unknown Scope";
-      const complianceState = normalizeComplianceState(getValue(raw, "complianceState"));
-      const resourceCompliance = getValue(raw, "resourceCompliance") || "0% (0 out of 0)";
-      const nonCompliantResources = parseIntegerField(getValue(raw, "nonCompliantResources"));
-      const nonCompliantPolicies = parseIntegerField(getValue(raw, "nonCompliantPolicies"));
-      const numberOfPolicies = parseIntegerField(getValue(raw, "numberOfPolicies"));
-      const complianceRate = parseComplianceRate(resourceCompliance);
-
-      mapped.push({
-        id: `POL-${String(index + 1).padStart(4, "0")}`,
-        name,
-        scope,
-        complianceState,
-        resourceCompliance,
-        complianceRate,
-        nonCompliantResources,
-        nonCompliantPolicies,
-        numberOfPolicies
-      });
-
-      if (index > 0 && index % 1200 === 0) {
-        await yieldToBrowser();
-      }
-    }
-
-    return dedupePolicyAssignments(mapped);
-  }
-
-  function dedupePolicyAssignments(rows) {
-    const byKey = new Map();
-    rows.forEach((row) => {
-      const key = `${toLower(row.scope)}::${toLower(row.name)}`;
-      const existing = byKey.get(key);
-      if (!existing) {
-        byKey.set(key, { ...row });
-        return;
-      }
-
-      if (getComplianceRank(row.complianceState) > getComplianceRank(existing.complianceState)) {
-        existing.complianceState = normalizeComplianceState(row.complianceState);
-      }
-      existing.complianceRate = Math.max(existing.complianceRate || 0, row.complianceRate || 0);
-      existing.nonCompliantResources = Math.max(existing.nonCompliantResources || 0, row.nonCompliantResources || 0);
-      existing.nonCompliantPolicies = Math.max(existing.nonCompliantPolicies || 0, row.nonCompliantPolicies || 0);
-      existing.numberOfPolicies = Math.max(existing.numberOfPolicies || 0, row.numberOfPolicies || 0);
-
-      if (String(row.resourceCompliance || "").length > String(existing.resourceCompliance || "").length) {
-        existing.resourceCompliance = row.resourceCompliance;
-      }
-    });
-
-    return Array.from(byKey.values())
-      .sort((a, b) => (
-        getComplianceRank(b.complianceState) - getComplianceRank(a.complianceState)
-        || (b.nonCompliantPolicies - a.nonCompliantPolicies)
-        || a.scope.localeCompare(b.scope)
-        || a.name.localeCompare(b.name)
-      ))
-      .map((row, index) => ({
-        ...row,
-        id: `POL-${String(index + 1).padStart(4, "0")}`
-      }));
-  }
-
-  function derivePolicyAssignmentsFromFindings(rows) {
-    const grouped = new Map();
-
-    rows.forEach((row) => {
-      const scope = row.subscription || "Unknown Scope";
-      const name = row.recommendationName || "Unmapped Recommendation";
-      const key = `${scope}::${name}`;
-      if (!grouped.has(key)) {
-        grouped.set(key, {
-          scope,
-          name,
-          totalResources: 0,
-          nonCompliantResources: 0,
-          nonCompliantPolicies: 0,
-          severityRank: 0
-        });
-      }
-
-      const bucket = grouped.get(key);
-      bucket.totalResources += 1;
-      bucket.severityRank = Math.max(bucket.severityRank, getSeverityRank(row.severity));
-      const status = toLower(row.statusCode);
-      const isNonCompliant = status.includes("unhealthy") || status.includes("failed");
-      if (isNonCompliant) bucket.nonCompliantResources += 1;
-      if (getSeverityRank(row.severity) >= 3) bucket.nonCompliantPolicies += 1;
-    });
-
-    const projected = Array.from(grouped.values()).map((bucket, index) => {
-      const compliantCount = Math.max(0, bucket.totalResources - bucket.nonCompliantResources);
-      const rate = bucket.totalResources > 0
-        ? Math.round((compliantCount / bucket.totalResources) * 100)
-        : 0;
-      const complianceState = bucket.nonCompliantResources > 0 ? "non-compliant" : "compliant";
-      return {
-        id: `POL-${String(index + 1).padStart(4, "0")}`,
-        name: bucket.name,
-        scope: bucket.scope,
-        complianceState,
-        resourceCompliance: `${rate}% (${compliantCount} out of ${bucket.totalResources})`,
-        complianceRate: rate,
-        nonCompliantResources: bucket.nonCompliantResources,
-        nonCompliantPolicies: bucket.nonCompliantPolicies,
-        numberOfPolicies: bucket.totalResources
-      };
-    });
-
-    return dedupePolicyAssignments(projected);
-  }
-
-  function resetPolicyFilters() {
-    state.policyScope = "all";
-    state.policyCompliance = "all";
-    state.policySearch = "";
-    state.policyFocusType = "";
-    state.policyFocusValue = "";
-    state.policyNodeLimit = 80;
-  }
-
-  function getFilteredPolicyAssignments() {
-    const query = toLower(state.policySearch).trim();
-    return policyAssignments.filter((row) => {
-      if (state.policyScope !== "all" && row.scope !== state.policyScope) return false;
-      if (state.policyCompliance !== "all" && normalizeComplianceState(row.complianceState) !== state.policyCompliance) return false;
-      if (query) {
-        const text = `${row.name} ${row.scope} ${row.complianceState}`.toLowerCase();
-        if (!text.includes(query)) return false;
-      }
-      if (state.policyFocusType === "policy" && state.policyFocusValue) {
-        return row.name === state.policyFocusValue;
-      }
-      return true;
-    });
   }
 
   function resolveSortValue(row, sortBy) {
@@ -5873,308 +5309,6 @@ button.legend-chip.active {
     });
   }
 
-  function getPolicyRowsForNode(nodeId, rows) {
-    if (!nodeId) return [];
-    const rowIds = policyNodeRowsMap.get(nodeId);
-    if (!rowIds) return [];
-    return rows.filter((row) => rowIds.has(row.id));
-  }
-
-  function renderPolicies() {
-    const svg = document.getElementById("policySvg");
-    const detailsList = document.getElementById("policyDetailsList");
-    const scopeSelect = document.getElementById("policyScopeSelect");
-    const complianceSelect = document.getElementById("policyComplianceSelect");
-    const nodeLimitSelect = document.getElementById("policyNodeLimitSelect");
-    if (!svg || !detailsList || !scopeSelect || !complianceSelect || !nodeLimitSelect) return;
-
-    const allScopes = uniqueSorted(policyAssignments.map((row) => row.scope).filter(Boolean));
-    const requestedScope = allScopes.includes(state.policyScope) ? state.policyScope : "all";
-    if (requestedScope !== state.policyScope) state.policyScope = requestedScope;
-    const scopeOptions = [`<option value="all">All Scopes</option>`]
-      .concat(allScopes.map((scope) => `<option value="${escapeHtml(scope)}">${escapeHtml(scope)}</option>`))
-      .join("");
-    scopeSelect.innerHTML = scopeOptions;
-    scopeSelect.value = state.policyScope;
-
-    const validComplianceStates = new Set(["all", "non-compliant", "partially-compliant", "compliant", "not-applicable", "exempt", "unknown"]);
-    if (!validComplianceStates.has(state.policyCompliance)) state.policyCompliance = "all";
-    complianceSelect.value = state.policyCompliance;
-    nodeLimitSelect.value = String(state.policyNodeLimit);
-
-    if (!policyAssignments.length) {
-      latestRenderedPolicyRows = [];
-      policyNodeRowsMap = new Map();
-      svg.innerHTML = "";
-      svg.setAttribute("viewBox", "0 0 1100 560");
-      svg.style.height = "560px";
-      detailsList.innerHTML = `<div class="simple-item">No policy assignments loaded yet. Import a policy CSV (for example ComplianceListExport) to build this map.</div>`;
-      return;
-    }
-
-    const baseRows = getFilteredPolicyAssignments();
-
-    if (!baseRows.length) {
-      latestRenderedPolicyRows = [];
-      policyNodeRowsMap = new Map();
-      svg.innerHTML = "";
-      svg.setAttribute("viewBox", "0 0 1100 560");
-      svg.style.height = "560px";
-      detailsList.innerHTML = `<div class="simple-item">No policy assignments match current filters.</div>`;
-      return;
-    }
-
-    const policyAggMap = new Map();
-    baseRows.forEach((row) => {
-      if (!policyAggMap.has(row.name)) {
-        policyAggMap.set(row.name, {
-          name: row.name,
-          count: 0,
-          nonCompliantResources: 0,
-          nonCompliantPolicies: 0,
-          maxComplianceRank: 0
-        });
-      }
-      const bucket = policyAggMap.get(row.name);
-      bucket.count += 1;
-      bucket.nonCompliantResources += Number(row.nonCompliantResources) || 0;
-      bucket.nonCompliantPolicies += Number(row.nonCompliantPolicies) || 0;
-      bucket.maxComplianceRank = Math.max(bucket.maxComplianceRank, getComplianceRank(row.complianceState));
-    });
-
-    const sortedPolicyNames = Array.from(policyAggMap.values())
-      .sort((a, b) => (
-        b.maxComplianceRank - a.maxComplianceRank
-        || b.nonCompliantPolicies - a.nonCompliantPolicies
-        || b.nonCompliantResources - a.nonCompliantResources
-        || b.count - a.count
-        || a.name.localeCompare(b.name)
-      ))
-      .slice(0, Math.max(10, state.policyNodeLimit))
-      .map((entry) => entry.name);
-    const visiblePolicySet = new Set(sortedPolicyNames);
-    const rows = baseRows.filter((row) => visiblePolicySet.has(row.name));
-    latestRenderedPolicyRows = rows;
-
-    const scopeMap = new Map();
-    const policyMap = new Map();
-    const linkMap = new Map();
-
-    rows.forEach((row) => {
-      const scope = row.scope || "Unknown Scope";
-      const policy = row.name || "Unnamed Policy";
-      const complianceState = normalizeComplianceState(row.complianceState);
-      const complianceRank = getComplianceRank(complianceState);
-
-      if (!scopeMap.has(scope)) {
-        scopeMap.set(scope, {
-          id: `scope:${scope}`,
-          label: scope,
-          count: 0,
-          nonCompliantResources: 0,
-          nonCompliantPolicies: 0,
-          complianceRank: 0,
-          rowIds: new Set()
-        });
-      }
-      const scopeNode = scopeMap.get(scope);
-      scopeNode.count += 1;
-      scopeNode.nonCompliantResources += Number(row.nonCompliantResources) || 0;
-      scopeNode.nonCompliantPolicies += Number(row.nonCompliantPolicies) || 0;
-      scopeNode.complianceRank = Math.max(scopeNode.complianceRank, complianceRank);
-      scopeNode.rowIds.add(row.id);
-
-      if (!policyMap.has(policy)) {
-        policyMap.set(policy, {
-          id: `policy:${policy}`,
-          label: policy,
-          count: 0,
-          nonCompliantResources: 0,
-          nonCompliantPolicies: 0,
-          complianceRank: 0,
-          rowIds: new Set()
-        });
-      }
-      const policyNode = policyMap.get(policy);
-      policyNode.count += 1;
-      policyNode.nonCompliantResources += Number(row.nonCompliantResources) || 0;
-      policyNode.nonCompliantPolicies += Number(row.nonCompliantPolicies) || 0;
-      policyNode.complianceRank = Math.max(policyNode.complianceRank, complianceRank);
-      policyNode.rowIds.add(row.id);
-
-      const linkKey = `${scope}|||${policy}`;
-      if (!linkMap.has(linkKey)) {
-        linkMap.set(linkKey, {
-          source: scope,
-          target: policy,
-          value: 0,
-          complianceRank: 0,
-          state: "unknown"
-        });
-      }
-      const link = linkMap.get(linkKey);
-      link.value += Math.max(1, Number(row.nonCompliantPolicies) || 0);
-      if (complianceRank >= link.complianceRank) {
-        link.complianceRank = complianceRank;
-        link.state = complianceState;
-      }
-    });
-
-    const scopeNodes = Array.from(scopeMap.values()).sort((a, b) => (
-      b.complianceRank - a.complianceRank
-      || b.nonCompliantPolicies - a.nonCompliantPolicies
-      || b.count - a.count
-      || a.label.localeCompare(b.label)
-    ));
-    const policyNodes = Array.from(policyMap.values()).sort((a, b) => (
-      b.complianceRank - a.complianceRank
-      || b.nonCompliantPolicies - a.nonCompliantPolicies
-      || b.count - a.count
-      || a.label.localeCompare(b.label)
-    ));
-
-    const width = 1100;
-    const marginTop = 24;
-    const marginBottom = 24;
-    const rowHeight = 52;
-    const rowGap = 12;
-    const leftX = 24;
-    const rightX = 600;
-    const nodeWidth = 476;
-    const maxRows = Math.max(scopeNodes.length, policyNodes.length, 1);
-    const computedHeight = Math.max(560, marginTop + marginBottom + (maxRows * rowHeight) + (Math.max(0, maxRows - 1) * rowGap));
-    svg.setAttribute("viewBox", `0 0 ${width} ${computedHeight}`);
-    svg.style.height = `${computedHeight}px`;
-
-    scopeNodes.forEach((node, index) => {
-      node.x = leftX;
-      node.y = marginTop + (index * (rowHeight + rowGap));
-      node.w = nodeWidth;
-      node.h = rowHeight;
-      node.state = getComplianceLabel(complianceStateFromRank(node.complianceRank));
-    });
-    policyNodes.forEach((node, index) => {
-      node.x = rightX;
-      node.y = marginTop + (index * (rowHeight + rowGap));
-      node.w = nodeWidth;
-      node.h = rowHeight;
-      node.state = getComplianceLabel(complianceStateFromRank(node.complianceRank));
-    });
-
-    const scopeNodeMap = new Map(scopeNodes.map((node) => [node.label, node]));
-    const policyNodeMap = new Map(policyNodes.map((node) => [node.label, node]));
-
-    const escape = (text) => String(text || "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
-
-    const maxLinkValue = Math.max(1, ...Array.from(linkMap.values()).map((link) => link.value));
-    const nextRowMap = new Map();
-    scopeNodes.forEach((node) => nextRowMap.set(node.id, new Set(node.rowIds)));
-    policyNodes.forEach((node) => nextRowMap.set(node.id, new Set(node.rowIds)));
-    policyNodeRowsMap = nextRowMap;
-
-    let linksSvg = "";
-    Array.from(linkMap.values())
-      .sort((a, b) => b.value - a.value)
-      .forEach((link) => {
-        const source = scopeNodeMap.get(link.source);
-        const target = policyNodeMap.get(link.target);
-        if (!source || !target) return;
-        const sx = source.x + source.w;
-        const sy = source.y + (source.h / 2);
-        const tx = target.x;
-        const ty = target.y + (target.h / 2);
-        const curve = Math.max(80, (tx - sx) * 0.38);
-        const thickness = Math.max(1.1, (Math.sqrt(link.value) / Math.sqrt(maxLinkValue)) * 4.8);
-        const color = getComplianceColor(link.state);
-        const path = `M ${sx} ${sy} C ${sx + curve} ${sy}, ${tx - curve} ${ty}, ${tx} ${ty}`;
-        linksSvg += `<path class="policy-link" d="${path}" style="stroke:${rgbaFromHex(color, 0.52)};" stroke-width="${thickness}"></path>`;
-      });
-
-    const nodeToSvg = (node, type) => {
-      const rawState = complianceStateFromRank(node.complianceRank);
-      const stateLabel = getComplianceLabel(rawState).toUpperCase();
-      const stateColor = getComplianceColor(rawState);
-      const safeId = escape(node.id);
-      const safeLabel = escape(node.label);
-      const safeType = escape(type);
-      const textMax = type === "scope" ? 44 : 50;
-      const title = escape(truncateLabel(node.label, textMax));
-      const subLabel = `${node.count} assignments | ${node.nonCompliantResources} non-compliant resources`;
-      const pillWidth = Math.max(106, (stateLabel.length * 7) + 18);
-      const pillX = node.x + node.w - pillWidth - 8;
-      const pillHeight = 22;
-      const pillY = node.y + Math.round((node.h - pillHeight) / 2);
-      const titleY = node.y + 18;
-      const subtitleY = node.y + 36;
-      const stateY = pillY + 14;
-      return `
-        <g class="policy-node" data-policy-node-id="${safeId}" data-policy-node-type="${safeType}" data-policy-node-value="${safeLabel}">
-          <rect x="${node.x}" y="${node.y}" width="${node.w}" height="${node.h}" rx="8" ry="8" fill="${rgbaFromHex(stateColor, 0.16)}" stroke="${rgbaFromHex(stateColor, 0.92)}"></rect>
-          <text class="policy-node-title" x="${node.x + 12}" y="${titleY}">${title}</text>
-          <text class="policy-node-subtitle" x="${node.x + 12}" y="${subtitleY}">${escape(subLabel)}</text>
-          <rect x="${pillX}" y="${pillY}" width="${pillWidth}" height="${pillHeight}" rx="11" ry="11" fill="${rgbaFromHex(stateColor, 0.96)}" stroke="${rgbaFromHex(stateColor, 1)}"></rect>
-          <text class="policy-node-state" x="${pillX + (pillWidth / 2)}" y="${stateY}" text-anchor="middle">${stateLabel}</text>
-        </g>
-      `;
-    };
-
-    let nodesSvg = "";
-    scopeNodes.forEach((node) => {
-      nodesSvg += nodeToSvg(node, "scope");
-    });
-    policyNodes.forEach((node) => {
-      nodesSvg += nodeToSvg(node, "policy");
-    });
-
-    svg.innerHTML = `
-      <text x="26" y="16" fill="var(--text-muted)" font-family="'JetBrains Mono', monospace" font-size="11">Scopes</text>
-      <text x="602" y="16" fill="var(--text-muted)" font-family="'JetBrains Mono', monospace" font-size="11">Policy assignments</text>
-      ${linksSvg}
-      ${nodesSvg}
-    `;
-
-    const selectedRows = state.policyFocusType === "policy" && state.policyFocusValue
-      ? rows.filter((row) => row.name === state.policyFocusValue)
-      : rows;
-    const summaryRows = selectedRows.slice(0, 16);
-    const hiddenCount = Math.max(0, selectedRows.length - summaryRows.length);
-    const nonCompliantCount = selectedRows.filter((row) => normalizeComplianceState(row.complianceState) === "non-compliant").length;
-    const compliantCount = selectedRows.filter((row) => normalizeComplianceState(row.complianceState) === "compliant").length;
-    const partialCount = selectedRows.filter((row) => normalizeComplianceState(row.complianceState) === "partially-compliant").length;
-
-    const focusTitle = state.policyFocusType === "policy" && state.policyFocusValue
-      ? `Focused policy: ${escapeHtml(state.policyFocusValue)}`
-      : "Policy assignment summary";
-    detailsList.innerHTML = `
-      <div class="policy-summary-head">
-        <strong>${focusTitle}</strong><br>
-        Showing ${selectedRows.length} assignments (${rows.length} in current filtered map).
-        Right-click any node to open full detail table.
-      </div>
-      <div class="policy-kpi-grid">
-        <div class="policy-kpi"><div class="k">Non-compliant</div><div class="v">${nonCompliantCount}</div></div>
-        <div class="policy-kpi"><div class="k">Partially compliant</div><div class="v">${partialCount}</div></div>
-        <div class="policy-kpi"><div class="k">Compliant</div><div class="v">${compliantCount}</div></div>
-        <div class="policy-kpi"><div class="k">Visible policies</div><div class="v">${policyNodes.length}</div></div>
-      </div>
-      ${summaryRows.map((row) => `
-        <div class="simple-item">
-          <span class="policy-row-title">${escapeHtml(row.name)}</span>
-          <span class="policy-row-scope">${escapeHtml(row.scope)}</span>
-          <span class="policy-row-meta">
-            <span class="${getCompliancePillClass(row.complianceState)}">${escapeHtml(getComplianceLabel(row.complianceState))}</span>
-            <span class="policy-row-compliance">${escapeHtml(row.resourceCompliance || "n/a")}</span>
-          </span>
-        </div>
-      `).join("")}
-      ${hiddenCount > 0 ? `<div class="simple-item">+${hiddenCount} more assignments hidden in side panel. Right-click node for full table.</div>` : ""}
-    `;
-  }
-
   function renderKPIs(rows, severityScopeRows = rows) {
     const total = rows.length;
     const critical = severityScopeRows.filter((r) => r.severity === "critical").length;
@@ -6659,96 +5793,70 @@ button.legend-chip.active {
         dataModeLabel.textContent = `CSV IMPORT (reading ${files.length} file${files.length === 1 ? "" : "s"}...)`;
 
         const importedFindingsCollections = [];
-        const importedPolicyCollections = [];
-        let policyFileCount = 0;
         for (let i = 0; i < files.length; i += 1) {
           const file = files[i];
           dataModeLabel.textContent = `CSV IMPORT (processing ${i + 1}/${files.length})`;
           const csvText = await file.text();
           const rows = await parseCsv(String(csvText || ""));
-          if (isPolicyAssignmentCsvRows(rows)) {
-            const policyRows = await mapCsvRowsToPolicyAssignments(rows);
-            importedPolicyCollections.push(policyRows);
-            policyFileCount += 1;
-          } else {
-            const findingRows = await mapCsvRowsToFindings(rows);
-            importedFindingsCollections.push(findingRows);
-          }
+          const findingRows = await mapCsvRowsToFindings(rows);
+          importedFindingsCollections.push(findingRows);
           await yieldToBrowser();
         }
 
         const importedFindings = dedupeImportedFindings(importedFindingsCollections.flat());
-        const importedPolicies = dedupePolicyAssignments(importedPolicyCollections.flat());
 
-        if (!importedFindings.length && !importedPolicies.length) {
-          alert("CSV import failed: no compatible findings or policy-assignment rows were found.");
+        if (!importedFindings.length) {
+          alert("CSV import failed: no compatible findings rows were found.");
           input.value = "";
           return;
         }
 
-        if (importedFindings.length) {
-          findings = mergeTrackedStateIntoFindings(importedFindings);
-          markMissingTrackerEntries(findings);
-          dataMode = "csv";
-          state.severity = "all";
-          state.category = "all";
-          state.control = "all";
-          state.tactic = "all";
-          state.resourceType = "all";
-          state.subscription = "all";
-          state.search = "";
-          state.kpiFocus = "all";
-          state.logicFocus = "none";
-          state.boardView = "all";
-          state.boardMode = "summary";
-          state.boardGroupBy = "recommendationName";
-          state.boardPerLane = 50;
-          state.boardSearch = "";
-          state.boardFocusField = "";
-          state.boardFocusValue = "";
-          state.topologySubscription = "all";
-          state.topologyResourceGroup = "all";
-          state.topologyResourceLimit = 60;
-          state.topologyZoom = 1;
-          state.sankeyZoom = 1;
-          state.sankeyObjectiveFilter = "all";
-          state.sankeyLaneVisibility = createDefaultSankeyLaneVisibility();
-          state.tableVisibleLimit = TABLE_INITIAL_RENDER_LIMIT;
-          topologyNodeOffsets = {};
-          state.sortBy = "id";
-          state.sortDir = "asc";
-          state.columnFilters = createEmptyColumnFilters();
-          lastTableFilterSignature = "";
+        findings = mergeTrackedStateIntoFindings(importedFindings);
+        markMissingTrackerEntries(findings);
+        dataMode = "csv";
+        state.severity = "all";
+        state.category = "all";
+        state.control = "all";
+        state.tactic = "all";
+        state.resourceType = "all";
+        state.subscription = "all";
+        state.search = "";
+        state.kpiFocus = "all";
+        state.logicFocus = "none";
+        state.boardView = "all";
+        state.boardMode = "summary";
+        state.boardGroupBy = "recommendationName";
+        state.boardPerLane = 50;
+        state.boardSearch = "";
+        state.boardFocusField = "";
+        state.boardFocusValue = "";
+        state.topologySubscription = "all";
+        state.topologyResourceGroup = "all";
+        state.topologyResourceLimit = 60;
+        state.topologyZoom = 1;
+        state.sankeyZoom = 1;
+        state.sankeyObjectiveFilter = "all";
+        state.sankeyLaneVisibility = createDefaultSankeyLaneVisibility();
+        state.tableVisibleLimit = TABLE_INITIAL_RENDER_LIMIT;
+        topologyNodeOffsets = {};
+        state.sortBy = "id";
+        state.sortDir = "asc";
+        state.columnFilters = createEmptyColumnFilters();
+        lastTableFilterSignature = "";
 
-          document.getElementById("searchFilter").value = "";
-          syncColumnFilterInputs();
-          setSeverityFilter("all");
-          document.querySelectorAll(".exec-card[data-kpi-focus]").forEach((card) => {
-            card.classList.toggle("active", card.dataset.kpiFocus === "all");
-          });
-          document.querySelectorAll(".kpi-cell[data-logic-filter]").forEach((cell) => {
-            cell.classList.remove("active");
-          });
-        }
-
-        if (importedPolicies.length) {
-          policyAssignments = importedPolicies;
-          resetPolicyFilters();
-          const policySearchInput = document.getElementById("policySearchInput");
-          if (policySearchInput) policySearchInput.value = "";
-        } else if (importedFindings.length) {
-          policyAssignments = derivePolicyAssignmentsFromFindings(findings);
-          resetPolicyFilters();
-        }
+        document.getElementById("searchFilter").value = "";
+        syncColumnFilterInputs();
+        setSeverityFilter("all");
+        document.querySelectorAll(".exec-card[data-kpi-focus]").forEach((card) => {
+          card.classList.toggle("active", card.dataset.kpiFocus === "all");
+        });
+        document.querySelectorAll(".kpi-cell[data-logic-filter]").forEach((cell) => {
+          cell.classList.remove("active");
+        });
 
         const summaryParts = [];
-        if (importedFindings.length) summaryParts.push(`${importedFindings.length} findings`);
-        if (importedPolicies.length) summaryParts.push(`${importedPolicies.length} policy assignments`);
-        if (policyFileCount > 0 && !importedPolicies.length) summaryParts.push("0 policy assignments");
+        summaryParts.push(`${importedFindings.length} findings`);
         dataModeLabel.textContent = `CSV IMPORT (${summaryParts.join(" | ")} from ${files.length} file${files.length === 1 ? "" : "s"})`;
-        if (!importedFindings.length && importedPolicies.length) {
-          applyWorkspaceView("policies");
-        }
 
         refreshFilterOptions();
         renderCatalogs();
@@ -7557,25 +6665,6 @@ button.legend-chip.active {
     });
   }
 
-  function updatePolicyControlsState() {
-    const scopeSelect = document.getElementById("policyScopeSelect");
-    const complianceSelect = document.getElementById("policyComplianceSelect");
-    const nodeLimitSelect = document.getElementById("policyNodeLimitSelect");
-    const searchInput = document.getElementById("policySearchInput");
-    if (scopeSelect && !Array.from(scopeSelect.options).some((opt) => opt.value === state.policyScope)) {
-      state.policyScope = "all";
-      scopeSelect.value = "all";
-    } else if (scopeSelect) {
-      scopeSelect.value = state.policyScope;
-    }
-    if (complianceSelect) complianceSelect.value = state.policyCompliance;
-    if (nodeLimitSelect) nodeLimitSelect.value = String(state.policyNodeLimit);
-    if (searchInput) searchInput.value = state.policySearch;
-    document.querySelectorAll("#policyComplianceLegend [data-policy-compliance]").forEach((btn) => {
-      btn.classList.toggle("active", btn.dataset.policyCompliance === state.policyCompliance);
-    });
-  }
-
   function updateReportLegendState() {
     document.querySelectorAll("#reportSeverityLegend [data-report-severity]").forEach((btn) => {
       btn.classList.toggle("active", btn.dataset.reportSeverity === state.severity);
@@ -8238,149 +7327,6 @@ button.legend-chip.active {
     resourceTypeExplorerBound = true;
   }
 
-  function closePolicyDetailsDialog() {
-    const dialog = document.getElementById("policyDetailsDialog");
-    policyDetailsRows = [];
-    policyDetailsScopeTitle = "";
-    if (dialog && dialog.open) dialog.close();
-  }
-
-  function exportPolicyDetailsCsv() {
-    if (!policyDetailsRows.length) return;
-    const headers = [
-      "id",
-      "name",
-      "scope",
-      "complianceState",
-      "resourceCompliance",
-      "nonCompliantResources",
-      "nonCompliantPolicies",
-      "numberOfPolicies"
-    ];
-    const lines = [headers.join(",")];
-    policyDetailsRows.forEach((row) => {
-      const values = [
-        row.id,
-        row.name,
-        row.scope,
-        getComplianceLabel(row.complianceState),
-        row.resourceCompliance,
-        row.nonCompliantResources,
-        row.nonCompliantPolicies,
-        row.numberOfPolicies
-      ].map(csvEscape);
-      lines.push(values.join(","));
-    });
-    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
-    const url = window.URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = `mdc-policy-assignments-${new Date().toISOString().slice(0, 10)}.csv`;
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    window.URL.revokeObjectURL(url);
-  }
-
-  function decodeScopeSegment(value) {
-    const text = String(value || "");
-    if (!text) return "";
-    try {
-      return decodeURIComponent(text);
-    } catch (error) {
-      return text;
-    }
-  }
-
-  function buildPolicyScopeMatcher(scopeValue) {
-    const raw = toLower(scopeValue || "");
-    const subMatch = raw.match(/\/subscriptions\/([^/]+)/i);
-    const rgMatch = raw.match(/\/resourcegroups\/([^/]+)/i);
-    const subscriptionToken = decodeScopeSegment(subMatch ? subMatch[1] : "");
-    const resourceGroupToken = normalizeResourceGroupName(decodeScopeSegment(rgMatch ? rgMatch[1] : ""));
-    return {
-      raw,
-      subscriptionToken: toLower(subscriptionToken),
-      resourceGroupToken: toLower(resourceGroupToken),
-      isManagementGroupScope: raw.includes("/managementgroups/")
-    };
-  }
-
-  function policyScopeMatchesFinding(scopeMatcher, finding) {
-    const findingSubscription = toLower(finding.subscription || "");
-    const findingResourceGroup = toLower(normalizeResourceGroupName(finding.resourceGroup || ""));
-
-    if (scopeMatcher.resourceGroupToken && scopeMatcher.resourceGroupToken !== findingResourceGroup) return false;
-
-    if (scopeMatcher.subscriptionToken) {
-      if (findingSubscription.includes(scopeMatcher.subscriptionToken)) return true;
-      if (scopeMatcher.subscriptionToken.includes(findingSubscription) && findingSubscription) return true;
-      if (scopeMatcher.raw.includes(findingSubscription) && findingSubscription) return true;
-      return false;
-    }
-
-    if (scopeMatcher.isManagementGroupScope) return false;
-    return scopeMatcher.raw.includes(findingSubscription) || scopeMatcher.raw.includes(findingResourceGroup);
-  }
-
-  function getFindingsForPolicyRows(rows) {
-    if (!rows.length || !findings.length) return [];
-    const matchers = Array.from(new Set(rows.map((row) => String(row.scope || "").trim()).filter(Boolean)))
-      .map(buildPolicyScopeMatcher);
-    if (!matchers.length) return [];
-
-    const matched = [];
-    findings.forEach((finding) => {
-      const isMatch = matchers.some((matcher) => policyScopeMatchesFinding(matcher, finding));
-      if (isMatch) matched.push(finding);
-    });
-    return matched;
-  }
-
-  function openPolicyDetailsDialog(title, rows) {
-    const dialog = document.getElementById("policyDetailsDialog");
-    const titleEl = document.getElementById("policyDetailsTitle");
-    const subtitleEl = document.getElementById("policyDetailsSubtitle");
-    const tbody = document.getElementById("policyDetailsBody");
-    if (!dialog || !titleEl || !subtitleEl || !tbody) return;
-
-    policyDetailsScopeTitle = title || "Policy Assignments";
-    titleEl.textContent = policyDetailsScopeTitle;
-    subtitleEl.textContent = `${rows.length} assignments in current scope`;
-    policyDetailsRows = [...rows].sort((a, b) => (
-      getComplianceRank(b.complianceState) - getComplianceRank(a.complianceState)
-      || (b.nonCompliantPolicies - a.nonCompliantPolicies)
-      || a.scope.localeCompare(b.scope)
-      || a.name.localeCompare(b.name)
-    ));
-
-    const visible = policyDetailsRows.slice(0, 500);
-    tbody.innerHTML = visible.map((row) => `
-      <tr>
-        <td class="col-id">${escapeHtml(row.id)}</td>
-        <td class="col-recommendation">${escapeHtml(row.name)}</td>
-        <td class="col-subscription">${escapeHtml(row.scope)}</td>
-        <td><span class="${getCompliancePillClass(row.complianceState)}">${escapeHtml(getComplianceLabel(row.complianceState))}</span></td>
-        <td>${escapeHtml(row.resourceCompliance || "n/a")}</td>
-        <td>${Number(row.nonCompliantResources) || 0}</td>
-        <td>${Number(row.nonCompliantPolicies) || 0}</td>
-        <td>${Number(row.numberOfPolicies) || 0}</td>
-      </tr>
-    `).join("");
-
-    if (policyDetailsRows.length > visible.length) {
-      const overflowRow = document.createElement("tr");
-      const overflowCell = document.createElement("td");
-      overflowCell.colSpan = 8;
-      overflowCell.textContent = `Showing first ${visible.length} assignments. Refine filters or node scope for smaller result sets.`;
-      overflowCell.style.color = "var(--text-muted)";
-      overflowRow.appendChild(overflowCell);
-      tbody.appendChild(overflowRow);
-    }
-
-    dialog.showModal();
-  }
-
   function closeSankeyDetailsDialog() {
     const dialog = document.getElementById("sankeyDetailsDialog");
     sankeyDetailsRows = [];
@@ -8596,165 +7542,6 @@ button.legend-chip.active {
     state.topologyZoom = 1;
     topologyNodeOffsets = {};
     render();
-  }
-
-  function resetPolicyView() {
-    resetPolicyFilters();
-    const searchInput = document.getElementById("policySearchInput");
-    if (searchInput) searchInput.value = "";
-    render();
-  }
-
-  function bindPolicyControls() {
-    if (policyControlsBound) return;
-
-    const importBtn = document.getElementById("importPolicyCsvBtn");
-    const fileInput = document.getElementById("policyCsvFileInput");
-    const scopeSelect = document.getElementById("policyScopeSelect");
-    const complianceSelect = document.getElementById("policyComplianceSelect");
-    const nodeLimitSelect = document.getElementById("policyNodeLimitSelect");
-    const searchInput = document.getElementById("policySearchInput");
-    const resetBtn = document.getElementById("resetPolicyBtn");
-    const legend = document.getElementById("policyComplianceLegend");
-    const svg = document.getElementById("policySvg");
-    const detailsDialog = document.getElementById("policyDetailsDialog");
-    const detailsCloseBtn = document.getElementById("policyDetailsCloseBtn");
-    const detailsDownloadBtn = document.getElementById("policyDetailsDownloadBtn");
-    const detailsPlanBtn = document.getElementById("policyPlanFindingsBtn");
-
-    if (importBtn && fileInput) importBtn.addEventListener("click", () => {
-      fileInput.click();
-    });
-
-    if (fileInput) fileInput.addEventListener("change", async () => {
-      const files = Array.from(fileInput.files || []);
-      if (!files.length) return;
-
-      try {
-        if (importBtn) {
-          importBtn.disabled = true;
-          importBtn.textContent = "Importing...";
-        }
-
-        const imported = [];
-        for (let i = 0; i < files.length; i += 1) {
-          const csvText = await files[i].text();
-          const rows = await parseCsv(String(csvText || ""));
-          if (!isPolicyAssignmentCsvRows(rows)) continue;
-          const mapped = await mapCsvRowsToPolicyAssignments(rows);
-          imported.push(...mapped);
-          await yieldToBrowser();
-        }
-
-        if (!imported.length) {
-          alert("Policy CSV import failed: no compatible policy assignment rows were found.");
-          return;
-        }
-
-        policyAssignments = dedupePolicyAssignments(imported);
-        resetPolicyFilters();
-        if (searchInput) searchInput.value = "";
-        applyWorkspaceView("policies");
-        render();
-      } catch (error) {
-        alert("Policy CSV import failed: unable to read one or more selected files.");
-      } finally {
-        if (importBtn) {
-          importBtn.disabled = false;
-          importBtn.textContent = "Import Policy CSV";
-        }
-        fileInput.value = "";
-      }
-    });
-
-    if (scopeSelect) scopeSelect.addEventListener("change", () => {
-      state.policyScope = scopeSelect.value || "all";
-      state.policyFocusType = "";
-      state.policyFocusValue = "";
-      render();
-    });
-
-    if (complianceSelect) complianceSelect.addEventListener("change", () => {
-      state.policyCompliance = complianceSelect.value || "all";
-      render();
-    });
-
-    if (nodeLimitSelect) nodeLimitSelect.addEventListener("change", () => {
-      const parsed = Number.parseInt(nodeLimitSelect.value, 10);
-      state.policyNodeLimit = Number.isFinite(parsed) ? Math.max(10, parsed) : 80;
-      render();
-    });
-
-    if (searchInput) {
-      const debouncedPolicySearch = debounce(() => {
-        state.policySearch = searchInput.value || "";
-        render();
-      }, 180);
-      searchInput.addEventListener("input", debouncedPolicySearch);
-    }
-
-    if (resetBtn) resetBtn.addEventListener("click", () => {
-      resetPolicyView();
-    });
-
-    if (legend) legend.addEventListener("click", (event) => {
-      const chip = event.target.closest("[data-policy-compliance]");
-      if (!chip) return;
-      const complianceState = chip.dataset.policyCompliance || "all";
-      state.policyCompliance = state.policyCompliance === complianceState ? "all" : complianceState;
-      render();
-    });
-
-    if (svg) svg.addEventListener("click", (event) => {
-      const node = event.target.closest("[data-policy-node-id]");
-      if (!node) return;
-      const nodeType = node.dataset.policyNodeType;
-      const value = node.dataset.policyNodeValue || "";
-      if (nodeType === "scope") {
-        state.policyScope = state.policyScope === value ? "all" : value;
-        state.policyFocusType = "";
-        state.policyFocusValue = "";
-      } else if (nodeType === "policy") {
-        const isSame = state.policyFocusType === "policy" && state.policyFocusValue === value;
-        state.policyFocusType = isSame ? "" : "policy";
-        state.policyFocusValue = isSame ? "" : value;
-      }
-      render();
-    });
-
-    if (svg) svg.addEventListener("contextmenu", (event) => {
-      const node = event.target.closest("[data-policy-node-id]");
-      if (!node) return;
-      event.preventDefault();
-      const nodeId = node.dataset.policyNodeId || "";
-      const label = node.dataset.policyNodeValue || "Policy Node";
-      const matches = getPolicyRowsForNode(nodeId, latestRenderedPolicyRows);
-      if (!matches.length) return;
-      openPolicyDetailsDialog(`Policy Assignments | ${label}`, matches);
-    });
-
-    if (detailsCloseBtn) detailsCloseBtn.addEventListener("click", closePolicyDetailsDialog);
-    if (detailsDownloadBtn) detailsDownloadBtn.addEventListener("click", exportPolicyDetailsCsv);
-    if (detailsPlanBtn) detailsPlanBtn.addEventListener("click", () => {
-      const matches = getFindingsForPolicyRows(policyDetailsRows);
-      if (!matches.length) {
-        alert("No matching findings were identified for this policy scope in the current findings dataset.");
-        return;
-      }
-      const plannerLabel = policyDetailsScopeTitle || "Policy Scope";
-      closePolicyDetailsDialog();
-      openTopologyPlannerDialog(plannerLabel, matches);
-    });
-    if (detailsDialog) detailsDialog.addEventListener("click", (event) => {
-      const rect = detailsDialog.getBoundingClientRect();
-      const withinDialog = rect.top <= event.clientY
-        && event.clientY <= rect.top + rect.height
-        && rect.left <= event.clientX
-        && event.clientX <= rect.left + rect.width;
-      if (!withinDialog) closePolicyDetailsDialog();
-    });
-
-    policyControlsBound = true;
   }
 
   function bindSankeyControls() {
@@ -9306,8 +8093,6 @@ button.legend-chip.active {
       renderTable(filtered);
     } else if (currentView === "topology") {
       renderTopology(filtered);
-    } else if (currentView === "policies") {
-      renderPolicies();
     } else if (currentView === "sankey") {
       renderSankey(filtered);
     } else if (currentView === "catalog") {
@@ -9322,7 +8107,6 @@ button.legend-chip.active {
     updateLogicCardState();
     updateBoardControlsState();
     updateTopologyControlsState();
-    updatePolicyControlsState();
     updateSankeyControlsState();
     updateReportLegendState();
   }
@@ -9341,7 +8125,6 @@ button.legend-chip.active {
     findingKey: getFindingKey(finding)
   })));
   markMissingTrackerEntries(findings);
-  policyAssignments = derivePolicyAssignmentsFromFindings(findings);
   refreshFilterOptions();
   syncColumnFilterInputs();
   bindSeverityFilters();
@@ -9358,7 +8141,6 @@ button.legend-chip.active {
   bindHelpControls();
   bindBoardDnD();
   bindTopologyControls();
-  bindPolicyControls();
   bindSankeyControls();
   bindRecommendationExplorerControls();
   bindResourceTypeExplorerControls();
