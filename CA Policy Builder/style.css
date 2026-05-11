@@ -1,0 +1,55 @@
+:root {
+  --bg-primary: #ffffff;
+  --bg-card: #ffffff;
+  --bg-elevated: #f3eee8;
+  --border: #ded4c8;
+  --text-primary: #201c18;
+  --text-secondary: #5f5751;
+  --text-muted: #867d74;
+  --accent-ninja: #e8610a;
+  --teal: #008fd6;
+  --purple: #6f675f;
+  --mint: #00a96e;
+  --severity-critical: #e1063a;
+  --severity-high: #e75a00;
+  --severity-medium: #f2aa00;
+  --severity-low: #008fd6;
+  --radius: 10px;
+  --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+button,
+select,
+input,
+textarea {
+  font: inherit;
+}
+
+.app-loading {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  color: var(--text-muted);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+}
+
+button {
+  transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition), background var(--transition);
+}
+
+button:hover {
+  transform: translateY(-1px);
+}

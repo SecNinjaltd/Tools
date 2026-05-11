@@ -1,42 +1,74 @@
 const { useState, useEffect } = React;
 
 
-const COLORS = {
-  bg: "#090e1a",
-  surface: "#0d1526",
-  surfaceAlt: "#111d35",
-  border: "#1e3a5f",
-  accent: "#3b82f6",
-  accentBright: "#60a5fa",
-  success: "#10b981",
-  warning: "#f59e0b",
-  danger: "#ef4444",
-  text: "#e2e8f0",
-  textMuted: "#64748b",
-  textDim: "#94a3b8",
+const LIGHT_COLORS = {
+  bg: "#ffffff",
+  surface: "#ffffff",
+  surfaceAlt: "#f3eee8",
+  border: "#ded4c8",
+  accent: "#e8610a",
+  accentBright: "#c44e00",
+  success: "#00a96e",
+  warning: "#f2aa00",
+  danger: "#e1063a",
+  text: "#201c18",
+  textMuted: "#867d74",
+  textDim: "#5f5751",
 };
 
+const DARK_COLORS = {
+  bg: "#141414",
+  surface: "#1d1d1d",
+  surfaceAlt: "#232323",
+  border: "#302d2a",
+  accent: "#e8610a",
+  accentBright: "#ff8748",
+  success: "#3fd392",
+  warning: "#f0c030",
+  danger: "#ff5c66",
+  text: "#f5f2ee",
+  textMuted: "#a59a8d",
+  textDim: "#cfc6bc",
+};
+
+const COLORS = { ...LIGHT_COLORS };
+
+function getStoredTheme() {
+  try {
+    const prefs = JSON.parse(localStorage.getItem('xdr_ui_prefs') || '{}');
+    return prefs.theme === 'dark-mode' || prefs.theme === 'cyber-mode' ? 'dark-mode' : 'light';
+  } catch (_err) {
+    return 'light';
+  }
+}
+
+function applyBuilderTheme(theme) {
+  Object.assign(COLORS, theme === 'dark-mode' ? DARK_COLORS : LIGHT_COLORS);
+}
+
+applyBuilderTheme(getStoredTheme());
+
 const CONTROL_COLORS = {
-  phish_mfa: "#a855f7",
-  mfa: "#3b82f6",
-  legacy_auth: "#f97316",
-  compliant_device: "#10b981",
-  hybrid_join: "#059669",
-  app_protection: "#14b8a6",
-  approved_client: "#0d9488",
-  named_locations: "#eab308",
-  sign_in_risk: "#ef4444",
-  user_risk: "#ec4899",
-  session_controls: "#6366f1",
-  terms_of_use: "#8b5cf6",
-  block_unknown_platforms: "#dc2626",
-  require_password_change: "#f97316",
+  phish_mfa: "#6f675f",
+  mfa: "#008fd6",
+  legacy_auth: "#e75a00",
+  compliant_device: "#00a96e",
+  hybrid_join: "#00a96e",
+  app_protection: "#008fd6",
+  approved_client: "#00a96e",
+  named_locations: "#f2aa00",
+  sign_in_risk: "#e1063a",
+  user_risk: "#e1063a",
+  session_controls: "#6f675f",
+  terms_of_use: "#6f675f",
+  block_unknown_platforms: "#e1063a",
+  require_password_change: "#e75a00",
 };
 
 const ZERO_TRUST_PRINCIPLES = {
-  verify: { label: "Verify Explicitly", color: "#3b82f6", icon: "🔍" },
-  least: { label: "Least Privilege Access", color: "#8b5cf6", icon: "🔒" },
-  breach: { label: "Assume Breach", color: "#ef4444", icon: "🛡️" },
+  verify: { label: "Verify Explicitly", color: "#008fd6", icon: "🔍" },
+  least: { label: "Least Privilege Access", color: "#6f675f", icon: "🔒" },
+  breach: { label: "Assume Breach", color: "#e1063a", icon: "🛡️" },
 };
 
 // MITRE ATT&CK techniques
@@ -431,6 +463,18 @@ const Btn = ({ label, onClick, disabled, danger, secondary, small }) => (
     }}
   >
     {label}
+  </button>
+);
+
+const ThemeToggleButton = () => (
+  <button className="theme-toggle-btn" type="button" data-xdr-theme-toggle aria-label="Enable dark mode" title="Enable dark mode">
+    <svg className="icon-moon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M20 14.2A8 8 0 1 1 9.8 4a6.5 6.5 0 1 0 10.2 10.2Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+    <svg className="icon-sun" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M12 2v2.4M12 19.6V22M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M2 12h2.4M19.6 12H22M4.9 19.1l1.7-1.7M17.4 6.6l1.7-1.7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
   </button>
 );
 
@@ -977,12 +1021,25 @@ const ThreatCoverageMap = ({ controls, controlSettings, identity }) => {
 };
 
 function ConditionalAccessBuilder() {
+  const [theme, setTheme] = useState(getStoredTheme());
   const [step, setStep] = useState(0);
   const [identity, setIdentity] = useState(null);
   const [target, setTarget] = useState(null);
   const [selectedControls, setSelectedControls] = useState([]);
   const [controlSettings, setControlSettings] = useState({});
   const [showBestPractices, setShowBestPractices] = useState(false);
+
+  useEffect(() => {
+    applyBuilderTheme(theme);
+  }, [theme]);
+
+  useEffect(() => {
+    const onThemeChange = (event) => {
+      setTheme(event.detail?.theme === 'dark-mode' ? 'dark-mode' : 'light');
+    };
+    window.addEventListener('xdr-theme-change', onThemeChange);
+    return () => window.removeEventListener('xdr-theme-change', onThemeChange);
+  }, []);
 
   const handleReset = () => {
     setStep(0);
@@ -1042,7 +1099,7 @@ function ConditionalAccessBuilder() {
       minHeight: "100vh",
       background: COLORS.bg,
       color: COLORS.text,
-      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      fontFamily: "'Plus Jakarta Sans', sans-serif",
       padding: 24,
     }}>
       <div style={{ maxWidth: 1600, margin: "0 auto" }}>
@@ -1057,6 +1114,7 @@ function ConditionalAccessBuilder() {
             </div>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
+            <ThemeToggleButton />
             <Btn label="📚 BEST PRACTICES" onClick={() => setShowBestPractices(!showBestPractices)} secondary small />
             <Btn label="↺ RESET" onClick={handleReset} danger />
           </div>

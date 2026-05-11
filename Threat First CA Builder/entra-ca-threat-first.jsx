@@ -1,5 +1,4 @@
-const { useState, useEffect } = React;
-
+import { useState, useEffect } from "react";
 
 const COLORS = {
   bg: "#090e1a",
@@ -479,7 +478,7 @@ const RiskMeter = ({ score, size = 80 }) => {
   );
 };
 
-function ThreatFirstCABuilder() {
+export default function ThreatFirstCABuilder() {
   const [identity, setIdentity] = useState(null);
   const [target, setTarget] = useState(null);
   const [selectedThreats, setSelectedThreats] = useState([]);
@@ -1751,5 +1750,3 @@ function ThreatFirstCABuilder() {
     </div>
   );
 }
-const root = ReactDOM.createRoot(document.getElementById("root"));
-root.render(<ThreatFirstCABuilder />);

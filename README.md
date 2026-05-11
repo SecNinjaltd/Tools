@@ -1,2 +1,0 @@
-# Tools
-AI Generating Tooling

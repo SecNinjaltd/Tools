@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Zero Trust Interactive Diagram Builder</title>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@700&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg: #e8f2fb;
@@ -1058,6 +1058,7 @@
       .zone.network { top: 70%; left: 52%; width: 43%; }
     }
   </style>
+  <link rel="stylesheet" href="../css/xdr-tools-theme.css">
 </head>
 <body>
   <header class="topbar">
@@ -1065,7 +1066,18 @@
       <h1>Microsoft Zero Trust Interactive Diagram Builder</h1>
       <p>Click or drag controls to the diagram zones to move from basic to expert posture with MITRE and license context.</p>
     </div>
-    <div class="status-pill" id="statusPill">Validated with Microsoft Learn references · 2026-02-26</div>
+    <div class="topbar-actions">
+      <button class="theme-toggle-btn" type="button" data-xdr-theme-toggle aria-label="Enable dark mode" title="Enable dark mode">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M20 14.2A8 8 0 1 1 9.8 4a6.5 6.5 0 1 0 10.2 10.2Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.8"/>
+          <path d="M12 2v2.4M12 19.6V22M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M2 12h2.4M19.6 12H22M4.9 19.1l1.7-1.7M17.4 6.6l1.7-1.7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+      </button>
+      <div class="status-pill" id="statusPill">Validated with Microsoft Learn references · 2026-02-26</div>
+    </div>
   </header>
 
   <main class="shell">
@@ -2315,5 +2327,6 @@
 
     init();
   </script>
+  <script src="../js/xdr-theme.js"></script>
 </body>
 </html>

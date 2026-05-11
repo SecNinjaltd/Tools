@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Security Ninja Tools Hub</title>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@700&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg: #e8f2fb;
@@ -59,7 +59,7 @@
     .status-pill {
       border: 1px solid rgba(176, 203, 225, 0.56);
       background: rgba(255, 255, 255, 0.1);
-      color: #d3e6f7;
+      color: #0f2a44;
       border-radius: 999px;
       padding: 7px 12px;
       font-size: 11px;
@@ -220,6 +220,7 @@
       color: var(--cta);
     }
   </style>
+  <link rel="stylesheet" href="css/xdr-tools-theme.css">
 </head>
 <body>
   <header class="topbar">
@@ -227,7 +228,18 @@
       <h1>Security Ninja Tool Suite</h1>
       <p>Navigation hub for Conditional Access, Defender for Cloud, and Zero Trust design tools</p>
     </div>
-    <div class="status-pill">TOOLS INDEX</div>
+    <div class="topbar-actions">
+      <button class="theme-toggle-btn" type="button" data-xdr-theme-toggle aria-label="Enable dark mode" title="Enable dark mode">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M20 14.2A8 8 0 1 1 9.8 4a6.5 6.5 0 1 0 10.2 10.2Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.8"/>
+          <path d="M12 2v2.4M12 19.6V22M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M2 12h2.4M19.6 12H22M4.9 19.1l1.7-1.7M17.4 6.6l1.7-1.7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+      </button>
+      <div class="status-pill">TOOLS INDEX</div>
+    </div>
   </header>
 
   <main class="shell">
@@ -248,7 +260,7 @@
         </div>
       </a>
 
-      <a class="tool-card tool-card--ca" href="./CA-Builder/index.html">
+      <a class="tool-card tool-card--ca" href="./CA%20Policy%20Builder/index.html">
         <div class="tool-banner">
           <span class="tool-tag">Conditional Access</span>
           <h3 class="tool-title">CA Policy Builder</h3>
@@ -259,7 +271,7 @@
         </div>
       </a>
 
-      <a class="tool-card tool-card--threat" href="./Threat-First-CABuilder/index.html">
+      <a class="tool-card tool-card--threat" href="./Threat%20First%20CA%20Builder/index.html">
         <div class="tool-banner">
           <span class="tool-tag">Threat-Led Design</span>
           <h3 class="tool-title">Threat-First CA Builder</h3>
@@ -283,5 +295,6 @@
 
     </section>
   </main>
+  <script src="js/xdr-theme.js"></script>
 </body>
 </html>

@@ -1,0 +1,418 @@
+:root {
+  --sidebar-width: 240px;
+  --bg: #ffffff;
+  --bg-primary: #ffffff;
+  --bg-secondary: #f7f3ee;
+  --bg-card: #ffffff;
+  --bg-card-hover: #faf7f3;
+  --bg-elevated: #f3eee8;
+  --card: #ffffff;
+  --card-soft: #fbf8f4;
+  --surface: #ffffff;
+  --surface-soft: #f6f0e9;
+  --border: #ded4c8;
+  --border-subtle: #ece1d4;
+  --border-strong: #cdbda9;
+  --text: #201c18;
+  --text-primary: #201c18;
+  --text-secondary: #5f5751;
+  --text-muted: #867d74;
+  --brand-900: #1a1a1a;
+  --brand-700: #212121;
+  --brand-500: #e8610a;
+  --accent-ninja: #212121;
+  --accent-primary: #e8610a;
+  --accent-primary-dim: rgba(232, 97, 10, 0.12);
+  --accent-primary-glow: rgba(232, 97, 10, 0.26);
+  --accent-secondary: #f0c030;
+  --accent-tertiary: #6f675f;
+  --accent-success: #00e5a0;
+  --sn-orange: #f29d1d;
+  --sn-orange-deep: #d57e00;
+  --sn-charcoal: #21232b;
+  --severity-critical: #e1063a;
+  --severity-high: #e75a00;
+  --severity-medium: #f2aa00;
+  --severity-low: #008fd6;
+  --status-compliant: #00a96e;
+  --status-warning: #f2aa00;
+  --status-noncompliant: #e1063a;
+  --chart-1: #00a96e;
+  --chart-2: #e8610a;
+  --chart-3: #f0c030;
+  --chart-4: #c44e00;
+  --chart-5: #9d2317;
+  --radius: 10px;
+  --radius-sm: 6px;
+  --shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --cell-grad-main: linear-gradient(180deg, #1a1a1a 0%, #212121 100%);
+  --cell-grad-sub: linear-gradient(135deg, #fbf8f4 0%, #f2ebe2 100%);
+  --cell-grad-sub-hover: linear-gradient(135deg, #fffaf4 0%, #eee4d8 100%);
+  --panel-header-grad: linear-gradient(180deg, #1a1a1a 0%, #212121 100%);
+  --panel-header-border: rgba(232, 97, 10, 0.24);
+  --outline-gradient: linear-gradient(180deg, #1a1a1a 0%, #212121 100%);
+  --nav-title: #ffffff;
+  --nav-subtitle: rgba(255, 255, 255, 0.68);
+  --nav-border: rgba(255, 255, 255, 0.09);
+  --btn-secondary-bg: rgba(255, 255, 255, 0.25);
+  --btn-secondary-border: rgba(19, 38, 60, 0.18);
+  --btn-secondary-text: #201c18;
+  --theme-control-bg: rgba(255, 255, 255, 0.28);
+  --theme-control-border: rgba(19, 38, 60, 0.18);
+  --theme-control-text: #201c18;
+}
+
+body[data-theme="dark-mode"] {
+  --bg: #141414;
+  --bg-primary: #141414;
+  --bg-secondary: #1a1a1a;
+  --bg-card: #1d1d1d;
+  --bg-card-hover: #242424;
+  --bg-elevated: #232323;
+  --card: #1d1d1d;
+  --card-soft: #232323;
+  --surface: #1d1d1d;
+  --surface-soft: #242424;
+  --border: #302d2a;
+  --border-subtle: #3a3530;
+  --border-strong: #51483f;
+  --text: #f5f2ee;
+  --text-primary: #f5f2ee;
+  --text-secondary: #cfc6bc;
+  --text-muted: #a59a8d;
+  --accent-ninja: #f5f2ee;
+  --cell-grad-main: linear-gradient(180deg, #111111 0%, #1a1a1a 100%);
+  --cell-grad-sub: linear-gradient(135deg, #232323 0%, #1d1d1d 100%);
+  --cell-grad-sub-hover: linear-gradient(135deg, #282828 0%, #202020 100%);
+  --panel-header-grad: linear-gradient(180deg, #161616 0%, #212121 100%);
+  --panel-header-border: rgba(232, 97, 10, 0.28);
+  --severity-critical: #ff5c66;
+  --severity-high: #ff8748;
+  --severity-medium: #f0c030;
+  --severity-low: #c6954e;
+  --status-compliant: #3fd392;
+  --status-warning: #f0c030;
+  --status-noncompliant: #ff5c66;
+  --chart-1: #3fd392;
+  --chart-2: #e8610a;
+  --chart-3: #f0c030;
+  --chart-4: #c44e00;
+  --chart-5: #d73b2e;
+  --btn-secondary-bg: rgba(255, 255, 255, 0.04);
+  --btn-secondary-border: rgba(255, 255, 255, 0.12);
+  --btn-secondary-text: #ffffff;
+  --theme-control-bg: rgba(255, 255, 255, 0.04);
+  --theme-control-border: rgba(255, 255, 255, 0.12);
+  --theme-control-text: rgba(255, 255, 255, 0.84);
+}
+
+* {
+  letter-spacing: 0;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background: var(--bg-primary) !important;
+  color: var(--text-primary);
+  transition: background var(--transition), color var(--transition);
+}
+
+body[data-theme="dark-mode"] ::-webkit-scrollbar-track { background: #171717; }
+body[data-theme="dark-mode"] ::-webkit-scrollbar-thumb { background: #302d2a; }
+
+h1,
+h2,
+h3,
+h4,
+.topbar h1,
+.topnav-title,
+.topnav-subtitle,
+.tool-title,
+.card-title,
+.intro-title,
+button,
+.btn,
+.btn-connect,
+.tool-cta {
+  font-family: 'Sora', 'Plus Jakarta Sans', sans-serif;
+}
+
+.status-pill,
+.topnav-status,
+.card-subtitle,
+.tool-tag,
+.metric,
+.score,
+.value,
+.risk-score,
+.topnav-byline,
+.portal-version,
+.version,
+output,
+code,
+pre {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.topnav {
+  background:
+    linear-gradient(180deg, rgba(242, 157, 29, 0.98) 0%, rgba(236, 145, 13, 0.98) 100%),
+    linear-gradient(rgba(0, 0, 0, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.06) 1px, transparent 1px) !important;
+  background-size: auto, 48px 48px, 48px 48px !important;
+  border-color: var(--nav-border) !important;
+}
+
+.topbar {
+  background: linear-gradient(180deg, #1a1a1a 0%, #212121 100%) !important;
+  border-color: rgba(232, 97, 10, 0.24) !important;
+  box-shadow: none;
+}
+
+.topbar h1,
+.topnav-title,
+.topnav-subtitle,
+.card-head .card-title,
+.card-header .card-title,
+.tool-title {
+  color: #ffffff !important;
+}
+
+.topbar p,
+.topnav-byline,
+.topnav-status {
+  color: rgba(255, 255, 255, 0.68) !important;
+}
+
+.topbar-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.topnav-brand {
+  background: linear-gradient(180deg, #2a2d37 0%, #21232b 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 10px !important;
+}
+
+.topnav-tab {
+  background: rgba(255, 255, 255, 0.2) !important;
+  border: 1px solid rgba(19, 38, 60, 0.18) !important;
+  color: rgba(19, 38, 60, 0.92) !important;
+  border-radius: 10px !important;
+}
+
+.topnav-tab:hover {
+  background: rgba(255, 255, 255, 0.35) !important;
+  border-color: rgba(19, 38, 60, 0.28) !important;
+  color: #13263c !important;
+}
+
+.topnav-tab.active,
+.analysis-tab.active,
+.filter-chip.active {
+  background: linear-gradient(135deg, #2b2f39 0%, #20242d 100%) !important;
+  border-color: rgba(32, 36, 45, 0.65) !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 22px rgba(18, 21, 27, 0.25);
+}
+
+.status-pill,
+.topnav-center,
+.theme-select,
+.theme-toggle-btn,
+.btn-utility,
+.filter-chip,
+.analysis-tab,
+.tool-tag {
+  background: rgba(255, 255, 255, 0.25) !important;
+  border: 1px solid rgba(19, 38, 60, 0.18) !important;
+  color: #201c18 !important;
+}
+
+body[data-theme="dark-mode"] .status-pill,
+body[data-theme="dark-mode"] .topnav-center,
+body[data-theme="dark-mode"] .theme-select,
+body[data-theme="dark-mode"] .theme-toggle-btn,
+body[data-theme="dark-mode"] .btn-utility,
+body[data-theme="dark-mode"] .filter-chip,
+body[data-theme="dark-mode"] .analysis-tab,
+body[data-theme="dark-mode"] .tool-tag {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: rgba(255, 255, 255, 0.84) !important;
+}
+
+.btn-connect,
+.btn-primary,
+button.primary,
+.primary-btn {
+  background: linear-gradient(135deg, #2b2f39 0%, #20242d 100%) !important;
+  border-color: rgba(32, 36, 45, 0.65) !important;
+  color: #ffffff !important;
+  border-radius: 10px !important;
+  transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition), background var(--transition);
+}
+
+.btn-connect:hover,
+.btn-primary:hover,
+button.primary:hover,
+.primary-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(33, 33, 33, 0.18);
+}
+
+.tool-card,
+.intro,
+.card,
+.section,
+.sidebar-card,
+.control-card,
+.bp-card,
+.modal-content,
+.threat-palette,
+.drop-zone,
+.principle,
+.insight,
+.source-list,
+.identity-option,
+.target-option {
+  background: var(--bg-card) !important;
+  border-color: var(--border) !important;
+  box-shadow: none !important;
+  transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition), background var(--transition);
+}
+
+.tool-card:hover,
+.card:hover,
+.section:hover,
+.control-card:hover,
+.bp-card:hover {
+  border-color: #d2ad7d !important;
+}
+
+.card-head,
+.card-header,
+.tool-banner,
+.panel-header,
+.section-header,
+.xdr-header-band {
+  background: var(--panel-header-grad) !important;
+  border-color: var(--panel-header-border) !important;
+  color: #ffffff !important;
+}
+
+.card,
+.tool-card,
+.intro {
+  border-top: 3px solid var(--sn-orange) !important;
+}
+
+.tool-card {
+  min-height: 180px;
+}
+
+.tool-body,
+.panel-body,
+.card-body {
+  background: #ffffff;
+}
+
+body[data-theme="dark-mode"] .tool-body,
+body[data-theme="dark-mode"] .panel-body,
+body[data-theme="dark-mode"] .card-body {
+  background: var(--bg-card);
+}
+
+body[data-theme="dark-mode"] input,
+body[data-theme="dark-mode"] select,
+body[data-theme="dark-mode"] textarea {
+  background: #171717;
+  border-color: var(--border);
+  color: var(--text-primary);
+}
+
+.theme-toggle-btn {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 !important;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.theme-toggle-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.theme-toggle-btn .icon-sun { display: none; }
+body[data-theme="dark-mode"] .theme-toggle-btn .icon-sun { display: block; }
+body[data-theme="dark-mode"] .theme-toggle-btn .icon-moon { display: none; }
+
+.xdr-floating-theme-toggle {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 500;
+}
+
+body:has(.topnav) .xdr-floating-theme-toggle {
+  left: 14px;
+  right: auto;
+  bottom: 16px;
+}
+
+.tool-desc,
+.intro-text,
+.card-subtitle {
+  color: var(--text-muted) !important;
+}
+
+.tool-cta,
+a,
+.link,
+.card-title .icon,
+.sidebar-title,
+.threat-id {
+  color: #e8610a;
+}
+
+.severity-critical,
+[data-severity="critical"] {
+  color: #e1063a;
+}
+
+.severity-high,
+[data-severity="high"] {
+  color: #e75a00;
+}
+
+.severity-medium,
+[data-severity="medium"] {
+  color: #f2aa00;
+}
+
+.severity-low,
+[data-severity="low"] {
+  color: #008fd6;
+}
+
+@media (max-width: 760px) {
+  .topbar,
+  .topnav {
+    gap: 10px;
+  }
+
+  .status-pill,
+  .topnav-status {
+    white-space: normal;
+  }
+}

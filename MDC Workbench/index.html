@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Microsoft Defender for Cloud | Interactive Workbench</title>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&amp;family=Sora:wght@700&amp;display=swap" rel="stylesheet">
 <style>
 :root {
   --bg-primary: #ffffff;
@@ -2126,6 +2126,7 @@ button.legend-chip.active {
   .exec-strip { grid-template-columns: 1fr; }
 }
 </style>
+<link rel="stylesheet" href="../css/xdr-tools-theme.css">
 </head>
 <body>
 <nav class="topnav">
@@ -2148,7 +2149,7 @@ button.legend-chip.active {
         <span id="trackerPersistLabel" title="Changes are kept in-memory unless a tracker file is bound or exported.">TRACKER MANUAL</span>
       </div>
       <div class="topnav-icon-buttons">
-        <button class="theme-toggle-btn icon-toggle-btn" type="button" id="themeBtn" aria-label="Enable dark mode" title="Enable dark mode">
+        <button class="theme-toggle-btn icon-toggle-btn" type="button" id="themeBtn" data-xdr-theme-toggle aria-label="Enable dark mode" title="Enable dark mode">
           <svg class="icon-moon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d="M20 14.2A8 8 0 1 1 9.8 4a6.5 6.5 0 1 0 10.2 10.2Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
           </svg>
@@ -3215,7 +3216,7 @@ button.legend-chip.active {
   ];
 
   const APP_NAME = "MDC";
-  const APP_VERSION = "1.44";
+  const APP_VERSION = "1.48";
   const APP_PRODUCT = "Microsoft Defender for Cloud";
   const APP_HEADER_TITLE = "Microsoft Defender for Cloud | Interactive Workbench";
   const IDENTITY_SCOPE_RESOURCE_GROUP = "Identity / Tenant Scope";
@@ -8039,7 +8040,14 @@ button.legend-chip.active {
       themeBtn.setAttribute("title", dark ? "Enable light mode" : "Enable dark mode");
     };
 
-    themeBtn.addEventListener("click", () => {
+    themeBtn.addEventListener("click", (event) => {
+      if (window.SecurityNinjaTheme) {
+        event.stopPropagation();
+        const dark = document.body.getAttribute("data-theme") === "dark-mode";
+        window.SecurityNinjaTheme.applyTheme(dark ? "light" : "dark-mode", true);
+        syncThemeToggleState();
+        return;
+      }
       const dark = document.body.getAttribute("data-theme") === "dark-mode";
       if (dark) {
         document.body.removeAttribute("data-theme");
@@ -8153,5 +8161,6 @@ button.legend-chip.active {
   render();
 })();
 </script>
+<script src="../js/xdr-theme.js"></script>
 </body>
 </html>

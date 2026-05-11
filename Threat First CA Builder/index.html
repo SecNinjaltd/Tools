@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Threat-First CA Policy Builder</title>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@700&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg-primary: #ffffff;
@@ -486,6 +486,10 @@
             border-radius: 8px;
             cursor: grab;
             transition: var(--transition);
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+            touch-action: manipulation;
         }
 
         .threat-item:active {
@@ -587,14 +591,15 @@
             border-radius: 16px;
             padding: 32px;
             min-height: 200px;
-            transition: all 0.3s;
+            transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
             position: relative;
             overflow: hidden;
         }
 
         .drop-zone.drag-over {
-            background: #fee2e2;
-            border-color: #ef4444;
+            background: var(--surface-soft);
+            border-color: var(--hover-border);
+            box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.2);
         }
 
         .drop-zone-empty {
@@ -1042,8 +1047,18 @@
         }
 
         body[data-theme="security-ninja"] .drop-zone.drag-over {
-            background: linear-gradient(135deg, #e5f2ff 0%, #d3e8ff 100%);
-            border-color: #2f6ea4;
+            background: linear-gradient(135deg, #16314b 0%, #21486d 60%, #2d5a84 100%);
+            border-color: #4a7baa;
+        }
+
+        body[data-theme="vibe-code"] .drop-zone.drag-over {
+            background: linear-gradient(135deg, #361a67 0%, #5a35a2 55%, #3f88ff 100%);
+            border-color: #c6a8ff;
+        }
+
+        body[data-theme="cyber-mode"] .drop-zone.drag-over {
+            background: linear-gradient(135deg, #081d15 0%, #133725 55%, #179568 100%);
+            border-color: #33c896;
         }
 
         body[data-theme="security-ninja"] .identity-option,
@@ -1439,6 +1454,7 @@
             }
         }
     </style>
+    <link rel="stylesheet" href="../css/xdr-tools-theme.css">
 </head>
 <body>
     <div class="topnav">
@@ -1451,6 +1467,15 @@
                 <div class="topnav-subtitle">Drag threats to see required controls • Real-time MITRE ATT&CK analysis</div>
             </div>
             <div class="topnav-actions">
+                <button class="theme-toggle-btn" type="button" data-xdr-theme-toggle aria-label="Enable dark mode" title="Enable dark mode">
+                    <svg class="icon-moon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M20 14.2A8 8 0 1 1 9.8 4a6.5 6.5 0 1 0 10.2 10.2Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+                    </svg>
+                    <svg class="icon-sun" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.8"></circle>
+                        <path d="M12 2v2.4M12 19.6V22M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M2 12h2.4M19.6 12H22M4.9 19.1l1.7-1.7M17.4 6.6l1.7-1.7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+                    </svg>
+                </button>
                 <button class="btn btn-secondary" onclick="toggleBestPractices()">📚 BEST PRACTICES</button>
                 <button class="btn btn-secondary" onclick="downloadPdf()">⬇ PDF</button>
                 <button class="btn btn-danger" onclick="resetAll()">↺ RESET</button>
@@ -1526,7 +1551,7 @@
                 <!-- Center: Drop Zone & Controls -->
                 <div style="display: flex; flex-direction: column; gap: 24px;">
                     <!-- Drop Zone -->
-                    <div id="drop-zone" class="drop-zone" ondragover="handleDragOver(event)" ondrop="handleDrop(event)" ondragleave="handleDragLeave(event)">
+                    <div id="drop-zone" class="drop-zone" ondragenter="handleDragEnter(event)" ondragover="handleDragOver(event)" ondrop="handleDrop(event)" ondragleave="handleDragLeave(event)">
                         <div style="margin-bottom: 16px;">
                             <div class="xdr-header-band">
                                 <div class="xdr-header-title">THREATS TO DEFEND AGAINST</div>
@@ -2000,6 +2025,7 @@
             target: null,
             selectedThreats: [],
             draggedThreat: null,
+            dragDepth: 0,
             analysisView: 'overview',
             pulseInterval: null,
             theme: 'security-ninja'
@@ -2120,6 +2146,7 @@
                 return `
                     <div class="threat-item ${isSelected ? 'disabled' : ''}" 
                          draggable="${!isSelected}" 
+                         onclick="handleThreatTap('${id}')"
                          ondragstart="handleThreatDragStart(event, '${id}')"
                          ondragend="handleThreatDragEnd(event)">
                         <div class="threat-header">
@@ -2141,23 +2168,52 @@
             }
         }
 
+        function handleThreatTap(threatId) {
+            if (state.selectedThreats.includes(threatId)) return;
+            state.selectedThreats.push(threatId);
+            updateAll();
+        }
+
+        function setDropZoneDragState(isActive) {
+            const dropZone = document.getElementById('drop-zone');
+            if (!dropZone) return;
+            dropZone.classList.toggle('drag-over', isActive);
+        }
+
         function handleThreatDragEnd(event) {
             state.draggedThreat = null;
-            document.getElementById('drop-zone').classList.remove('drag-over');
+            state.dragDepth = 0;
+            setDropZoneDragState(false);
+        }
+
+        function handleDragEnter(event) {
+            event.preventDefault();
+            if (!state.draggedThreat) return;
+            state.dragDepth += 1;
+            setDropZoneDragState(true);
         }
 
         function handleDragOver(event) {
             event.preventDefault();
-            document.getElementById('drop-zone').classList.add('drag-over');
+            if (!state.draggedThreat) return;
+            if (state.dragDepth === 0) {
+                state.dragDepth = 1;
+            }
+            setDropZoneDragState(true);
         }
 
         function handleDragLeave(event) {
-            document.getElementById('drop-zone').classList.remove('drag-over');
+            if (!state.draggedThreat) return;
+            state.dragDepth = Math.max(0, state.dragDepth - 1);
+            if (state.dragDepth === 0) {
+                setDropZoneDragState(false);
+            }
         }
 
         function handleDrop(event) {
             event.preventDefault();
-            document.getElementById('drop-zone').classList.remove('drag-over');
+            state.dragDepth = 0;
+            setDropZoneDragState(false);
             if (state.draggedThreat && !state.selectedThreats.includes(state.draggedThreat)) {
                 state.selectedThreats.push(state.draggedThreat);
                 state.draggedThreat = null;
@@ -2719,6 +2775,7 @@
                 target: null,
                 selectedThreats: [],
                 draggedThreat: null,
+                dragDepth: 0,
                 analysisView: 'overview'
             };
             renderIdentityOptions();
@@ -2736,5 +2793,6 @@
         // Initialize on load
         window.onload = init;
     </script>
+    <script src="../js/xdr-theme.js"></script>
 </body>
 </html>
