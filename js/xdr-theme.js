@@ -54,7 +54,7 @@
     document.body.appendChild(button);
   }
 
-  window.SecurityNinjaTheme = { applyTheme, readTheme };
+  window.XDRToolsTheme = { applyTheme, readTheme };
 
   document.addEventListener('DOMContentLoaded', () => {
     if (!document.querySelector('[data-xdr-theme-toggle]')) {

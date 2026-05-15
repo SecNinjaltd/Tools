@@ -7,22 +7,22 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #e8f2fb;
+      --bg: #f7f3ee;
       --card: #ffffff;
-      --card-soft: #f8fbff;
-      --border: #d6e2ef;
-      --border-strong: #b8cbe0;
-      --text: #13263c;
-      --text-muted: #5b7693;
-      --brand-900: #0b1726;
-      --brand-700: #1e3a5a;
-      --brand-500: #2b5d89;
-      --brand-100: #d8e7f7;
+      --card-soft: #fbf8f4;
+      --border: #ded4c8;
+      --border-strong: #cdbda9;
+      --text: #201c18;
+      --text-muted: #867d74;
+      --brand-900: #1a1a1a;
+      --brand-700: #212121;
+      --brand-500: #e8610a;
+      --brand-100: #f2ebe2;
       --ok: #0f8a4a;
       --warn: #f0a11a;
       --bad: #be2643;
-      --info: #2470c6;
-      --shadow: 0 10px 30px rgba(14, 40, 66, 0.12);
+      --info: #008fd6;
+      --shadow: 0 8px 24px rgba(32, 28, 24, 0.08);
       --radius: 12px;
       --radius-sm: 8px;
       --transition: 0.2s ease;
@@ -33,9 +33,9 @@
     body {
       font-family: 'Plus Jakarta Sans', sans-serif;
       background:
-        radial-gradient(circle at 8% 0%, rgba(52, 126, 195, 0.18) 0%, rgba(230,240,250,0) 36%),
-        radial-gradient(circle at 100% 100%, rgba(20, 148, 130, 0.16) 0%, rgba(219,234,254,0) 42%),
-        radial-gradient(circle at 50% 100%, rgba(177, 95, 47, 0.14) 0%, rgba(177,95,47,0) 34%),
+        radial-gradient(circle at 8% 0%, rgba(232, 97, 10, 0.10) 0%, rgba(232,97,10,0) 36%),
+        radial-gradient(circle at 100% 100%, rgba(0, 169, 110, 0.08) 0%, rgba(0,169,110,0) 42%),
+        radial-gradient(circle at 50% 100%, rgba(242, 170, 0, 0.10) 0%, rgba(242,170,0,0) 34%),
         var(--bg);
       color: var(--text);
       min-height: 100vh;
@@ -45,8 +45,8 @@
       position: sticky;
       top: 0;
       z-index: 60;
-      border-bottom: 1px solid #20486c;
-      background: linear-gradient(135deg, #0b1726 0%, #142b44 48%, #1f3e61 100%);
+      border-bottom: 1px solid rgba(32, 28, 24, 0.18);
+      background: linear-gradient(180deg, #f29d1d 0%, #ea8c0a 100%);
       padding: 10px 22px;
       display: flex;
       justify-content: space-between;
@@ -55,27 +55,27 @@
     }
 
     .topbar h1 {
-      color: #edf5fc;
+      color: #201c18;
       font-size: 20px;
       font-weight: 800;
       line-height: 1.2;
     }
 
     .topbar p {
-      color: #bdd2e7;
+      color: rgba(32, 28, 24, 0.72);
       font-size: 12px;
       margin-top: 2px;
     }
 
     .status-pill {
-      border: 1px solid rgba(170, 198, 224, 0.5);
-      color: #d5e6f6;
+      border: 1px solid rgba(32, 28, 24, 0.18);
+      color: #201c18;
       font-family: 'JetBrains Mono', monospace;
       font-size: 11px;
       border-radius: 999px;
       padding: 7px 12px;
       white-space: nowrap;
-      background: rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.25);
     }
 
     .shell {
@@ -95,8 +95,8 @@
     }
 
     .card-head {
-      background: linear-gradient(135deg, #183e61 0%, #245a87 60%, #2d6ea2 100%);
-      border-bottom: 1px solid #2f6b9a;
+      background: linear-gradient(180deg, #1a1a1a 0%, #212121 100%);
+      border-bottom: 1px solid rgba(232, 97, 10, 0.28);
       padding: 11px 14px;
       display: flex;
       justify-content: space-between;
@@ -672,7 +672,7 @@
     }
 
     .diagram-legend {
-      border-top: 1px dashed #c8d9ea;
+      border-top: 1px dashed #ded4c8;
       padding-top: 9px;
       font-size: 11px;
       color: #557390;
@@ -1018,6 +1018,47 @@
       border-radius: 8px;
       padding: 8px;
       line-height: 1.4;
+    }
+
+    .section-principles,
+    .panel-library,
+    .panel-diagram,
+    .panel-flyout,
+    .panel-mitre,
+    .panel-license,
+    .panel-sources,
+    .panel-body,
+    .diagram-wrap,
+    .source-list,
+    .insight {
+      background: var(--card) !important;
+      border-color: var(--border) !important;
+    }
+
+    .section-principles .card-head,
+    .panel-library .card-head,
+    .panel-diagram .card-head,
+    .panel-flyout .card-head,
+    .panel-mitre .card-head,
+    .panel-license .card-head,
+    .panel-sources .card-head {
+      background: linear-gradient(180deg, #1a1a1a 0%, #212121 100%) !important;
+      border-bottom-color: rgba(232, 97, 10, 0.28) !important;
+    }
+
+    body[data-theme="dark-mode"] .section-principles,
+    body[data-theme="dark-mode"] .panel-library,
+    body[data-theme="dark-mode"] .panel-diagram,
+    body[data-theme="dark-mode"] .panel-flyout,
+    body[data-theme="dark-mode"] .panel-mitre,
+    body[data-theme="dark-mode"] .panel-license,
+    body[data-theme="dark-mode"] .panel-sources,
+    body[data-theme="dark-mode"] .panel-body,
+    body[data-theme="dark-mode"] .diagram-wrap,
+    body[data-theme="dark-mode"] .source-list,
+    body[data-theme="dark-mode"] .insight {
+      background: var(--bg-card) !important;
+      border-color: var(--border) !important;
     }
 
     @media (max-width: 1400px) {

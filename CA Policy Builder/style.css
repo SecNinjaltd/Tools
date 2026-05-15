@@ -53,3 +53,40 @@ button {
 button:hover {
   transform: translateY(-1px);
 }
+
+#root > div {
+  padding: 0 !important;
+}
+
+#root > div > div {
+  max-width: none !important;
+  margin: 0 !important;
+}
+
+#root > div > div > div:first-child {
+  background:
+    linear-gradient(180deg, #f29d1d 0%, #ea8c0a 100%),
+    linear-gradient(rgba(0, 0, 0, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.06) 1px, transparent 1px) !important;
+  background-size: auto, 48px 48px, 48px 48px !important;
+  border-bottom: 1px solid rgba(32, 28, 24, 0.18) !important;
+  padding: 12px 24px !important;
+  margin-bottom: 24px !important;
+  gap: 16px !important;
+}
+
+#root > div > div > div:first-child > div:first-child > div:first-child {
+  color: #201c18 !important;
+  font-size: 22px !important;
+  margin-bottom: 4px !important;
+}
+
+#root > div > div > div:first-child > div:first-child > div:last-child {
+  color: rgba(32, 28, 24, 0.72) !important;
+}
+
+#root > div > div > :not(:first-child) {
+  max-width: 1600px;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}

@@ -8,21 +8,21 @@
     <style>
         :root {
             --bg-primary: #ffffff;
-            --bg-secondary: #f7fafd;
+            --bg-secondary: #f7f3ee;
             --bg-card: #ffffff;
-            --bg-card-hover: #f3f8fd;
-            --bg-elevated: #eaf3fb;
-            --border: #c8d9ea;
-            --border-subtle: #dce8f3;
-            --text-primary: #13263c;
-            --text-secondary: #42617f;
-            --text-muted: #6683a1;
-            --accent-ninja: #1e3a5a;
-            --accent-ninja-dim: rgba(30,58,90,0.12);
-            --accent-ninja-glow: rgba(30,58,90,0.25);
-            --cell-grad-main: linear-gradient(135deg, #0B1726 0%, #12263C 60%, #1E3A5A 100%);
-            --cell-grad-sub: linear-gradient(135deg, #edf5fc 0%, #e1edf8 100%);
-            --cell-grad-sub-hover: linear-gradient(135deg, #e5f0fb 0%, #d7e7f6 100%);
+            --bg-card-hover: #faf7f3;
+            --bg-elevated: #f3eee8;
+            --border: #ded4c8;
+            --border-subtle: #ece1d4;
+            --text-primary: #201c18;
+            --text-secondary: #5f5751;
+            --text-muted: #867d74;
+            --accent-ninja: #e8610a;
+            --accent-ninja-dim: rgba(232,97,10,0.12);
+            --accent-ninja-glow: rgba(232,97,10,0.26);
+            --cell-grad-main: linear-gradient(180deg, #f29d1d 0%, #ea8c0a 100%);
+            --cell-grad-sub: linear-gradient(135deg, #fbf8f4 0%, #f2ebe2 100%);
+            --cell-grad-sub-hover: linear-gradient(135deg, #fffaf4 0%, #eee4d8 100%);
             --severity-critical: #ef4444;
             --severity-high: #ff7b42;
             --severity-medium: #ffb830;
@@ -34,28 +34,28 @@
             --radius: 10px;
             --radius-sm: 6px;
             --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            --nav-title: #f0f7ff;
-            --nav-subtitle: #c6daee;
-            --nav-border: #21486d;
-            --btn-secondary-bg: rgba(255, 255, 255, 0.12);
-            --btn-secondary-border: rgba(189, 213, 234, 0.5);
-            --btn-secondary-text: #e4f0fb;
+            --nav-title: #201c18;
+            --nav-subtitle: rgba(32,28,24,0.72);
+            --nav-border: rgba(32,28,24,0.18);
+            --btn-secondary-bg: rgba(255, 255, 255, 0.25);
+            --btn-secondary-border: rgba(19,38,60,0.18);
+            --btn-secondary-text: #201c18;
             --btn-danger-bg: #ef4444;
             --btn-danger-border: #ef4444;
             --btn-danger-text: #ffffff;
-            --surface-soft: #edf5fc;
-            --surface-soft-border: #c8d9ea;
+            --surface-soft: #fbf8f4;
+            --surface-soft-border: #ded4c8;
             --card-shadow: 0 4px 24px rgba(16, 36, 60, 0.06);
             --elev-step1: 0 2px 12px rgba(16, 36, 60, 0.05);
             --elev-analysis: 0 6px 24px rgba(16, 36, 60, 0.08);
             --elev-builder: 0 8px 28px rgba(16, 36, 60, 0.1);
             --hover-lift: translateY(-1px);
-            --hover-border: #3b82f6;
+            --hover-border: #e8610a;
             --hover-surface: var(--bg-card-hover);
-            --theme-control-bg: rgba(255,255,255,0.12);
-            --theme-control-border: rgba(189,213,234,0.5);
-            --theme-control-text: #e4f0fb;
-            --outline-gradient: linear-gradient(135deg, #15314d 0%, #21486d 55%, #2d5a84 100%);
+            --theme-control-bg: rgba(255,255,255,0.28);
+            --theme-control-border: rgba(19,38,60,0.18);
+            --theme-control-text: #201c18;
+            --outline-gradient: linear-gradient(180deg, #1a1a1a 0%, #212121 100%);
         }
 
         * {
@@ -99,11 +99,14 @@
             letter-spacing: -0.3px;
         }
 
-        .topnav-logo {
-            width: 240px;
-            height: 240px;
-            object-fit: contain;
-            display: block;
+        .topnav-brand-text {
+            width: 48px;
+            height: 44px;
+            justify-content: center;
+            color: #201c18;
+            font-family: 'Sora', 'Plus Jakarta Sans', sans-serif;
+            font-size: 18px;
+            letter-spacing: 0;
         }
 
         .topnav-status {
@@ -992,63 +995,63 @@
             box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.25), 0 4px 14px rgba(59, 130, 246, 0.2);
         }
 
-        body[data-theme="security-ninja"] .section,
-        body[data-theme="security-ninja"] .threat-palette,
-        body[data-theme="security-ninja"] .sidebar-card,
-        body[data-theme="security-ninja"] .control-card,
-        body[data-theme="security-ninja"] .bp-card,
-        body[data-theme="security-ninja"] .modal-content,
-        body[data-theme="security-ninja"] .drop-zone {
+        body[data-theme="light"] .section,
+        body[data-theme="light"] .threat-palette,
+        body[data-theme="light"] .sidebar-card,
+        body[data-theme="light"] .control-card,
+        body[data-theme="light"] .bp-card,
+        body[data-theme="light"] .modal-content,
+        body[data-theme="light"] .drop-zone {
             border-color: var(--border);
         }
 
-        body[data-theme="security-ninja"] .identity-option:not(.selected),
-        body[data-theme="security-ninja"] .target-option:not(.selected),
-        body[data-theme="security-ninja"] .analysis-tab:not(.active) {
+        body[data-theme="light"] .identity-option:not(.selected),
+        body[data-theme="light"] .target-option:not(.selected),
+        body[data-theme="light"] .analysis-tab:not(.active) {
             border-color: var(--surface-soft-border);
         }
 
-        body[data-theme="security-ninja"] .threat-item,
-        body[data-theme="security-ninja"] .dropped-threat {
-            background: linear-gradient(135deg, #11253b 0%, #17344f 55%, #214b70 100%);
-            border: 1px solid #2f628f;
-            color: #e9f3fc;
-            box-shadow: inset 0 0 0 1px rgba(201, 222, 241, 0.08);
+        body[data-theme="light"] .threat-item,
+        body[data-theme="light"] .dropped-threat {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            box-shadow: none;
         }
 
-        body[data-theme="security-ninja"] .threat-item:not(.disabled):hover {
-            background: linear-gradient(135deg, #142d47 0%, #1c3f5f 55%, #2a5b86 100%);
-            border-color: #4a7baa;
-            filter: brightness(1.03);
+        body[data-theme="light"] .threat-item:not(.disabled):hover {
+            background: var(--bg-card-hover);
+            border-color: #d2ad7d;
+            filter: none;
         }
 
-        body[data-theme="security-ninja"] .threat-item.disabled {
-            background: linear-gradient(135deg, #1a2a3d 0%, #23374d 100%);
-            border-color: #4d6783;
-            color: #9bb0c5;
+        body[data-theme="light"] .threat-item.disabled {
+            background: var(--surface-soft);
+            border-color: var(--border-subtle);
+            color: var(--text-muted);
         }
 
-        body[data-theme="security-ninja"] .threat-id {
-            color: #d7eaff;
-            background: rgba(9, 21, 35, 0.55);
-            border: 1px solid rgba(109, 161, 213, 0.5);
+        body[data-theme="light"] .threat-id {
+            color: #e8610a;
+            background: rgba(232, 97, 10, 0.10);
+            border: 1px solid rgba(232, 97, 10, 0.22);
         }
 
-        body[data-theme="security-ninja"] .threat-name {
-            color: #f1f8ff;
+        body[data-theme="light"] .threat-name {
+            color: var(--text-primary);
         }
 
-        body[data-theme="security-ninja"] .threat-tactic {
-            color: #c4daef;
+        body[data-theme="light"] .threat-tactic {
+            color: #e8610a;
         }
 
-        body[data-theme="security-ninja"] .threat-desc {
-            color: #b0c8df;
+        body[data-theme="light"] .threat-desc {
+            color: var(--text-muted);
         }
 
-        body[data-theme="security-ninja"] .drop-zone.drag-over {
-            background: linear-gradient(135deg, #16314b 0%, #21486d 60%, #2d5a84 100%);
-            border-color: #4a7baa;
+        body[data-theme="light"] .drop-zone.drag-over {
+            background: rgba(232, 97, 10, 0.08);
+            border-color: #e8610a;
         }
 
         body[data-theme="vibe-code"] .drop-zone.drag-over {
@@ -1061,68 +1064,68 @@
             border-color: #33c896;
         }
 
-        body[data-theme="security-ninja"] .identity-option,
-        body[data-theme="security-ninja"] .target-option {
-            background: var(--cell-grad-main);
-            border: 1px solid #21486d;
-            color: #e9f3fc;
+        body[data-theme="light"] .identity-option,
+        body[data-theme="light"] .target-option {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            color: var(--text-primary);
         }
 
-        body[data-theme="security-ninja"] .identity-option .option-desc,
-        body[data-theme="security-ninja"] .target-option .option-desc {
-            color: #c6daee;
+        body[data-theme="light"] .identity-option .option-desc,
+        body[data-theme="light"] .target-option .option-desc {
+            color: var(--text-muted);
         }
 
-        body[data-theme="security-ninja"] .identity-option:hover,
-        body[data-theme="security-ninja"] .target-option:hover {
-            border-color: #2d5a84;
-            background: linear-gradient(135deg, #0f2135 0%, #17304b 60%, #284f77 100%);
+        body[data-theme="light"] .identity-option:hover,
+        body[data-theme="light"] .target-option:hover {
+            border-color: #d2ad7d;
+            background: var(--bg-card-hover);
         }
 
-        body[data-theme="security-ninja"] .identity-option.selected,
-        body[data-theme="security-ninja"] .target-option.selected {
-            background: linear-gradient(145deg, #193a5f 0%, #25527e 55%, #2f6a9f 100%) !important;
-            border-color: #6ea8e0 !important;
-            color: #f3f9ff !important;
-            box-shadow: 0 0 0 2px rgba(110, 168, 224, 0.32), inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+        body[data-theme="light"] .identity-option.selected,
+        body[data-theme="light"] .target-option.selected {
+            background: linear-gradient(135deg, #2b2f39 0%, #20242d 100%) !important;
+            border-color: rgba(32, 36, 45, 0.65) !important;
+            color: #ffffff !important;
+            box-shadow: 0 8px 22px rgba(18, 21, 27, 0.18);
         }
 
-        body[data-theme="security-ninja"] .identity-option.selected:hover,
-        body[data-theme="security-ninja"] .target-option.selected:hover {
-            background: linear-gradient(145deg, #1c426b 0%, #2a5d8f 55%, #3678b1 100%) !important;
-            border-color: #81b7eb !important;
+        body[data-theme="light"] .identity-option.selected:hover,
+        body[data-theme="light"] .target-option.selected:hover {
+            background: linear-gradient(135deg, #343944 0%, #242933 100%) !important;
+            border-color: rgba(32, 36, 45, 0.72) !important;
             color: #ffffff !important;
         }
 
-        body[data-theme="security-ninja"] .identity-option.selected .option-label,
-        body[data-theme="security-ninja"] .target-option.selected .option-label,
-        body[data-theme="security-ninja"] .identity-option.selected .option-icon,
-        body[data-theme="security-ninja"] .target-option.selected .option-icon {
-            color: #f3f9ff !important;
+        body[data-theme="light"] .identity-option.selected .option-label,
+        body[data-theme="light"] .target-option.selected .option-label,
+        body[data-theme="light"] .identity-option.selected .option-icon,
+        body[data-theme="light"] .target-option.selected .option-icon {
+            color: #ffffff !important;
         }
 
-        body[data-theme="security-ninja"] .identity-option.selected .option-desc,
-        body[data-theme="security-ninja"] .target-option.selected .option-desc {
-            color: #d3e8fb !important;
+        body[data-theme="light"] .identity-option.selected .option-desc,
+        body[data-theme="light"] .target-option.selected .option-desc {
+            color: rgba(255,255,255,0.72) !important;
         }
 
-        body[data-theme="security-ninja"] .analysis-tab {
-            background: var(--cell-grad-main);
-            border: 1px solid #21486d;
-            color: #c9def1;
+        body[data-theme="light"] .analysis-tab {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            color: var(--text-primary);
         }
 
-        body[data-theme="security-ninja"] .analysis-tab:hover {
-            border-color: #2d5a84;
+        body[data-theme="light"] .analysis-tab:hover {
+            border-color: #d2ad7d;
+            color: var(--text-primary);
+            background: var(--bg-card-hover);
+        }
+
+        body[data-theme="light"] .analysis-tab.active {
+            background: linear-gradient(135deg, #2b2f39 0%, #20242d 100%);
+            border-color: rgba(32, 36, 45, 0.65);
             color: #ffffff;
-            background: linear-gradient(135deg, #0f2135 0%, #17304b 60%, #284f77 100%);
-        }
-
-        body[data-theme="security-ninja"] .analysis-tab.active {
-            background: linear-gradient(135deg, #16314b 0%, #21486d 60%, #2d5a84 100%);
-            border-color: #3f6c95;
-            color: #ffffff;
-            box-shadow: inset 0 0 0 1px rgba(201, 222, 241, 0.22);
+            box-shadow: 0 8px 22px rgba(18, 21, 27, 0.18);
         }
 
         body[data-theme="vibe-code"] {
@@ -1458,8 +1461,8 @@
 </head>
 <body>
     <div class="topnav">
-        <div class="topnav-brand">
-            <img class="topnav-logo" src="Website Logo 2.png" alt="Security Ninja logo">
+        <div class="topnav-brand topnav-brand-text" aria-label="XDR Compliance Centre">
+            <span>XDR</span>
         </div>
         <div class="topnav-main">
             <div class="topnav-copy">
@@ -1483,13 +1486,7 @@
         </div>
         <div class="topnav-status">
             <span class="status-dot"></span>
-            <span>THEME</span>
-            <select id="theme-select" class="theme-select" onchange="setTheme(this.value)">
-                <option value="security-ninja">Security Ninja</option>
-                <option value="dark-mode">Dark Mode</option>
-                <option value="cyber-mode">Cyber Mode</option>
-                <option value="vibe-code">Vibe Code</option>
-            </select>
+            <span>XDR THEME</span>
         </div>
     </div>
 
@@ -1885,38 +1882,38 @@
         ];
 
         const THEME_PRESETS = {
-            "security-ninja": {
+            "light": {
                 "--bg-primary": "#ffffff",
                 "--bg-card": "#ffffff",
-                "--bg-card-hover": "#f3f8fd",
-                "--border": "#c8d9ea",
-                "--text-primary": "#13263c",
-                "--text-secondary": "#42617f",
-                "--text-muted": "#6683a1",
-                "--accent-ninja": "#1e3a5a",
-                "--accent-ninja-glow": "rgba(30,58,90,0.25)",
-                "--cell-grad-main": "linear-gradient(135deg, #0B1726 0%, #12263C 60%, #1E3A5A 100%)",
-                "--nav-title": "#f0f7ff",
-                "--nav-subtitle": "#c6daee",
-                "--nav-border": "#21486d",
-                "--btn-secondary-bg": "rgba(255, 255, 255, 0.12)",
-                "--btn-secondary-border": "rgba(189, 213, 234, 0.5)",
-                "--btn-secondary-text": "#e4f0fb",
+                "--bg-card-hover": "#faf7f3",
+                "--border": "#ded4c8",
+                "--text-primary": "#201c18",
+                "--text-secondary": "#5f5751",
+                "--text-muted": "#867d74",
+                "--accent-ninja": "#e8610a",
+                "--accent-ninja-glow": "rgba(232,97,10,0.26)",
+                "--cell-grad-main": "linear-gradient(180deg, #f29d1d 0%, #ea8c0a 100%)",
+                "--nav-title": "#201c18",
+                "--nav-subtitle": "rgba(32,28,24,0.72)",
+                "--nav-border": "rgba(32,28,24,0.18)",
+                "--btn-secondary-bg": "rgba(255, 255, 255, 0.25)",
+                "--btn-secondary-border": "rgba(19, 38, 60, 0.18)",
+                "--btn-secondary-text": "#201c18",
                 "--btn-danger-bg": "#ef4444",
                 "--btn-danger-border": "#ef4444",
                 "--btn-danger-text": "#ffffff",
-                "--surface-soft": "#edf5fc",
-                "--surface-soft-border": "#c8d9ea",
+                "--surface-soft": "#fbf8f4",
+                "--surface-soft-border": "#ded4c8",
                 "--card-shadow": "0 4px 24px rgba(16, 36, 60, 0.06)",
                 "--elev-step1": "0 2px 12px rgba(16, 36, 60, 0.05)",
                 "--elev-analysis": "0 6px 24px rgba(16, 36, 60, 0.08)",
                 "--elev-builder": "0 8px 28px rgba(16, 36, 60, 0.1)",
                 "--hover-lift": "translateY(-1px)",
-                "--hover-border": "#3b82f6",
-                "--hover-surface": "#f3f8fd",
-                "--theme-control-bg": "rgba(255,255,255,0.12)",
-                "--theme-control-border": "rgba(189,213,234,0.5)",
-                "--theme-control-text": "#e4f0fb"
+                "--hover-border": "#e8610a",
+                "--hover-surface": "#faf7f3",
+                "--theme-control-bg": "rgba(255,255,255,0.28)",
+                "--theme-control-border": "rgba(19,38,60,0.18)",
+                "--theme-control-text": "#201c18"
             },
             "dark-mode": {
                 "--bg-primary": "#0b1320",
@@ -1926,15 +1923,15 @@
                 "--text-primary": "#d8e7f8",
                 "--text-secondary": "#a5c0dc",
                 "--text-muted": "#7e9bb8",
-                "--accent-ninja": "#6aa7ff",
-                "--accent-ninja-glow": "rgba(106,167,255,0.35)",
+                "--accent-ninja": "#e8610a",
+                "--accent-ninja-glow": "rgba(232,97,10,0.35)",
                 "--cell-grad-main": "linear-gradient(135deg, #0a101a 0%, #16253a 55%, #243a59 100%)",
-                "--nav-title": "#f2f7ff",
-                "--nav-subtitle": "#b8d1ee",
-                "--nav-border": "#35577f",
-                "--btn-secondary-bg": "rgba(106,167,255,0.14)",
-                "--btn-secondary-border": "rgba(106,167,255,0.5)",
-                "--btn-secondary-text": "#dceaff",
+                "--nav-title": "#201c18",
+                "--nav-subtitle": "rgba(32,28,24,0.72)",
+                "--nav-border": "rgba(32,28,24,0.18)",
+                "--btn-secondary-bg": "rgba(255,255,255,0.24)",
+                "--btn-secondary-border": "rgba(19,38,60,0.22)",
+                "--btn-secondary-text": "#201c18",
                 "--btn-danger-bg": "#ef4444",
                 "--btn-danger-border": "#ef4444",
                 "--btn-danger-text": "#ffffff",
@@ -1945,11 +1942,11 @@
                 "--elev-analysis": "0 8px 26px rgba(0, 0, 0, 0.4)",
                 "--elev-builder": "0 10px 30px rgba(0, 0, 0, 0.45)",
                 "--hover-lift": "translateY(-1px)",
-                "--hover-border": "#6aa7ff",
+                "--hover-border": "#e8610a",
                 "--hover-surface": "#16253a",
-                "--theme-control-bg": "rgba(106,167,255,0.14)",
-                "--theme-control-border": "rgba(106,167,255,0.45)",
-                "--theme-control-text": "#dceaff"
+                "--theme-control-bg": "rgba(255,255,255,0.24)",
+                "--theme-control-border": "rgba(19,38,60,0.22)",
+                "--theme-control-text": "#201c18"
             },
             "cyber-mode": {
                 "--bg-primary": "#050b08",
@@ -2028,20 +2025,25 @@
             dragDepth: 0,
             analysisView: 'overview',
             pulseInterval: null,
-            theme: 'security-ninja'
+            theme: 'light'
         };
 
         // Initialize
         function init() {
             const savedTheme = (() => {
                 try {
-                    return localStorage.getItem('tfca-theme');
+                    const prefs = JSON.parse(localStorage.getItem('xdr_ui_prefs') || '{}');
+                    return prefs.theme === 'dark-mode' ? 'dark-mode' : 'light';
                 } catch (_) {
                     return null;
                 }
             })();
 
-            setTheme(savedTheme && THEME_PRESETS[savedTheme] ? savedTheme : 'security-ninja');
+            setTheme(savedTheme && THEME_PRESETS[savedTheme] ? savedTheme : 'light');
+            window.addEventListener('xdr-theme-change', event => {
+                const theme = event.detail?.theme === 'dark-mode' ? 'dark-mode' : 'light';
+                setTheme(theme);
+            });
             renderIdentityOptions();
             renderTargetOptions();
             renderThreatPalette();
@@ -2053,7 +2055,7 @@
         }
 
         function setTheme(themeId) {
-            const selectedTheme = THEME_PRESETS[themeId] ? themeId : 'security-ninja';
+            const selectedTheme = THEME_PRESETS[themeId] ? themeId : 'light';
             const themeVars = THEME_PRESETS[selectedTheme];
             Object.entries(themeVars).forEach(([varName, value]) => {
                 document.documentElement.style.setProperty(varName, value);
@@ -2067,7 +2069,9 @@
             }
 
             try {
-                localStorage.setItem('tfca-theme', selectedTheme);
+                const prefs = JSON.parse(localStorage.getItem('xdr_ui_prefs') || '{}');
+                prefs.theme = selectedTheme;
+                localStorage.setItem('xdr_ui_prefs', JSON.stringify(prefs));
             } catch (_) {
                 // Ignore storage errors in restricted environments.
             }
@@ -2561,7 +2565,7 @@
             const layerCoverage = getLayerCoverage(controlSet);
             const ztCoverage = getZTPrincipleCoverage(controlSet);
             const coveragePercent = allThreats.length > 0 ? Math.round((coveredThreats.size / allThreats.length) * 100) : 0;
-            const isSecurityNinja = state.theme === 'security-ninja';
+            const isSecurityNinja = state.theme === 'light';
             const analysisBaseStyle = isSecurityNinja ? 'background: #ffffff; border-radius: 12px; padding: 4px;' : '';
             const blueCardGrad = 'linear-gradient(145deg, #17324d 0%, #224b72 55%, #2f679a 100%)';
             const blueCardBorder = '#4f7ea8';
@@ -2770,13 +2774,16 @@
         }
 
         function resetAll() {
+            const currentTheme = state.theme;
             state = {
                 identity: null,
                 target: null,
                 selectedThreats: [],
                 draggedThreat: null,
                 dragDepth: 0,
-                analysisView: 'overview'
+                analysisView: 'overview',
+                pulseInterval: null,
+                theme: currentTheme
             };
             renderIdentityOptions();
             renderTargetOptions();

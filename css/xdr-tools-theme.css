@@ -61,6 +61,11 @@
   --theme-control-bg: rgba(255, 255, 255, 0.28);
   --theme-control-border: rgba(19, 38, 60, 0.18);
   --theme-control-text: #201c18;
+  --xdr-topbar-bg: linear-gradient(180deg, #f29d1d 0%, #ea8c0a 100%);
+  --xdr-topbar-text: #201c18;
+  --xdr-topbar-muted: rgba(32, 28, 24, 0.72);
+  --xdr-header-bg: linear-gradient(180deg, #1a1a1a 0%, #212121 100%);
+  --xdr-header-border: rgba(232, 97, 10, 0.28);
 }
 
 body[data-theme="dark-mode"] {
@@ -105,6 +110,11 @@ body[data-theme="dark-mode"] {
   --theme-control-bg: rgba(255, 255, 255, 0.04);
   --theme-control-border: rgba(255, 255, 255, 0.12);
   --theme-control-text: rgba(255, 255, 255, 0.84);
+  --xdr-topbar-bg: linear-gradient(180deg, #f29d1d 0%, #d57e00 100%);
+  --xdr-topbar-text: #201c18;
+  --xdr-topbar-muted: rgba(32, 28, 24, 0.72);
+  --xdr-header-bg: linear-gradient(180deg, #161616 0%, #212121 100%);
+  --xdr-header-border: rgba(232, 97, 10, 0.34);
 }
 
 * {
@@ -157,7 +167,7 @@ pre {
 
 .topnav {
   background:
-    linear-gradient(180deg, rgba(242, 157, 29, 0.98) 0%, rgba(236, 145, 13, 0.98) 100%),
+    var(--xdr-topbar-bg),
     linear-gradient(rgba(0, 0, 0, 0.06) 1px, transparent 1px),
     linear-gradient(90deg, rgba(0, 0, 0, 0.06) 1px, transparent 1px) !important;
   background-size: auto, 48px 48px, 48px 48px !important;
@@ -165,9 +175,13 @@ pre {
 }
 
 .topbar {
-  background: linear-gradient(180deg, #1a1a1a 0%, #212121 100%) !important;
-  border-color: rgba(232, 97, 10, 0.24) !important;
-  box-shadow: none;
+  background:
+    var(--xdr-topbar-bg),
+    linear-gradient(rgba(0, 0, 0, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.06) 1px, transparent 1px) !important;
+  background-size: auto, 48px 48px, 48px 48px !important;
+  border-color: rgba(32, 28, 24, 0.18) !important;
+  box-shadow: none !important;
 }
 
 .topbar h1,
@@ -176,13 +190,13 @@ pre {
 .card-head .card-title,
 .card-header .card-title,
 .tool-title {
-  color: #ffffff !important;
+  color: var(--xdr-topbar-text) !important;
 }
 
 .topbar p,
 .topnav-byline,
 .topnav-status {
-  color: rgba(255, 255, 255, 0.68) !important;
+  color: var(--xdr-topbar-muted) !important;
 }
 
 .topbar-actions {
@@ -194,8 +208,8 @@ pre {
 }
 
 .topnav-brand {
-  background: linear-gradient(180deg, #2a2d37 0%, #21232b 100%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: rgba(32, 28, 24, 0.14) !important;
+  border: 1px solid rgba(32, 28, 24, 0.18) !important;
   border-radius: 10px !important;
 }
 
@@ -209,7 +223,7 @@ pre {
 .topnav-tab:hover {
   background: rgba(255, 255, 255, 0.35) !important;
   border-color: rgba(19, 38, 60, 0.28) !important;
-  color: #13263c !important;
+  color: #201c18 !important;
 }
 
 .topnav-tab.active,
@@ -301,8 +315,17 @@ button.primary:hover,
 .panel-header,
 .section-header,
 .xdr-header-band {
-  background: var(--panel-header-grad) !important;
-  border-color: var(--panel-header-border) !important;
+  background: var(--xdr-header-bg) !important;
+  border-color: var(--xdr-header-border) !important;
+  color: #ffffff !important;
+}
+
+.card-head .card-title,
+.card-header .card-title,
+.tool-banner .tool-title,
+.panel-header,
+.section-header,
+.xdr-header-band {
   color: #ffffff !important;
 }
 

@@ -8,41 +8,41 @@
 <style>
 :root {
   --bg-primary: #ffffff;
-  --bg-secondary: #f7fafd;
+  --bg-secondary: #f7f3ee;
   --bg-card: #ffffff;
-  --bg-card-hover: #f3f8fd;
-  --bg-elevated: #eaf3fb;
-  --border: #c8d9ea;
-  --border-subtle: #dce8f3;
-  --text-primary: #13263c;
-  --text-secondary: #42617f;
-  --text-muted: #6683a1;
-  --accent-ninja: #1e3a5a;
-  --accent-ninja-dim: rgba(30,58,90,0.12);
-  --accent-ninja-glow: rgba(30,58,90,0.25);
-  --cell-grad-main: linear-gradient(135deg, #0b1726 0%, #12263c 60%, #1e3a5a 100%);
-  --cell-grad-sub: linear-gradient(135deg, #edf5fc 0%, #e1edf8 100%);
-  --cell-grad-sub-hover: linear-gradient(135deg, #e5f0fb 0%, #d7e7f6 100%);
+  --bg-card-hover: #faf7f3;
+  --bg-elevated: #f3eee8;
+  --border: #ded4c8;
+  --border-subtle: #ece1d4;
+  --text-primary: #201c18;
+  --text-secondary: #5f5751;
+  --text-muted: #867d74;
+  --accent-ninja: #e8610a;
+  --accent-ninja-dim: rgba(232,97,10,0.12);
+  --accent-ninja-glow: rgba(232,97,10,0.26);
+  --cell-grad-main: linear-gradient(180deg, #f29d1d 0%, #ea8c0a 100%);
+  --cell-grad-sub: linear-gradient(135deg, #fbf8f4 0%, #f2ebe2 100%);
+  --cell-grad-sub-hover: linear-gradient(135deg, #fffaf4 0%, #eee4d8 100%);
   --severity-critical: #e1063a;
   --severity-high: #e75a00;
   --severity-medium: #f2aa00;
   --severity-low: #008fd6;
-  --status-compliant: #0dbf67;
-  --chart-1: #00e5a0;
-  --chart-2: #4dc9f6;
-  --chart-3: #a78bfa;
+  --status-compliant: #00a96e;
+  --chart-1: #00a96e;
+  --chart-2: #e8610a;
+  --chart-3: #f0c030;
   --radius: 10px;
   --radius-sm: 6px;
   --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  --nav-title: #f0f7ff;
-  --nav-subtitle: #c6daee;
-  --nav-border: #21486d;
-  --btn-secondary-bg: rgba(255,255,255,0.14);
-  --btn-secondary-border: #c0d7ee;
-  --btn-secondary-text: #ffffff;
-  --theme-control-bg: rgba(255,255,255,0.08);
-  --theme-control-border: rgba(189, 213, 234, 0.35);
-  --theme-control-text: #d7e8f8;
+  --nav-title: #201c18;
+  --nav-subtitle: rgba(32,28,24,0.72);
+  --nav-border: rgba(32,28,24,0.18);
+  --btn-secondary-bg: rgba(255,255,255,0.25);
+  --btn-secondary-border: rgba(19,38,60,0.18);
+  --btn-secondary-text: #201c18;
+  --theme-control-bg: rgba(255,255,255,0.28);
+  --theme-control-border: rgba(19,38,60,0.18);
+  --theme-control-text: #201c18;
 }
 
 body[data-theme="dark-mode"] {
@@ -56,9 +56,9 @@ body[data-theme="dark-mode"] {
   --text-primary: #d8e7f8;
   --text-secondary: #a5c0dc;
   --text-muted: #7e9bb8;
-  --accent-ninja: #6aa7ff;
-  --accent-ninja-dim: rgba(106,167,255,0.12);
-  --accent-ninja-glow: rgba(106,167,255,0.35);
+  --accent-ninja: #e8610a;
+  --accent-ninja-dim: rgba(232,97,10,0.16);
+  --accent-ninja-glow: rgba(232,97,10,0.35);
   --cell-grad-main: linear-gradient(135deg, #0a101a 0%, #16253a 55%, #243a59 100%);
   --cell-grad-sub: linear-gradient(135deg, #14243b 0%, #1a2f4a 100%);
   --cell-grad-sub-hover: linear-gradient(135deg, #1a2c44 0%, #223751 100%);
@@ -66,19 +66,19 @@ body[data-theme="dark-mode"] {
   --severity-high: #ff8b4d;
   --severity-medium: #ffd166;
   --severity-low: #4dc9f6;
-  --status-compliant: #6aa7ff;
-  --chart-1: #6aa7ff;
-  --chart-2: #4dc9f6;
-  --chart-3: #a5c0dc;
-  --nav-title: #f2f7ff;
-  --nav-subtitle: #b8d1ee;
-  --nav-border: #35577f;
-  --btn-secondary-bg: rgba(106,167,255,0.14);
-  --btn-secondary-border: rgba(106,167,255,0.5);
-  --btn-secondary-text: #dceaff;
-  --theme-control-bg: rgba(106,167,255,0.14);
-  --theme-control-border: rgba(106,167,255,0.45);
-  --theme-control-text: #dceaff;
+  --status-compliant: #3fd392;
+  --chart-1: #3fd392;
+  --chart-2: #e8610a;
+  --chart-3: #f0c030;
+  --nav-title: #201c18;
+  --nav-subtitle: rgba(32,28,24,0.72);
+  --nav-border: rgba(32,28,24,0.18);
+  --btn-secondary-bg: rgba(255,255,255,0.24);
+  --btn-secondary-border: rgba(19,38,60,0.22);
+  --btn-secondary-text: #201c18;
+  --theme-control-bg: rgba(255,255,255,0.24);
+  --theme-control-border: rgba(19,38,60,0.22);
+  --theme-control-text: #201c18;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -8041,10 +8041,10 @@ button.legend-chip.active {
     };
 
     themeBtn.addEventListener("click", (event) => {
-      if (window.SecurityNinjaTheme) {
+      if (window.XDRToolsTheme) {
         event.stopPropagation();
         const dark = document.body.getAttribute("data-theme") === "dark-mode";
-        window.SecurityNinjaTheme.applyTheme(dark ? "light" : "dark-mode", true);
+        window.XDRToolsTheme.applyTheme(dark ? "light" : "dark-mode", true);
         syncThemeToggleState();
         return;
       }
