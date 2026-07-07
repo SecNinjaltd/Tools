@@ -1,0 +1,280 @@
+{
+  "generatedAt": "2026-07-07T16:18:49.181Z",
+  "upstream": {
+    "repo": "https://github.com/j0eyv/ConditionalAccessBaseline",
+    "version": "2026.6.1",
+    "commit": "1af233f9ab6bbf609d6e42b383bd0af5aa258774",
+    "source": "https://github.com/j0eyv/ConditionalAccessBaseline/tree/1af233f9ab6bbf609d6e42b383bd0af5aa258774"
+  },
+  "local": {
+    "baselineFile": "baseline-data.js",
+    "version": "2026.6.1",
+    "commit": "1af233f9ab6bbf609d6e42b383bd0af5aa258774"
+  },
+  "summary": {
+    "upstreamPolicies": 38,
+    "localPolicies": 38,
+    "exactMatches": 37,
+    "approvedOverrides": 1,
+    "unexpectedDifferences": 0,
+    "missingLocal": 0,
+    "missingUpstream": 0
+  },
+  "approvedOverrides": [
+    {
+      "sourceFile": "Config/ConditionalAccess/CA102-Admins-IdentityProtection-AllApps-AnyPlatform-SigninFrequency.json",
+      "id": "CA102",
+      "displayName": "CA102-Admins-IdentityProtection-AllApps-AnyPlatform-SigninFrequency",
+      "status": "approved-override",
+      "approvedOverrides": [
+        {
+          "path": "sessionControls.signInFrequency.value",
+          "local": 4,
+          "upstream": 12,
+          "reason": "CA Architect V2 hardening override: administrators default to a 4-hour sign-in frequency."
+        }
+      ]
+    }
+  ],
+  "unexpectedDifferences": [],
+  "missingLocal": [],
+  "missingUpstream": [],
+  "policies": [
+    {
+      "sourceFile": "Config/ConditionalAccess/CA000-Global-IdentityProtection-AnyApp-AnyPlatform-MFA.json",
+      "id": "CA000",
+      "displayName": "CA000-Global-IdentityProtection-AnyApp-AnyPlatform-MFA",
+      "status": "match"
+    },
+    {
+      "sourceFile": "Config/ConditionalAccess/CA001-Global-AttackSurfaceReduction-AnyApp-AnyPlatform-BLOCK-CountryWhitelist.json",
+      "id": "CA001",
+      "displayName": "CA001-Global-AttackSurfaceReduction-AnyApp-AnyPlatform-BLOCK-CountryWhitelist",
+      "status": "match"
+    },
+    {
+      "sourceFile": "Config/ConditionalAccess/CA002-Global-IdentityProtection-AnyApp-AnyPlatform-Block-LegacyAuthentication.json",
+      "id": "CA002",
+      "displayName": "CA002-Global-IdentityProtection-AnyApp-AnyPlatform-Block-LegacyAuthentication",
+      "status": "match"
+    },
+    {
+      "sourceFile": "Config/ConditionalAccess/CA003-Global-BaseProtection-RegisterOrJoin-AnyPlatform-MFA.json",
+      "id": "CA003",
+      "displayName": "CA003-Global-BaseProtection-RegisterOrJoin-AnyPlatform-MFA",
+      "status": "match"
+    },
+    {
+      "sourceFile": "Config/ConditionalAccess/CA004-Global-IdentityProtection-AnyApp-AnyPlatform-AuthenticationFlows.json",
+      "id": "CA004",
+      "displayName": "CA004-Global-IdentityProtection-AnyApp-AnyPlatform-AuthenticationFlows",
+      "status": "match"
+    },
+    {
+      "sourceFile": "Config/ConditionalAccess/CA005-Global-DataProtection-Office365-AnyPlatform-Unmanaged-RequireAppProtection.json",
+      "id": "CA005",
+      "displayName": "CA005-Global-DataProtection-Office365-AnyPlatform-Unmanaged-RequireAppProtection",
+      "status": "match"
+    },
+    {
+      "sourceFile": "Config/ConditionalAccess/CA005-Global-DataProtection-Office365-iOSenAndroid-ClientApps-Unmanaged-RequireAppProtection.json",
+      "id": "CA005",
+      "displayName": "CA005-Global-DataProtection-Office365-iOSenAndroid-ClientApps-Unmanaged-RequireAppProtection",
+      "status": "match"
+    },
+    {
+      "sourceFile": "Config/ConditionalAccess/CA006-Global-DataProtection-Office365-AnyPlatform-Browser-Unmanaged-AppEnforceRestrictions.json",
+      "id": "CA006",
+      "displayName": "CA006-Global-DataProtection-Office365-AnyPlatform-Browser-Unmanaged-AppEnforceRestrictions",
+      "status": "match"
+    },
+    {
+      "sourceFile": "Config/ConditionalAccess/CA006-Global-DataProtection-Office365-iOSenAndroid-RequireAppProtection.json",
+      "id": "CA006",
+      "displayName": "CA006-Global-DataProtection-Office365-iOSenAndroid-RequireAppProtection",
+      "status": "match"
+    },
+    {
+      "sourceFile": "Config/ConditionalAccess/CA100-Admins-IdentityProtection-AdminPortals-AnyPlatform-MFA.json",
+      "id": "CA100",
+      "displayName": "CA100-Admins-IdentityProtection-AdminPortals-AnyPlatform-MFA",
+      "status": "match"
+    },
+    {
+      "sourceFile": "Config/ConditionalAccess/CA101-Admins-IdentityProtection-AnyApp-AnyPlatform-MFA.json",
+      "id": "CA101",
+      "displayName": "CA101-Admins-IdentityProtection-AnyApp-AnyPlatform-MFA",
+      "status": "match"
+    },
+    {
+      "sourceFile": "Config/ConditionalAccess/CA102-Admins-IdentityProtection-AllApps-AnyPlatform-SigninFrequency.json",
+      "id": "CA102",
+      "displayName": "CA102-Admins-IdentityProtection-AllApps-AnyPlatform-SigninFrequency",
+      "status": "approved-override",
+      "approvedOverrides": [
+        {
+          "path": "sessionControls.signInFrequency.value",
+          "local": 4,
+          "upstream": 12,
+          "reason": "CA Architect V2 hardening override: administrators default to a 4-hour sign-in frequency."
+        }
+      ]
+    },
+    {
+      "sourceFile": "Config/ConditionalAccess/CA103-Admins-IdentityProtection-AllApps-AnyPlatform-PersistentBrowser.json",
+      "id": "CA103",
+      "displayName": "CA103-Admins-IdentityProtection-AllApps-AnyPlatform-PersistentBrowser",
+      "status": "match"
+    },
+    {
+      "sourceFile": "Config/ConditionalAccess/CA104-Admins-IdentityProtection-AllApps-AnyPlatform-ContinuousAccessEvaluation.json",
+      "id": "CA104",
+      "displayName": "CA104-Admins-IdentityProtection-AllApps-AnyPlatform-ContinuousAccessEvaluation",
+      "status": "match"
+    },
+    {
+      "sourceFile": "Config/ConditionalAccess/CA105-Admins-IdentityProtection-AnyApp-AnyPlatform-PhishingResistantMFA.json",
+      "id": "CA105",
+      "displayName": "CA105-Admins-IdentityProtection-AnyApp-AnyPlatform-PhishingResistantMFA",
+      "status": "match"
+    },
+    {
+      "sourceFile": "Config/ConditionalAccess/CA200-Internals-IdentityProtection-AnyApp-AnyPlatform-MFA.json",
+      "id": "CA200",
+      "displayName": "CA200-Internals-IdentityProtection-AnyApp-AnyPlatform-MFA",
+      "status": "match"
+    },
+    {
+      "sourceFile": "Config/ConditionalAccess/CA201-Internals-IdentityProtection-AnyApp-AnyPlatform-BLOCK-HighRiskUser.json",
+      "id": "CA201",
+      "displayName": "CA201-Internals-IdentityProtection-AnyApp-AnyPlatform-BLOCK-HighRiskUser",
+      "status": "match"
+    },
+    {
+      "sourceFile": "Config/ConditionalAccess/CA202-Internals-IdentityProtection-AllApps-WindowsMacOS-SigninFrequency-UnmanagedDevices.json",
+      "id": "CA202",
+      "displayName": "CA202-Internals-IdentityProtection-AllApps-WindowsMacOS-SigninFrequency-UnmanagedDevices",
+      "status": "match"
+    },
+    {
+      "sourceFile": "Config/ConditionalAccess/CA203-Internals-AppProtection-MicrosoftIntuneEnrollment-AnyPlatform-MFA.json",
+      "id": "CA203",
+      "displayName": "CA203-Internals-AppProtection-MicrosoftIntuneEnrollment-AnyPlatform-MFA",
+      "status": "match"
+    },
+    {
+      "sourceFile": "Config/ConditionalAccess/CA204-Internals-AttackSurfaceReduction-AllApps-AnyPlatform-BlockUnknownPlatforms.json",
+      "id": "CA204",
+      "displayName": "CA204-Internals-AttackSurfaceReduction-AllApps-AnyPlatform-BlockUnknownPlatforms",
+      "status": "match"
+    },
+    {
+      "sourceFile": "Config/ConditionalAccess/CA205-Internals-BaseProtection-AnyApp-Windows-CompliantorAADHJ.json",
+      "id": "CA205",
+      "displayName": "CA205-Internals-BaseProtection-AnyApp-Windows-CompliantorAADHJ",
+      "status": "match"
+    },
+    {
+      "sourceFile": "Config/ConditionalAccess/CA206-Internals-IdentityProtection-AllApps-AnyPlatform-PersistentBrowser.json",
+      "id": "CA206",
+      "displayName": "CA206-Internals-IdentityProtection-AllApps-AnyPlatform-PersistentBrowser",
+      "status": "match"
+    },
+    {
+      "sourceFile": "Config/ConditionalAccess/CA207-Internals-AttackSurfaceReduction-SelectedApps-AnyPlatform-BLOCK.json",
+      "id": "CA207",
+      "displayName": "CA207-Internals-AttackSurfaceReduction-SelectedApps-AnyPlatform-BLOCK",
+      "status": "match"
+    },
+    {
+      "sourceFile": "Config/ConditionalAccess/CA208-Internals-BaseProtection-AnyApp-MacOS-Compliant.json",
+      "id": "CA208",
+      "displayName": "CA208-Internals-BaseProtection-AnyApp-MacOS-Compliant",
+      "status": "match"
+    },
+    {
+      "sourceFile": "Config/ConditionalAccess/CA209-Internals-IdentityProtection-AllApps-AnyPlatform-ContinuousAccessEvaluation.json",
+      "id": "CA209",
+      "displayName": "CA209-Internals-IdentityProtection-AllApps-AnyPlatform-ContinuousAccessEvaluation",
+      "status": "match"
+    },
+    {
+      "sourceFile": "Config/ConditionalAccess/CA210-Internals-IdentityProtection-AnyApp-AnyPlatform-BLOCK-HighRiskSignIn.json",
+      "id": "CA210",
+      "displayName": "CA210-Internals-IdentityProtection-AnyApp-AnyPlatform-BLOCK-HighRiskSignIn",
+      "status": "match"
+    },
+    {
+      "sourceFile": "Config/ConditionalAccess/CA300-ServiceAccounts-IdentityProtection-AnyApp-AnyPlatform-MFA.json",
+      "id": "CA300",
+      "displayName": "CA300-ServiceAccounts-IdentityProtection-AnyApp-AnyPlatform-MFA",
+      "status": "match"
+    },
+    {
+      "sourceFile": "Config/ConditionalAccess/CA301-ServiceAccounts-AttackSurfaceReduction-AllApps-AnyPlatform-BlockUntrustedLocations.json",
+      "id": "CA301",
+      "displayName": "CA301-ServiceAccounts-AttackSurfaceReduction-AllApps-AnyPlatform-BlockUntrustedLocations",
+      "status": "match"
+    },
+    {
+      "sourceFile": "Config/ConditionalAccess/CA400-GuestUsers-IdentityProtection-AnyApp-AnyPlatform-MFA.json",
+      "id": "CA400",
+      "displayName": "CA400-GuestUsers-IdentityProtection-AnyApp-AnyPlatform-MFA",
+      "status": "match"
+    },
+    {
+      "sourceFile": "Config/ConditionalAccess/CA401-GuestUsers-AttackSurfaceReduction-AllApps-AnyPlatform-BlockNonGuestAppAccess.json",
+      "id": "CA401",
+      "displayName": "CA401-GuestUsers-AttackSurfaceReduction-AllApps-AnyPlatform-BlockNonGuestAppAccess",
+      "status": "match"
+    },
+    {
+      "sourceFile": "Config/ConditionalAccess/CA402-GuestUsers-IdentityProtection-AllApps-AnyPlatform-SigninFrequency.json",
+      "id": "CA402",
+      "displayName": "CA402-GuestUsers-IdentityProtection-AllApps-AnyPlatform-SigninFrequency",
+      "status": "match"
+    },
+    {
+      "sourceFile": "Config/ConditionalAccess/CA403-GuestUsers-IdentityProtection-AllApps-AnyPlatform-PersistentBrowser.json",
+      "id": "CA403",
+      "displayName": "CA403-GuestUsers-IdentityProtection-AllApps-AnyPlatform-PersistentBrowser",
+      "status": "match"
+    },
+    {
+      "sourceFile": "Config/ConditionalAccess/CA404-GuestUsers-AttackSurfaceReduction-SelectedApps-AnyPlatform-BLOCK.json",
+      "id": "CA404",
+      "displayName": "CA404-GuestUsers-AttackSurfaceReduction-SelectedApps-AnyPlatform-BLOCK",
+      "status": "match"
+    },
+    {
+      "sourceFile": "Config/ConditionalAccess/CA501-Agents-IdentityProtection-AnyApp-AnyPlatform-BLOCK-HighRiskAgent.json",
+      "id": "CA501",
+      "displayName": "CA501-Agents-IdentityProtection-AnyApp-AnyPlatform-BLOCK-HighRiskAgent",
+      "status": "match"
+    },
+    {
+      "sourceFile": "Config/ConditionalAccess/CA502-Agents-AttackSurfaceReduction-AllAgentIdentities-AllAgentResources-BLOCK.json",
+      "id": "CA502",
+      "displayName": "CA502-Agents-AttackSurfaceReduction-AllAgentIdentities-AllAgentResources-BLOCK",
+      "status": "match"
+    },
+    {
+      "sourceFile": "Config/ConditionalAccess/CA503-Agents-BaseProtection-AllAgentUsers-RequireCompliantDevice.json",
+      "id": "CA503",
+      "displayName": "CA503-Agents-BaseProtection-AllAgentUsers-RequireCompliantDevice",
+      "status": "match"
+    },
+    {
+      "sourceFile": "Config/ConditionalAccess/CA504-Agents-IdentityProtection-AllAgentUsers-AllResources-BlockRiskyAgents.json",
+      "id": "CA504",
+      "displayName": "CA504-Agents-IdentityProtection-AllAgentUsers-AllResources-BlockRiskyAgents",
+      "status": "match"
+    },
+    {
+      "sourceFile": "Config/ConditionalAccess/CA505-Agents-AttackSurfaceReduction-AllAgentUsers-AllResources-RequireCompliantNetWork.json",
+      "id": "CA505",
+      "displayName": "CA505-Agents-AttackSurfaceReduction-AllAgentUsers-AllResources-RequireCompliantNetWork",
+      "status": "match"
+    }
+  ]
+}

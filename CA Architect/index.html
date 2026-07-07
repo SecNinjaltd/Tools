@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'self';">
+  <title>CA Architect V2 - Consolidated Conditional Access Strategy Builder | Security Ninja</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="icon" href="data:,">
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="aurora" aria-hidden="true"></div>
+  <div class="dot-grid" aria-hidden="true"></div>
+  <header class="topbar app-topbar">
+    <div class="brand-lockup">
+      <div class="brand-mark">CA</div>
+      <div>
+        <p class="eyebrow">Security Ninja Tools</p>
+        <h1>CA Architect V2</h1>
+      </div>
+    </div>
+    <div class="topbar-meta">
+      <span id="baselineVersion">Baseline</span>
+      <span>Local only</span>
+      <a href="../index.html">Tools Hub</a>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <section class="intro-band">
+      <div>
+        <p class="eyebrow">Consolidated Conditional Access strategy builder</p>
+        <h2>Design stronger environments with fewer, clearer policies.</h2>
+        <p>CA Architect V2 simplifies Conditional Access by compressing best-practice controls into the fewest safe policies, explaining each build step, and mapping the design to MITRE ATT&amp;CK so teams can see which identity threats they are mitigating.</p>
+      </div>
+      <div class="intro-actions">
+        <button class="btn primary" id="loadRecommendedBtn">Load recommended strategy</button>
+        <button class="btn secondary" id="resetBtn">Clear strategy</button>
+      </div>
+    </section>
+
+    <section class="metrics" aria-live="polite">
+      <article><span>Threats</span><strong id="metricThreats">0</strong></article>
+      <article><span>Selected Policies</span><strong id="metricPolicies">0</strong></article>
+      <article><span>Monitor</span><strong id="metricMonitor">0</strong></article>
+      <article><span>Preview/Beta</span><strong id="metricBeta">0</strong></article>
+      <article><span>Warnings</span><strong id="metricWarnings">0</strong></article>
+      <article><span>Import Match</span><strong id="metricMatched">0%</strong></article>
+    </section>
+
+    <nav class="workspace-tabs" aria-label="CA Architect workflow" role="tablist">
+      <button class="tab-button active" id="tabButtonStrategyBuilder" type="button" role="tab" aria-selected="true" aria-controls="strategyBuilderPanel" data-tab="strategy-builder">
+        <span>Strategy builder</span>
+        <small>Requirements to strong coverage</small>
+      </button>
+      <button class="tab-button" id="tabButtonScenarioPlanner" type="button" role="tab" aria-selected="false" aria-controls="scenarioPlannerPanel" data-tab="scenario-planner">
+        <span>Scenario planner</span>
+        <small>Real access cases to safe policies</small>
+      </button>
+      <button class="tab-button" id="tabButtonPolicyRecommendations" type="button" role="tab" aria-selected="false" aria-controls="policyRecommendationsPanel" data-tab="policy-recommendations">
+        <span>Policy recommendations</span>
+        <small>Review, edit, and export</small>
+      </button>
+      <button class="tab-button" id="tabButtonImportCompare" type="button" role="tab" aria-selected="false" aria-controls="importComparePanel" data-tab="import-compare">
+        <span>Import and compare</span>
+        <small>Tenant export findings</small>
+      </button>
+    </nav>
+
+    <section class="workflow-panel active" id="strategyBuilderPanel" role="tabpanel" aria-labelledby="tabButtonStrategyBuilder" data-tab-panel="strategy-builder">
+      <section class="panel strategy-attack-panel">
+        <div class="panel-head compact">
+          <div>
+            <p class="eyebrow">Attack vectors addressed</p>
+            <h3>MITRE coverage for selected requirements</h3>
+          </div>
+        </div>
+        <div id="strategyAttackVectors" class="attack-vector-band"></div>
+      </section>
+
+      <section class="strategy-builder-grid">
+        <aside class="panel strategy-input-panel">
+          <div class="panel-head compact">
+            <div>
+              <p class="eyebrow">Best-practice strategy</p>
+              <h3>Requirements</h3>
+            </div>
+          </div>
+          <div class="strategy-form">
+            <label class="strategy-field">
+              <span>Strictness for selected requirements</span>
+              <select id="strategyProtection">
+                <option value="maximum">Maximum protection</option>
+                <option value="strong">Strong defaults</option>
+                <option value="starter">Starter baseline</option>
+              </select>
+              <small>Strictness only tunes requirements you tick below. Unticked requirements generate no policies.</small>
+            </label>
+            <label class="strategy-field">
+              <span>Rollout tolerance</span>
+              <select id="strategyRollout">
+                <option value="balanced">Balanced rollout</option>
+                <option value="cautious">Report-only first</option>
+                <option value="fast">Enable core controls</option>
+              </select>
+            </label>
+            <label class="strategy-toggle">
+              <input type="checkbox" id="strategyAdmins" data-strategy-toggle="admins">
+              <span><strong>Privileged admin hardening</strong><small>Phishing-resistant MFA, admin sessions, and admin portals.</small></span>
+            </label>
+            <label class="strategy-toggle">
+              <input type="checkbox" id="strategyInternals" data-strategy-toggle="internals">
+              <span><strong>Internal workforce</strong><small>Broad MFA, risk controls, devices, and sessions.</small></span>
+            </label>
+            <label class="strategy-toggle">
+              <input type="checkbox" id="strategyManagedDevices" data-strategy-toggle="managedDevices">
+              <span><strong>Managed device posture</strong><small>Use compliant devices, app protection, and platform controls.</small></span>
+            </label>
+            <label class="strategy-toggle">
+              <input type="checkbox" id="strategyGuests" data-strategy-toggle="guests">
+              <span><strong>Guests and partners</strong><small>Protect external collaboration without hiding guest-specific tradeoffs.</small></span>
+            </label>
+            <label class="strategy-toggle">
+              <input type="checkbox" id="strategyServiceAccounts" data-strategy-toggle="serviceAccounts">
+              <span><strong>Service accounts</strong><small>Separate non-human account controls and trusted-location decisions.</small></span>
+            </label>
+            <label class="strategy-toggle">
+              <input type="checkbox" id="strategyAgents" data-strategy-toggle="agents">
+              <span><strong>Copilot and agent identities</strong><small>Preview/beta agent identity, agent user, and agent resource controls.</small></span>
+            </label>
+            <label class="strategy-toggle">
+              <input type="checkbox" id="strategyTrustedLocations" data-strategy-toggle="trustedLocations">
+              <span><strong>Trusted network locations</strong><small>Use named locations where the organization can maintain them safely.</small></span>
+            </label>
+            <label class="strategy-toggle">
+              <input type="checkbox" id="strategyLegacyExceptions" data-strategy-toggle="legacyExceptions">
+              <span><strong>Legacy-auth exceptions required</strong><small>Highlight exception risk before blocking old protocols.</small></span>
+            </label>
+          </div>
+        </aside>
+
+        <section class="strategy-output">
+          <div class="panel strategy-summary-panel">
+            <div class="panel-head compact">
+              <div>
+                <p class="eyebrow">Recommended strategy</p>
+                <h3>Strongest safe design</h3>
+              </div>
+              <div class="panel-actions">
+                <button class="btn tiny primary" id="applyStrategyBtn">Apply strategy to rebuild set</button>
+                <button class="btn tiny" id="reviewStrategyPoliciesBtn">Review policy details</button>
+                <button class="btn tiny" id="downloadStrategyBtn">Download strategy summary</button>
+              </div>
+            </div>
+            <div id="strategySummary" class="strategy-summary"></div>
+          </div>
+
+          <section class="strategy-secondary-stack" aria-label="Advanced strategy details">
+            <details class="strategy-secondary-details">
+              <summary>
+                <span>Why some controls stay separate</span>
+                <small>Guardrails for policies that should not be merged.</small>
+              </summary>
+              <div id="strategySafety" class="strategy-card-list"></div>
+            </details>
+            <details class="strategy-secondary-details">
+              <summary>
+                <span>Baseline traceability</span>
+                <small>Shows which original baseline policies are represented by each consolidated policy.</small>
+              </summary>
+              <div id="strategyBaselineRepresented" class="strategy-card-list"></div>
+            </details>
+            <details class="strategy-secondary-details">
+              <summary>
+                <span>MITRE detail and residual gaps</span>
+                <small>Extra ATT&CK mapping and items Conditional Access cannot solve alone.</small>
+              </summary>
+              <div id="mitreCoverage" class="mitre-list"></div>
+              <div id="strategyResidualGaps" class="strategy-card-list"></div>
+            </details>
+            <details class="advanced-threat-model">
+              <summary>
+                <span>Advanced threat model</span>
+                <small>Optional scope, suggested threats, and control mapping for engineers who want to tune the strategy manually.</small>
+              </summary>
+              <div class="step-strip" aria-label="Threat model workflow">
+                <span><strong>1</strong> Choose scope</span>
+                <span><strong>2</strong> Confirm threats</span>
+                <span><strong>3</strong> Review controls</span>
+              </div>
+              <p class="scope-summary" id="scopeSummary">Choose an identity and target to see suggested threats and matching controls.</p>
+              <section class="builder-grid">
+                <section class="panel scope-panel">
+                  <div class="panel-head compact">
+                    <div>
+                      <p class="eyebrow">Scope</p>
+                      <h3>Identity and target</h3>
+                    </div>
+                  </div>
+                  <div class="choice-stack">
+                    <div>
+                      <h4>Identity profile</h4>
+                      <div id="identityOptions" class="choice-list"></div>
+                    </div>
+                    <div>
+                      <h4>Target resources</h4>
+                      <div id="targetOptions" class="choice-list"></div>
+                    </div>
+                  </div>
+                </section>
+
+                <section class="panel threat-panel">
+                  <div class="panel-head compact">
+                    <div>
+                      <p class="eyebrow">Threat model</p>
+                      <h3>Threats to defend against</h3>
+                    </div>
+                    <div class="panel-actions">
+                      <button class="btn tiny primary" id="useSuggestedThreatsBtn">Use suggested threats</button>
+                      <button class="btn tiny" id="clearThreatsBtn">Clear selected threats</button>
+                    </div>
+                  </div>
+                  <div id="threatList" class="threat-list"></div>
+                </section>
+
+                <aside class="panel strategy-panel">
+                  <div class="panel-head compact">
+                    <div>
+                      <p class="eyebrow">Coverage</p>
+                      <h3>Recommended controls</h3>
+                    </div>
+                    <button class="btn tiny" id="reviewPoliciesBtn">Review policies</button>
+                  </div>
+                  <div id="coverageSummary" class="coverage-summary"></div>
+                  <div id="controlList" class="control-list"></div>
+                </aside>
+              </section>
+            </details>
+          </section>
+        </section>
+      </section>
+    </section>
+
+    <section class="workflow-panel" id="scenarioPlannerPanel" role="tabpanel" aria-labelledby="tabButtonScenarioPlanner" data-tab-panel="scenario-planner" hidden>
+      <section class="scenario-grid">
+        <aside class="panel scenario-input-panel">
+          <div class="panel-head compact">
+            <div>
+              <p class="eyebrow">Scenario planner</p>
+              <h3>Real access situation</h3>
+            </div>
+          </div>
+          <div class="scenario-form">
+            <div>
+              <h4>Start with a template</h4>
+              <div id="scenarioTemplates" class="scenario-template-list"></div>
+            </div>
+            <label class="strategy-field">
+              <span>Target group display name</span>
+              <input type="text" id="scenarioGroupName" placeholder="CA-Scenario-ExternalCollaboration-Users">
+              <small>Create one security group per scenario so membership, expiry, and review are obvious.</small>
+            </label>
+            <label class="strategy-field">
+              <span>Target group object ID</span>
+              <input type="text" id="scenarioGroupId" placeholder="GUID required before apply/export">
+              <small>Guidance renders without this, but Graph export needs the real group object ID.</small>
+            </label>
+            <label class="strategy-field">
+              <span>Trusted named location object ID</span>
+              <input type="text" id="scenarioLocationId" placeholder="Only required for trusted-location scenarios">
+              <small>Needed when the scenario limits access to, or excludes, a trusted network location.</small>
+            </label>
+            <div class="scenario-custom-grid" aria-label="Custom scenario inputs">
+              <label class="strategy-field">
+                <span>Account type</span>
+                <select id="scenarioAccountType">
+                  <option value="externalGuest">External guest or partner</option>
+                  <option value="internalUser">Internal user</option>
+                  <option value="admin">Privileged/admin user</option>
+                  <option value="serviceAccount">Service account or automation</option>
+                  <option value="agentIdentity">Copilot or agent identity</option>
+                </select>
+              </label>
+              <label class="strategy-field">
+                <span>Target app/resource</span>
+                <select id="scenarioResource">
+                  <option value="sharepoint">SharePoint or OneDrive</option>
+                  <option value="exchange">Exchange Online or Microsoft 365 mail</option>
+                  <option value="office365">Microsoft 365 core apps</option>
+                  <option value="adminPortals">Admin portals</option>
+                  <option value="allApps">All cloud apps</option>
+                  <option value="agentResources">Agent resources</option>
+                </select>
+              </label>
+              <label class="strategy-field">
+                <span>Device trust</span>
+                <select id="scenarioDeviceTrust">
+                  <option value="unmanaged">Unmanaged or untrusted</option>
+                  <option value="managed">Managed/compliant required</option>
+                  <option value="browserOnly">Browser-only limited access</option>
+                  <option value="trustedLocation">Trusted location/device exception</option>
+                </select>
+              </label>
+              <label class="strategy-field">
+                <span>Allowed platforms</span>
+                <select id="scenarioPlatforms">
+                  <option value="any">Any platform</option>
+                  <option value="windows">Windows only</option>
+                  <option value="mobile">iOS and Android only</option>
+                  <option value="unknownBlocked">Block unknown platforms</option>
+                </select>
+              </label>
+              <label class="strategy-field">
+                <span>Location/network</span>
+                <select id="scenarioLocation">
+                  <option value="any">Any network</option>
+                  <option value="trustedOnly">Trusted named locations only</option>
+                  <option value="excludeTrusted">Apply outside trusted locations</option>
+                </select>
+              </label>
+              <label class="strategy-field">
+                <span>Risk tolerance</span>
+                <select id="scenarioRiskTolerance">
+                  <option value="low">Low friction</option>
+                  <option value="balanced">Balanced</option>
+                  <option value="strict">Strict</option>
+                </select>
+              </label>
+              <label class="strategy-field">
+                <span>Authentication requirement</span>
+                <select id="scenarioAuthRequirement">
+                  <option value="standardMfa">Standard MFA</option>
+                  <option value="passwordlessMfa">Passwordless MFA</option>
+                  <option value="phishingResistantMfa">Phishing-resistant MFA</option>
+                </select>
+                <small>Uses Entra authentication strengths where stronger method quality is required.</small>
+              </label>
+              <label class="strategy-field">
+                <span>Session strictness</span>
+                <select id="scenarioSession">
+                  <option value="standard">Standard</option>
+                  <option value="short">Short session</option>
+                  <option value="browserLocked">Browser locked down</option>
+                </select>
+                <div id="scenarioSessionHelp" class="scenario-choice-help"></div>
+              </label>
+              <label class="strategy-field">
+                <span>Access duration</span>
+                <select id="scenarioDuration">
+                  <option value="ongoing">Ongoing</option>
+                  <option value="temporary">Temporary / time-boxed</option>
+                  <option value="emergency">Emergency only</option>
+                </select>
+                <div id="scenarioDurationHelp" class="scenario-choice-help"></div>
+              </label>
+              <label class="strategy-field">
+                <span>Data sensitivity</span>
+                <select id="scenarioSensitivity">
+                  <option value="standard">Standard business data</option>
+                  <option value="sensitive">Sensitive business data</option>
+                  <option value="highlySensitive">Highly sensitive or regulated</option>
+                </select>
+              </label>
+            </div>
+          </div>
+        </aside>
+
+        <section class="scenario-output">
+          <section class="panel scenario-summary-panel">
+            <div class="panel-head compact">
+              <div>
+                <p class="eyebrow">Scenario outcome</p>
+                <h3 id="scenarioTitle">Secure access plan</h3>
+              </div>
+              <div class="panel-actions">
+                <button class="btn tiny primary" id="applyScenarioBtn">Apply scenario to rebuild set</button>
+                <button class="btn tiny" id="downloadScenarioBtn">Download scenario summary</button>
+              </div>
+            </div>
+            <div id="scenarioSummary" class="scenario-summary"></div>
+          </section>
+
+          <section class="panel scenario-attack-panel">
+            <div class="panel-head compact">
+              <div>
+                <p class="eyebrow">Threats mitigated</p>
+                <h3>MITRE and safety view</h3>
+              </div>
+            </div>
+            <div id="scenarioMitre" class="attack-vector-band"></div>
+          </section>
+
+          <section class="panel scenario-pack-panel">
+            <div class="panel-head compact">
+              <div>
+                <p class="eyebrow">Recommended policy pack</p>
+                <h3>Build these scenario policies</h3>
+              </div>
+            </div>
+            <div id="scenarioPolicyPack" class="scenario-policy-pack"></div>
+          </section>
+
+          <section class="scenario-support-grid">
+            <section class="panel">
+              <div class="panel-head compact">
+                <div>
+                  <p class="eyebrow">Prerequisites</p>
+                  <h3>Before Conditional Access</h3>
+                </div>
+              </div>
+              <div id="scenarioPrerequisites" class="scenario-check-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head compact">
+                <div>
+                  <p class="eyebrow">Manual build notes</p>
+                  <h3>What to configure</h3>
+                </div>
+              </div>
+              <div id="scenarioGuidance" class="scenario-check-list"></div>
+            </section>
+          </section>
+        </section>
+      </section>
+    </section>
+
+    <section class="workflow-panel" id="policyRecommendationsPanel" role="tabpanel" aria-labelledby="tabButtonPolicyRecommendations" data-tab-panel="policy-recommendations" hidden>
+      <section class="main-grid">
+      <aside class="panel policy-nav" aria-label="Conditional Access policies">
+        <div class="panel-head compact">
+          <div>
+            <p class="eyebrow">Policy review</p>
+            <h3>Recommended build plan</h3>
+          </div>
+          <span class="count-pill" id="policyCount">0</span>
+        </div>
+        <div class="policy-plan-summary" id="policyPlanSummary"></div>
+        <div class="review-guide" aria-label="Policy review steps">
+          <span>Review why recommended</span>
+          <span>Choose rollout</span>
+          <span>Add exclusions</span>
+          <span>Check JSON</span>
+        </div>
+        <details class="advanced-filters">
+          <summary>Advanced filters</summary>
+          <div class="segmented stacked" id="policyViewControl">
+            <button data-view="recommended">Recommended</button>
+            <button data-view="selected">Included in export</button>
+            <button data-view="all">Baseline library</button>
+          </div>
+          <div class="filter-label">
+            <span>Policy group</span>
+            <small>Use groups to narrow the review list without changing exports.</small>
+          </div>
+          <div class="filters" id="personaFilters"></div>
+          <label class="search-box">
+            <span>Search</span>
+            <input type="search" id="searchInput" placeholder="CA105, guests, legacy, agents">
+          </label>
+        </details>
+        <div class="policy-list" id="policyList"></div>
+      </aside>
+
+      <section class="panel detail-panel" aria-label="Selected policy detail">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow" id="selectedPersona">Policy detail</p>
+            <h3 id="selectedTitle">Select a policy</h3>
+          </div>
+          <span class="risk-pill" id="selectedRisk">-</span>
+        </div>
+        <p class="summary" id="selectedSummary">Select a policy to review controls, structured edits, and Graph JSON.</p>
+        <div class="selected-guidance" id="selectedGuidance"></div>
+
+        <div class="decision-card">
+          <div>
+            <p class="eyebrow">Rollout decision</p>
+            <div class="segmented" id="decisionControl">
+              <button data-decision="include">Include</button>
+              <button data-decision="monitor">Monitor</button>
+              <button data-decision="exclude">Exclude</button>
+            </div>
+          </div>
+          <p id="decisionHint">Recommended states start higher-risk controls in report-only where supported.</p>
+        </div>
+
+        <div class="detail-grid">
+          <div>
+            <h4>Prerequisites</h4>
+            <ul id="prereqList" class="check-list"></ul>
+          </div>
+          <div>
+            <h4>Required objects</h4>
+            <ul id="objectList" class="check-list"></ul>
+          </div>
+        </div>
+
+        <div class="compare-box" id="compareBox"></div>
+
+        <section class="manual-guide-panel">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Manual build guide</p>
+              <h4>Entra portal checklist</h4>
+              <span class="fine-inline">Generated from the configured export shape</span>
+            </div>
+            <div class="manual-actions">
+              <button class="btn tiny" id="copyPolicyNameBtn">Copy name</button>
+              <button class="btn tiny" id="copyManualGuideBtn">Copy checklist</button>
+            </div>
+          </div>
+          <div id="manualGuide" class="manual-guide"></div>
+        </section>
+
+        <section class="override-panel">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Structured edits</p>
+              <h4>Export overrides</h4>
+            </div>
+            <button class="btn tiny" id="clearOverridesBtn">Clear edits</button>
+          </div>
+          <div class="override-grid" id="overrideGrid"></div>
+        </section>
+
+        <div class="json-card">
+          <div class="json-head">
+            <div>
+              <h4>Sanitized Graph JSON</h4>
+              <span id="jsonModeLabel" class="fine-inline">v1.0 policy shape</span>
+            </div>
+            <div class="json-actions">
+              <button class="btn tiny" id="copyJsonBtn">Copy JSON</button>
+              <button class="btn tiny" id="downloadPolicyBtn">Download JSON</button>
+            </div>
+          </div>
+          <pre id="jsonPreview"></pre>
+        </div>
+      </section>
+
+      <aside class="side-stack">
+        <section class="panel">
+          <div class="panel-head compact">
+            <div>
+              <p class="eyebrow">Export</p>
+              <h3>Rebuild set</h3>
+            </div>
+          </div>
+          <div class="export-stack">
+            <button class="btn primary" id="exportConfiguredBtn">Export as configured</button>
+            <button class="btn secondary" id="exportReportBtn">Export report-only rollout</button>
+            <button class="btn secondary" id="exportDisabledBtn">Export all disabled</button>
+          </div>
+          <p class="fine-print">Agent identity policies use current Microsoft Graph beta/preview fields when required.</p>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head compact">
+            <div>
+              <p class="eyebrow">Safety</p>
+              <h3>Warnings</h3>
+            </div>
+          </div>
+          <div id="warningList" class="warning-list"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head compact">
+            <div>
+              <p class="eyebrow">Snapshot</p>
+              <h3>Source</h3>
+            </div>
+          </div>
+          <dl class="source-list">
+            <dt>Version</dt><dd id="sourceVersion"></dd>
+            <dt>Upstream</dt><dd id="sourceUpstream"></dd>
+            <dt>Commit</dt><dd id="commitText"></dd>
+            <dt>Parity</dt><dd id="sourceParity"></dd>
+            <dt>Override</dt><dd id="sourceOverride"></dd>
+            <dt>Policies</dt><dd id="sourcePolicies"></dd>
+            <dt>Generated</dt><dd id="sourceGenerated"></dd>
+            <dt>Groups</dt><dd id="sourceGroups"></dd>
+            <dt>Locations</dt><dd id="sourceLocations"></dd>
+          </dl>
+        </section>
+      </aside>
+      </section>
+    </section>
+
+    <section class="workflow-panel" id="importComparePanel" role="tabpanel" aria-labelledby="tabButtonImportCompare" data-tab-panel="import-compare" hidden>
+      <section class="panel import-panel">
+      <div class="panel-head">
+        <div>
+          <p class="eyebrow">Import and compare</p>
+          <h3>Your current tenant export</h3>
+        </div>
+        <div class="import-actions">
+          <button class="btn secondary" id="analyseBtn">Analyse pasted JSON</button>
+          <button class="btn secondary" id="clearImportBtn">Clear import</button>
+        </div>
+      </div>
+      <div class="import-grid">
+        <div>
+          <textarea id="importText" spellcheck="false" placeholder='{ "value": [ { "displayName": "...", "conditions": {}, "grantControls": {} } ] }'></textarea>
+          <div class="dropzone" id="dropzone">Drop a .json export here or click to browse<input id="fileInput" type="file" accept=".json,application/json"></div>
+        </div>
+        <div>
+          <div id="importStatus" class="status-box">Import a Graph or IntuneManagement export to compare against both the V2 rebuild set and the full baseline.</div>
+          <div id="importDashboard" class="import-dashboard"></div>
+          <div class="import-filter-bar" id="importFilterControl" aria-label="Import result filters">
+            <button class="filter-chip active" data-import-filter="all">All</button>
+            <button class="filter-chip" data-import-filter="exact">Exact</button>
+            <button class="filter-chip" data-import-filter="different">Different</button>
+            <button class="filter-chip" data-import-filter="missing">Missing</button>
+            <button class="filter-chip" data-import-filter="extra">Extra</button>
+            <button class="filter-chip" data-import-filter="risk">Risk</button>
+          </div>
+          <div id="importFindings" class="finding-list"></div>
+        </div>
+      </div>
+      </section>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="baseline-data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
