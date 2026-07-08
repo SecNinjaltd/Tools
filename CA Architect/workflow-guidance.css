@@ -1,0 +1,134 @@
+.intro-band a {
+  color: #fff;
+  font-weight: 800;
+  text-decoration-color: rgba(255, 255, 255, 0.45);
+  text-underline-offset: 3px;
+}
+
+.workflow-overview {
+  display: grid;
+  grid-template-columns: minmax(260px, 380px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+  margin: 0 0 14px;
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: linear-gradient(155deg, rgba(54, 54, 64, 0.9) 0%, rgba(36, 36, 40, 0.95) 52%, rgba(20, 20, 24, 0.98) 100%);
+  box-shadow: var(--shadow-soft);
+}
+
+.workflow-overview h3 {
+  color: var(--ink);
+  font-size: 20px;
+  line-height: 1.25;
+  max-width: 360px;
+}
+
+.workflow-paths {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.workflow-path {
+  min-height: 112px;
+  padding: 13px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  display: grid;
+  gap: 7px;
+  align-content: start;
+}
+
+.workflow-path span,
+.tab-group,
+.tab-context span {
+  color: #f5d547;
+  font: 800 10px/1.2 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+}
+
+.workflow-path strong {
+  color: var(--ink);
+  line-height: 1.25;
+}
+
+.workflow-path small {
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.workspace-tabs {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.tab-button {
+  gap: 5px;
+  align-content: start;
+  min-height: 104px;
+}
+
+.tab-button.active .tab-group {
+  color: rgba(14, 14, 16, 0.72);
+}
+
+.tab-context {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin: 0 0 16px;
+  padding: 15px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: linear-gradient(155deg, rgba(54, 54, 64, 0.9) 0%, rgba(36, 36, 40, 0.95) 52%, rgba(20, 20, 24, 0.98) 100%);
+  box-shadow: var(--shadow-soft);
+}
+
+.tab-context div {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.tab-context p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+@media (max-width: 1380px) {
+  .workflow-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .workflow-overview h3 {
+    max-width: 720px;
+  }
+
+  .workflow-paths {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .workspace-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 960px) {
+  .workspace-tabs,
+  .tab-context {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 680px) {
+  .workflow-overview,
+  .tab-context {
+    padding: 14px;
+  }
+
+  .workflow-paths {
+    grid-template-columns: 1fr;
+  }
+}
