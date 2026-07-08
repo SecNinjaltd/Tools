@@ -10,6 +10,7 @@
   <link rel="icon" href="data:,">
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="workflow-guidance.css">
 </head>
 <body>
   <div class="aurora" aria-hidden="true"></div>
@@ -23,18 +24,18 @@
       </div>
     </div>
     <div class="topbar-meta">
-      <span id="baselineVersion">Baseline</span>
       <span>Local only</span>
       <a href="../index.html">Tools Hub</a>
     </div>
   </header>
+  <span id="baselineVersion" hidden></span>
 
   <main class="workspace">
     <section class="intro-band">
       <div>
         <p class="eyebrow">Consolidated Conditional Access strategy builder</p>
         <h2>Design stronger environments with fewer, clearer policies.</h2>
-        <p>CA Architect V2 simplifies Conditional Access by compressing best-practice controls into the fewest safe policies, explaining each build step, and mapping the design to MITRE ATT&amp;CK so teams can see which identity threats they are mitigating.</p>
+        <p>CA Architect V2 simplifies Conditional Access by compressing best-practice controls into the fewest safe policies, explaining each build step, and mapping the design to MITRE ATT&amp;CK so teams can see which identity threats they are mitigating. This tool was built with reference to <a href="https://github.com/j0eyv/ConditionalAccessBaseline" target="_blank" rel="noopener noreferrer">j0eyv/ConditionalAccessBaseline</a>.</p>
       </div>
       <div class="intro-actions">
         <button class="btn primary" id="loadRecommendedBtn">Load recommended strategy</button>
@@ -42,35 +43,83 @@
       </div>
     </section>
 
-    <section class="metrics" aria-live="polite">
-      <article><span>Threats</span><strong id="metricThreats">0</strong></article>
-      <article><span>Selected Policies</span><strong id="metricPolicies">0</strong></article>
-      <article><span>Monitor</span><strong id="metricMonitor">0</strong></article>
-      <article><span>Preview/Beta</span><strong id="metricBeta">0</strong></article>
-      <article><span>Warnings</span><strong id="metricWarnings">0</strong></article>
-      <article><span>Import Match</span><strong id="metricMatched">0%</strong></article>
+    <p class="metrics-context" id="metricsContext" aria-live="polite">Showing the default recommendation set. Apply a strategy or scenario to rebuild it.</p>
+    <section class="metrics" aria-label="Current recommendation metrics">
+      <article aria-label="Selected threats in the current requirements"><span>Selected Threats</span><strong id="metricThreats">0</strong><small>chosen requirements</small></article>
+      <article aria-label="Recommended policies in the current rebuild set"><span>Recommended Policies</span><strong id="metricPolicies">0</strong><small id="metricPoliciesHelp">default rebuild set</small></article>
+      <article aria-label="Policies set to report-only mode"><span>Report-only</span><strong id="metricMonitor">0</strong><small>staged rollout</small></article>
+      <article aria-label="Policies using preview or beta controls"><span>Preview/Beta</span><strong id="metricBeta">0</strong><small>review supportability</small></article>
+      <article aria-label="Safety warnings to review before rollout"><span>Safety Warnings</span><strong id="metricWarnings">0</strong><small id="metricWarningsHelp">review before rollout</small></article>
+      <article aria-label="Imported tenant policies matching the current rebuild set"><span>Import Match</span><strong id="metricMatched">0%</strong><small id="metricImportHelp">no import analysed</small></article>
+    </section>
+
+    <section class="workflow-overview" aria-labelledby="workflowOverviewTitle">
+      <div>
+        <p class="eyebrow">Choose your starting point</p>
+        <h3 id="workflowOverviewTitle">Two ways to design, one place to review and export.</h3>
+      </div>
+      <div class="workflow-paths" aria-label="CA Architect paths">
+        <div class="workflow-path">
+          <span>Start path</span>
+          <strong>Start from requirements</strong>
+          <small>Use Strategy builder for a full Conditional Access strategy.</small>
+        </div>
+        <div class="workflow-path">
+          <span>Start path</span>
+          <strong>Start from a real access case</strong>
+          <small>Use Scenario planner for one group, resource, or exception.</small>
+        </div>
+        <div class="workflow-path">
+          <span>Shared output</span>
+          <strong>Review and export</strong>
+          <small>Use Policy recommendations to tune rollout, exclusions, and JSON.</small>
+        </div>
+        <div class="workflow-path">
+          <span>Validate</span>
+          <strong>Existing tenant review</strong>
+          <small>Use Import and compare to check current exports for gaps.</small>
+        </div>
+      </div>
     </section>
 
     <nav class="workspace-tabs" aria-label="CA Architect workflow" role="tablist">
       <button class="tab-button active" id="tabButtonStrategyBuilder" type="button" role="tab" aria-selected="true" aria-controls="strategyBuilderPanel" data-tab="strategy-builder">
+        <strong class="tab-group">Start path</strong>
         <span>Strategy builder</span>
-        <small>Requirements to strong coverage</small>
+        <small>Build a full strategy from requirements</small>
       </button>
       <button class="tab-button" id="tabButtonScenarioPlanner" type="button" role="tab" aria-selected="false" aria-controls="scenarioPlannerPanel" data-tab="scenario-planner">
+        <strong class="tab-group">Start path</strong>
         <span>Scenario planner</span>
-        <small>Real access cases to safe policies</small>
+        <small>Build a focused policy pack for one access case</small>
       </button>
       <button class="tab-button" id="tabButtonPolicyRecommendations" type="button" role="tab" aria-selected="false" aria-controls="policyRecommendationsPanel" data-tab="policy-recommendations">
+        <strong class="tab-group">Shared output</strong>
         <span>Policy recommendations</span>
-        <small>Review, edit, and export</small>
+        <small>Review, tune rollout, and export</small>
       </button>
       <button class="tab-button" id="tabButtonImportCompare" type="button" role="tab" aria-selected="false" aria-controls="importComparePanel" data-tab="import-compare">
+        <strong class="tab-group">Validate</strong>
         <span>Import and compare</span>
-        <small>Tenant export findings</small>
+        <small>Check an existing tenant export</small>
       </button>
     </nav>
 
     <section class="workflow-panel active" id="strategyBuilderPanel" role="tabpanel" aria-labelledby="tabButtonStrategyBuilder" data-tab-panel="strategy-builder">
+      <section class="tab-context" aria-label="Strategy builder guidance">
+        <div>
+          <span>Use this when</span>
+          <p>You need a broad Conditional Access design based on business and security requirements.</p>
+        </div>
+        <div>
+          <span>You will need</span>
+          <p>The requirements to protect, preferred strictness, and rollout tolerance.</p>
+        </div>
+        <div>
+          <span>Next step</span>
+          <p>Apply the generated strategy to the rebuild set, then review it in Policy recommendations.</p>
+        </div>
+      </section>
       <section class="panel strategy-attack-panel">
         <div class="panel-head compact">
           <div>
@@ -245,6 +294,20 @@
     </section>
 
     <section class="workflow-panel" id="scenarioPlannerPanel" role="tabpanel" aria-labelledby="tabButtonScenarioPlanner" data-tab-panel="scenario-planner" hidden>
+      <section class="tab-context" aria-label="Scenario planner guidance">
+        <div>
+          <span>Use this when</span>
+          <p>You need policies for one real access case, exception, partner group, or sensitive resource.</p>
+        </div>
+        <div>
+          <span>You will need</span>
+          <p>The target group, resource, device trust, location, risk tolerance, and any object IDs for export.</p>
+        </div>
+        <div>
+          <span>Next step</span>
+          <p>Apply the scenario pack to the rebuild set, then review the resulting policies.</p>
+        </div>
+      </section>
       <section class="scenario-grid">
         <aside class="panel scenario-input-panel">
           <div class="panel-head compact">
@@ -428,6 +491,20 @@
     </section>
 
     <section class="workflow-panel" id="policyRecommendationsPanel" role="tabpanel" aria-labelledby="tabButtonPolicyRecommendations" data-tab-panel="policy-recommendations" hidden>
+      <section class="tab-context" aria-label="Policy recommendations guidance">
+        <div>
+          <span>Use this when</span>
+          <p>You have applied a strategy or scenario and are ready to inspect the generated build plan.</p>
+        </div>
+        <div>
+          <span>You will need</span>
+          <p>Rollout decisions, exclusions, required object names, and any edits needed before export.</p>
+        </div>
+        <div>
+          <span>Next step</span>
+          <p>Export configured JSON, copy manual build guidance, or compare it with an existing tenant.</p>
+        </div>
+      </section>
       <section class="main-grid">
       <aside class="panel policy-nav" aria-label="Conditional Access policies">
         <div class="panel-head compact">
@@ -591,6 +668,20 @@
     </section>
 
     <section class="workflow-panel" id="importComparePanel" role="tabpanel" aria-labelledby="tabButtonImportCompare" data-tab-panel="import-compare" hidden>
+      <section class="tab-context" aria-label="Import and compare guidance">
+        <div>
+          <span>Use this when</span>
+          <p>You want to assess an existing tenant against the V2 rebuild set and baseline coverage.</p>
+        </div>
+        <div>
+          <span>You will need</span>
+          <p>A Microsoft Graph or IntuneManagement Conditional Access JSON export.</p>
+        </div>
+        <div>
+          <span>Next step</span>
+          <p>Analyse the export, filter findings, then resolve missing, different, or risky policies.</p>
+        </div>
+      </section>
       <section class="panel import-panel">
       <div class="panel-head">
         <div>

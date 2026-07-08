@@ -5,6 +5,28 @@
   text-underline-offset: 3px;
 }
 
+.metrics-context {
+  margin: 14px 0 -4px;
+  padding: 11px 14px;
+  border: 1px solid rgba(245, 213, 71, 0.2);
+  background: rgba(245, 213, 71, 0.08);
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.metrics small {
+  position: relative;
+  z-index: 1;
+  display: block;
+  max-width: calc(100% - 46px);
+  margin-top: 8px;
+  color: rgba(245, 243, 239, 0.66);
+  font: 700 10px/1.25 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+}
+
 .workflow-overview {
   display: grid;
   grid-template-columns: minmax(260px, 380px) minmax(0, 1fr);
@@ -124,7 +146,8 @@
 
 @media (max-width: 680px) {
   .workflow-overview,
-  .tab-context {
+  .tab-context,
+  .metrics-context {
     padding: 14px;
   }
 
