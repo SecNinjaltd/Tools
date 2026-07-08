@@ -39,7 +39,8 @@ h4 { font-size: 13px; text-transform: uppercase; margin-bottom: 10px; }
   color: #f5f3ef !important;
 }
 .topbar-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; font: 700 11px/1 'JetBrains Mono', monospace; text-transform: uppercase; color: rgba(32,35,43,.78); }
-.topbar-meta span, .topbar-meta a { padding: 10px 12px; border: 1px solid rgba(255,255,255,.16); background: rgba(255,255,255,.055); border-radius: 0; color: var(--ink-soft); text-decoration: none; clip-path: polygon(9px 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%, 0 9px); }
+.topbar-meta span, .topbar-meta a, .theme-toggle { padding: 10px 12px; border: 1px solid rgba(255,255,255,.16); background: rgba(255,255,255,.055); border-radius: 0; color: var(--ink-soft); text-decoration: none; clip-path: polygon(9px 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%, 0 9px); }
+.theme-toggle { cursor: pointer; font: inherit; text-transform: inherit; }
 .workspace { width: min(1840px, calc(100% - 32px)); margin: 22px auto 48px; }
 .intro-band { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 24px; border-radius: var(--radius); background: linear-gradient(165deg, rgba(255,255,255,.09) 0%, rgba(255,255,255,.04) 48%, rgba(255,255,255,.02) 100%); border: 1px solid rgba(255,255,255,.12); box-shadow: var(--shadow-soft); backdrop-filter: blur(24px); }
 .intro-band h2 { color: #fff; font-size: clamp(25px, 3vw, 42px); max-width: 880px; }
@@ -734,6 +735,314 @@ pre { background: #111113; color: #f5f3ef; border-top: 1px solid rgba(255,255,25
 }
 .metrics article:nth-child(5)::before {
   background: linear-gradient(90deg, #e1063a 0%, #ff6a1a 58%, #f5d547 100%);
+}
+
+html[data-theme="light"] {
+  --app-bg: #f3eee6;
+  --surface-1: rgba(255, 255, 255, 0.94);
+  --surface-2: rgba(255, 255, 255, 0.76);
+  --surface-3: rgba(14, 14, 16, 0.06);
+  --ink: #17171a;
+  --ink-soft: #4e4a44;
+  --ink-muted: #746d62;
+  --line: rgba(38, 34, 30, 0.18);
+  --line-soft: rgba(38, 34, 30, 0.1);
+  --charcoal: #242428;
+  --orange-soft: rgba(255, 106, 26, 0.12);
+  --shadow-soft: inset 1px 1px 0 rgba(255, 255, 255, 0.75), 4px 4px 0 rgba(41, 35, 29, 0.16), 14px 14px 34px rgba(86, 62, 38, 0.12);
+  color-scheme: light;
+}
+
+html[data-theme="light"] body {
+  background: var(--app-bg) !important;
+  color: var(--ink);
+}
+
+html[data-theme="light"] .aurora {
+  background:
+    linear-gradient(rgba(93, 71, 50, 0.09) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(93, 71, 50, 0.09) 1px, transparent 1px),
+    linear-gradient(145deg, #fff8ec 0%, #f4e4d1 42%, #ffd0a8 74%, #f49a56 100%);
+  background-size: 36px 36px, 36px 36px, auto;
+}
+
+html[data-theme="light"] .dot-grid {
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.08));
+}
+
+html[data-theme="light"] .app-topbar,
+html[data-theme="light"] .intro-band,
+html[data-theme="light"] .panel,
+html[data-theme="light"] .tab-button,
+html[data-theme="light"] .manual-guide-panel,
+html[data-theme="light"] .override-panel,
+html[data-theme="light"] .json-card,
+html[data-theme="light"] .advanced-filters,
+html[data-theme="light"] .advanced-threat-model,
+html[data-theme="light"] .strategy-secondary-details,
+html[data-theme="light"] .comparison-card {
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.96) 0%, rgba(255, 248, 238, 0.94) 52%, rgba(246, 232, 215, 0.98) 100%);
+  border-color: rgba(38, 34, 30, 0.16);
+  box-shadow: var(--shadow-soft);
+}
+
+html[data-theme="light"] .app-topbar h1,
+html[data-theme="light"] .app-topbar .eyebrow,
+html[data-theme="light"] .brand-mark,
+html[data-theme="light"] .intro-band h2,
+html[data-theme="light"] h1,
+html[data-theme="light"] h2,
+html[data-theme="light"] h3,
+html[data-theme="light"] h4 {
+  color: var(--ink) !important;
+}
+
+html[data-theme="light"] .brand-mark,
+html[data-theme="light"] .topbar-meta span,
+html[data-theme="light"] .topbar-meta a,
+html[data-theme="light"] .theme-toggle {
+  background: rgba(255, 255, 255, 0.72);
+  border-color: rgba(38, 34, 30, 0.16);
+  color: var(--ink-soft);
+}
+
+html[data-theme="light"] .theme-toggle[aria-pressed="true"] {
+  background: var(--orange);
+  border-color: var(--orange);
+  color: #0e0e10;
+}
+
+html[data-theme="light"] .intro-band p:not(.eyebrow),
+html[data-theme="light"] .summary,
+html[data-theme="light"] .choice-desc,
+html[data-theme="light"] .threat-meta,
+html[data-theme="light"] .threat-desc,
+html[data-theme="light"] .threat-controls,
+html[data-theme="light"] .control-row span:not(.control-dot),
+html[data-theme="light"] .strategy-summary p,
+html[data-theme="light"] .strategy-empty-callout span,
+html[data-theme="light"] .strategy-build-order li span,
+html[data-theme="light"] .strategy-policy-card dd,
+html[data-theme="light"] .strategy-note p,
+html[data-theme="light"] .represented-list span,
+html[data-theme="light"] .mitre-row span,
+html[data-theme="light"] .mitre-row p,
+html[data-theme="light"] .plan-summary-title span,
+html[data-theme="light"] .policy-plan-summary p,
+html[data-theme="light"] .filter-label small,
+html[data-theme="light"] .policy-reason,
+html[data-theme="light"] .policy-answer,
+html[data-theme="light"] .selected-guidance strong,
+html[data-theme="light"] .decision-card p,
+html[data-theme="light"] .manual-section-head p,
+html[data-theme="light"] .manual-row dd em,
+html[data-theme="light"] .warning,
+html[data-theme="light"] .status-box,
+html[data-theme="light"] .comparison-body dd,
+html[data-theme="light"] .comparison-body p,
+html[data-theme="light"] .diff-list span {
+  color: var(--ink-soft);
+}
+
+html[data-theme="light"] .panel-head,
+html[data-theme="light"] .section-head,
+html[data-theme="light"] .json-head,
+html[data-theme="light"] .manual-section-head,
+html[data-theme="light"] .advanced-filters[open] summary {
+  background: rgba(255, 255, 255, 0.58);
+  border-color: rgba(38, 34, 30, 0.1);
+}
+
+html[data-theme="light"] .choice-card,
+html[data-theme="light"] .threat-card,
+html[data-theme="light"] .control-row,
+html[data-theme="light"] .strategy-toggle,
+html[data-theme="light"] .scenario-template-card,
+html[data-theme="light"] .strategy-policy-card,
+html[data-theme="light"] .scenario-setting-card,
+html[data-theme="light"] .strategy-note,
+html[data-theme="light"] .mitre-row,
+html[data-theme="light"] .strategy-build-order li,
+html[data-theme="light"] .represented-list li,
+html[data-theme="light"] .policy-answer,
+html[data-theme="light"] .check-list li,
+html[data-theme="light"] .manual-section,
+html[data-theme="light"] .manual-object,
+html[data-theme="light"] .finding,
+html[data-theme="light"] .diff-list li,
+html[data-theme="light"] .metrics article,
+html[data-theme="light"] .strategy-score-grid article,
+html[data-theme="light"] .risk-strip div,
+html[data-theme="light"] .import-dashboard article,
+html[data-theme="light"] .plan-summary-grid span,
+html[data-theme="light"] .strategy-empty-callout,
+html[data-theme="light"] .empty-state,
+html[data-theme="light"] .dropzone,
+html[data-theme="light"] .status-box,
+html[data-theme="light"] .review-guide span {
+  background: rgba(255, 255, 255, 0.78);
+  border-color: rgba(38, 34, 30, 0.12);
+  color: var(--ink);
+}
+
+html[data-theme="light"] .metrics article {
+  background: linear-gradient(155deg, #ffffff 0%, #fff8ee 52%, #f5e7d6 100%) !important;
+  border: 1px solid rgba(38, 34, 30, 0.16) !important;
+  border-bottom-color: rgba(38, 34, 30, 0.28) !important;
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.85),
+    5px 5px 0 rgba(41, 35, 29, 0.18),
+    16px 16px 32px rgba(86, 62, 38, 0.12) !important;
+}
+
+html[data-theme="light"] .metrics article::after {
+  border-color: rgba(255, 106, 26, 0.18);
+  background: linear-gradient(135deg, rgba(255, 106, 26, 0.14), rgba(245, 213, 71, 0.18));
+}
+
+html[data-theme="light"] .metrics span {
+  color: #9b3d18;
+}
+
+html[data-theme="light"] .metrics strong,
+html[data-theme="light"] .metric-value {
+  color: var(--ink);
+  text-shadow: none;
+}
+
+html[data-theme="light"] .btn,
+html[data-theme="light"] .btn.secondary,
+html[data-theme="light"] .segmented,
+html[data-theme="light"] .strategy-mode-bar,
+html[data-theme="light"] .filter-chip,
+html[data-theme="light"] .count-pill,
+html[data-theme="light"] .status-chip,
+html[data-theme="light"] .risk-pill,
+html[data-theme="light"] .choice-risk,
+html[data-theme="light"] .technique,
+html[data-theme="light"] .mitre-row em {
+  background: rgba(255, 255, 255, 0.72) !important;
+  border-color: rgba(38, 34, 30, 0.16);
+  color: var(--ink-soft);
+}
+
+html[data-theme="light"] .btn.primary,
+html[data-theme="light"] .tab-button.active,
+html[data-theme="light"] .segmented button.active,
+html[data-theme="light"] .strategy-mode-bar button.active,
+html[data-theme="light"] .filter-chip.active {
+  background: var(--orange) !important;
+  border-color: var(--orange) !important;
+  color: #0e0e10;
+}
+
+html[data-theme="light"] .tab-button:hover,
+html[data-theme="light"] .btn:hover,
+html[data-theme="light"] .choice-card:hover,
+html[data-theme="light"] .strategy-toggle:hover,
+html[data-theme="light"] .scenario-template-card:hover,
+html[data-theme="light"] .policy-card:hover {
+  background: rgba(255, 106, 26, 0.12);
+  border-color: var(--orange);
+}
+
+html[data-theme="light"] .strategy-field select,
+html[data-theme="light"] .strategy-field input,
+html[data-theme="light"] textarea,
+html[data-theme="light"] .search-box input,
+html[data-theme="light"] .manual-guide-panel,
+html[data-theme="light"] .advanced-filters {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(38, 34, 30, 0.16);
+  color: var(--ink);
+}
+
+html[data-theme="light"] .strategy-field select option {
+  background: #ffffff;
+  color: var(--ink);
+}
+
+html[data-theme="light"] pre {
+  background: #fff8ee;
+  color: var(--ink);
+  border-top-color: rgba(38, 34, 30, 0.12);
+}
+
+html[data-theme="light"] .scope-summary,
+html[data-theme="light"] .policy-plan-summary,
+html[data-theme="light"] .strategy-build-order,
+html[data-theme="light"] .warning {
+  background: rgba(255, 106, 26, 0.1);
+  border-color: rgba(255, 106, 26, 0.28);
+  border-left-color: var(--orange);
+  color: var(--ink-soft);
+}
+
+html[data-theme="light"] .strategy-applied,
+html[data-theme="light"] .status-chip.include,
+html[data-theme="light"] .status-chip.import-exact,
+html[data-theme="light"] .risk-pill.medium {
+  background: rgba(0, 143, 97, 0.1) !important;
+  color: #006b47;
+  border-color: rgba(0, 143, 97, 0.26);
+}
+
+html[data-theme="light"] .choice-risk.high,
+html[data-theme="light"] .status-chip.monitor,
+html[data-theme="light"] .status-chip.import-partial,
+html[data-theme="light"] .status-chip.import-different,
+html[data-theme="light"] .status-chip.import-likely,
+html[data-theme="light"] .risk-pill.high {
+  background: rgba(255, 106, 26, 0.12) !important;
+  color: #8b3805;
+  border-color: rgba(255, 106, 26, 0.28);
+}
+
+html[data-theme="light"] .choice-risk.critical,
+html[data-theme="light"] .risk-pill.critical,
+html[data-theme="light"] .status-chip.import-missing,
+html[data-theme="light"] .status-chip.import-risk,
+html[data-theme="light"] .warning.critical {
+  background: rgba(225, 6, 58, 0.1) !important;
+  color: #9d1730;
+  border-color: rgba(225, 6, 58, 0.24);
+}
+
+html[data-theme="light"] .status-chip.exclude {
+  background: rgba(38, 34, 30, 0.06) !important;
+  color: var(--ink-muted);
+}
+
+html[data-theme="light"] .status-chip.beta,
+html[data-theme="light"] .choice-risk.medium,
+html[data-theme="light"] .status-chip.generated,
+html[data-theme="light"] .status-chip.import-extra,
+html[data-theme="light"] .manual-callout {
+  background: rgba(245, 213, 71, 0.18) !important;
+  color: #6f5700;
+  border-color: rgba(170, 130, 0, 0.24);
+}
+
+html[data-theme="light"] .manual-callout strong,
+html[data-theme="light"] .manual-callout span,
+html[data-theme="light"] .represented-list strong {
+  color: #6f5700;
+}
+
+html[data-theme="light"] .threat-card.suggested,
+html[data-theme="light"] .policy-reason.primary,
+html[data-theme="light"] .strategy-note.important,
+html[data-theme="light"] .compare-box,
+html[data-theme="light"] .manual-lookup-required {
+  color: #7a330f;
+  background: rgba(255, 106, 26, 0.11);
+  border-color: rgba(255, 106, 26, 0.28);
+}
+
+html[data-theme="light"] .toast {
+  background: #fff8ee;
+  border-color: rgba(38, 34, 30, 0.16);
+  color: var(--ink);
 }
 
 @media (max-width: 1380px) {
