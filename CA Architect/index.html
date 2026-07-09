@@ -32,14 +32,6 @@
   <span id="baselineVersion" hidden></span>
 
   <main class="workspace">
-    <section class="intro-band">
-      <div>
-        <p class="eyebrow">Consolidated Conditional Access strategy builder</p>
-        <h2>Design stronger environments with fewer, clearer policies.</h2>
-        <p>CA Architect V2 simplifies Conditional Access by compressing best-practice controls into the fewest safe policies, explaining each build step, and mapping the design to MITRE ATT&amp;CK so teams can see which identity threats they are mitigating. This tool was built with reference to <a href="https://github.com/j0eyv/ConditionalAccessBaseline" target="_blank" rel="noopener noreferrer">j0eyv/ConditionalAccessBaseline</a>.</p>
-      </div>
-    </section>
-
     <nav class="workspace-tabs" id="workflowTabs" aria-label="CA Architect workflow" role="tablist">
       <button class="tab-button active" id="tabButtonStart" type="button" role="tab" aria-selected="true" aria-controls="startPanel" data-tab="start">
         <span>Start</span>
@@ -63,11 +55,16 @@
       </button>
     </nav>
 
+    <div class="path-change-bar" id="pathChangeBar" hidden>
+      <button class="btn tiny secondary" type="button" data-tab="start">Change path</button>
+    </div>
+
     <section class="workflow-panel active" id="startPanel" role="tabpanel" aria-labelledby="tabButtonStart" data-tab-panel="start">
       <section class="start-panel" aria-labelledby="startTitle">
         <div class="start-head">
           <p class="eyebrow">Start here</p>
           <h3 id="startTitle">What do you need to do?</h3>
+          <p class="start-reference">Built with reference to <a href="https://github.com/j0eyv/ConditionalAccessBaseline" target="_blank" rel="noopener noreferrer">j0eyv/ConditionalAccessBaseline</a>.</p>
         </div>
         <div class="start-actions" aria-label="Choose a CA Architect workflow">
           <article class="start-card">
@@ -176,8 +173,7 @@
                 <h3>Strongest safe design</h3>
               </div>
               <div class="panel-actions">
-                <button class="btn tiny primary" id="applyStrategyBtn">Apply strategy to rebuild set</button>
-                <button class="btn tiny" id="reviewStrategyPoliciesBtn">Review policy details</button>
+                <button class="btn tiny primary" id="applyStrategyBtn">Continue to review/export</button>
                 <button class="btn tiny" id="downloadStrategyBtn">Download strategy summary</button>
               </div>
             </div>

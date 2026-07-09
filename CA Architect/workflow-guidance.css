@@ -51,6 +51,20 @@
   font-size: clamp(22px, 2.2vw, 34px);
 }
 
+.start-reference {
+  margin: 2px 0 0;
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.start-reference a {
+  color: #fff;
+  font-weight: 800;
+  text-decoration-color: rgba(255, 255, 255, 0.35);
+  text-underline-offset: 3px;
+}
+
 .start-actions {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -206,10 +220,30 @@
 
 .workspace-tabs {
   grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 7px;
+  margin: 0 0 12px;
+  padding: 0;
 }
 
 .workspace-tabs[hidden] {
   display: none;
+}
+
+.path-change-bar {
+  display: flex;
+  justify-content: flex-start;
+  margin: 0 0 10px;
+}
+
+.path-change-bar[hidden] {
+  display: none;
+}
+
+.path-change-bar .btn {
+  min-height: 28px;
+  padding: 6px 10px;
+  font-size: 10px;
+  letter-spacing: 0;
 }
 
 .tab-button {
@@ -217,10 +251,11 @@
   --tab-label: var(--tab-accent);
   position: relative;
   overflow: hidden;
-  gap: 5px;
-  align-content: start;
-  min-height: 104px;
-  border-top: 4px solid var(--tab-accent);
+  gap: 2px;
+  align-content: center;
+  min-height: 52px;
+  padding: 8px 12px;
+  border-top: 3px solid var(--tab-accent);
   background: #242428;
 }
 
@@ -257,11 +292,13 @@
   background: #242428 !important;
   border-color: var(--tab-accent) !important;
   color: var(--ink);
-  box-shadow: inset 0 4px 0 var(--tab-accent), 4px 4px 0 rgba(0, 0, 0, 0.35);
+  box-shadow: inset 0 3px 0 var(--tab-accent), 3px 3px 0 rgba(0, 0, 0, 0.35);
 }
 
 .tab-button[data-tab] span {
   color: #fff;
+  font-size: 13px;
+  line-height: 1.15;
 }
 
 .tab-button[data-tab].active span {
@@ -270,6 +307,11 @@
 
 .tab-button[data-tab].active small {
   color: rgba(245, 243, 239, 0.68);
+}
+
+.tab-button small {
+  font-size: 10px;
+  line-height: 1.2;
 }
 
 .workflow-panel[data-tab-panel].active > .panel,
@@ -363,9 +405,15 @@ html[data-theme="light"] .start-card strong {
 
 html[data-theme="light"] .workflow-path small,
 html[data-theme="light"] .start-card p,
+html[data-theme="light"] .start-reference,
 html[data-theme="light"] .tab-context p,
 html[data-theme="light"] .scenario-advanced-settings summary small {
   color: var(--ink-soft);
+}
+
+html[data-theme="light"] .start-reference a {
+  color: #7a330f;
+  text-decoration-color: rgba(122, 51, 15, 0.35);
 }
 
 html[data-theme="light"] .tab-button.active .tab-group {
@@ -416,7 +464,7 @@ html[data-theme="light"] .tab-button[data-tab="import-compare"] span {
   }
 
   .workspace-tabs {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 
   .start-actions {
@@ -425,7 +473,19 @@ html[data-theme="light"] .tab-button[data-tab="import-compare"] span {
 }
 
 @media (max-width: 960px) {
-  .workspace-tabs,
+  .workspace-tabs {
+    display: flex;
+    overflow-x: auto;
+    grid-template-columns: none;
+    gap: 8px;
+    padding-bottom: 6px;
+    scrollbar-width: thin;
+  }
+
+  .tab-button {
+    flex: 0 0 140px;
+  }
+
   .tab-context {
     grid-template-columns: 1fr;
   }

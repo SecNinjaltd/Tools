@@ -1227,7 +1227,6 @@
       applyBestPracticeStrategy(btn.dataset.strategyOpen);
     });
     $('applyStrategyBtn').addEventListener('click', applyBestPracticeStrategy);
-    $('reviewStrategyPoliciesBtn').addEventListener('click', applyBestPracticeStrategy);
     $('downloadStrategyBtn').addEventListener('click', downloadStrategySummary);
     $('searchInput').addEventListener('input', e => {
       state.search = e.target.value.trim().toLowerCase();
@@ -2119,7 +2118,8 @@
   function renderTabs() {
     const isStart = state.activeTab === 'start';
     $('introActions').hidden = isStart;
-    $('workflowTabs').hidden = isStart;
+    $('workflowTabs').hidden = true;
+    $('pathChangeBar').hidden = isStart;
     document.querySelectorAll('button[role="tab"][data-tab]').forEach(btn => {
       const active = btn.dataset.tab === state.activeTab;
       btn.classList.toggle('active', active);
@@ -2290,7 +2290,6 @@
       input.checked = Boolean(state.strategy[input.dataset.strategyToggle]);
     });
     $('applyStrategyBtn').disabled = plan.empty;
-    $('reviewStrategyPoliciesBtn').disabled = plan.empty;
     $('downloadStrategyBtn').disabled = plan.empty;
     renderStrategyAttackVectors(plan);
 
