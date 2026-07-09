@@ -38,89 +38,61 @@
         <h2>Design stronger environments with fewer, clearer policies.</h2>
         <p>CA Architect V2 simplifies Conditional Access by compressing best-practice controls into the fewest safe policies, explaining each build step, and mapping the design to MITRE ATT&amp;CK so teams can see which identity threats they are mitigating. This tool was built with reference to <a href="https://github.com/j0eyv/ConditionalAccessBaseline" target="_blank" rel="noopener noreferrer">j0eyv/ConditionalAccessBaseline</a>.</p>
       </div>
-      <div class="intro-actions">
-        <button class="btn primary" id="loadRecommendedBtn">Load recommended strategy</button>
-        <button class="btn secondary" id="resetBtn">Clear strategy</button>
-      </div>
     </section>
 
-    <p class="metrics-context" id="metricsContext" aria-live="polite">Showing the default recommendation set. Apply a strategy or scenario to rebuild it.</p>
-    <section class="metrics" aria-label="Current recommendation metrics">
-      <article aria-label="Selected threats in the current requirements"><span>Selected Threats</span><strong id="metricThreats">0</strong><small>chosen requirements</small></article>
-      <article aria-label="Recommended policies in the current rebuild set"><span>Recommended Policies</span><strong id="metricPolicies">0</strong><small id="metricPoliciesHelp">default rebuild set</small></article>
-      <article aria-label="Policies set to report-only mode"><span>Report-only</span><strong id="metricMonitor">0</strong><small>staged rollout</small></article>
-      <article aria-label="Policies using preview or beta controls"><span>Preview/Beta</span><strong id="metricBeta">0</strong><small>review supportability</small></article>
-      <article aria-label="Safety warnings to review before rollout"><span>Safety Warnings</span><strong id="metricWarnings">0</strong><small id="metricWarningsHelp">review before rollout</small></article>
-      <article aria-label="Imported tenant policies matching the current rebuild set"><span>Import Match</span><strong id="metricMatched">0%</strong><small id="metricImportHelp">no import analysed</small></article>
-    </section>
-
-    <section class="workflow-overview" aria-labelledby="workflowOverviewTitle">
-      <div>
-        <p class="eyebrow">Choose your starting point</p>
-        <h3 id="workflowOverviewTitle">Two ways to design, one place to review and export.</h3>
-      </div>
-      <div class="workflow-paths" aria-label="CA Architect paths">
-        <div class="workflow-path">
-          <span>Start path</span>
-          <strong>Start from requirements</strong>
-          <small>Use Strategy builder for a full Conditional Access strategy.</small>
-        </div>
-        <div class="workflow-path">
-          <span>Start path</span>
-          <strong>Start from a real access case</strong>
-          <small>Use Scenario planner for one group, resource, or exception.</small>
-        </div>
-        <div class="workflow-path">
-          <span>Shared output</span>
-          <strong>Review and export</strong>
-          <small>Use Policy recommendations to tune rollout, exclusions, and JSON.</small>
-        </div>
-        <div class="workflow-path">
-          <span>Validate</span>
-          <strong>Existing tenant review</strong>
-          <small>Use Import and compare to check current exports for gaps.</small>
-        </div>
-      </div>
-    </section>
-
-    <nav class="workspace-tabs" aria-label="CA Architect workflow" role="tablist">
-      <button class="tab-button active" id="tabButtonStrategyBuilder" type="button" role="tab" aria-selected="true" aria-controls="strategyBuilderPanel" data-tab="strategy-builder">
-        <strong class="tab-group">Start path</strong>
-        <span>Strategy builder</span>
-        <small>Build a full strategy from requirements</small>
+    <nav class="workspace-tabs" id="workflowTabs" aria-label="CA Architect workflow" role="tablist">
+      <button class="tab-button active" id="tabButtonStart" type="button" role="tab" aria-selected="true" aria-controls="startPanel" data-tab="start">
+        <span>Start</span>
+        <small>Choose what you need to do</small>
+      </button>
+      <button class="tab-button" id="tabButtonStrategyBuilder" type="button" role="tab" aria-selected="false" aria-controls="strategyBuilderPanel" data-tab="strategy-builder">
+        <span>Strategy</span>
+        <small>Build from requirements</small>
       </button>
       <button class="tab-button" id="tabButtonScenarioPlanner" type="button" role="tab" aria-selected="false" aria-controls="scenarioPlannerPanel" data-tab="scenario-planner">
-        <strong class="tab-group">Start path</strong>
-        <span>Scenario planner</span>
-        <small>Build a focused policy pack for one access case</small>
+        <span>Scenario</span>
+        <small>Build from one access case</small>
       </button>
       <button class="tab-button" id="tabButtonPolicyRecommendations" type="button" role="tab" aria-selected="false" aria-controls="policyRecommendationsPanel" data-tab="policy-recommendations">
-        <strong class="tab-group">Shared output</strong>
-        <span>Policy recommendations</span>
-        <small>Review, tune rollout, and export</small>
+        <span>Review/export</span>
+        <small>Tune rollout and JSON</small>
       </button>
       <button class="tab-button" id="tabButtonImportCompare" type="button" role="tab" aria-selected="false" aria-controls="importComparePanel" data-tab="import-compare">
-        <strong class="tab-group">Validate</strong>
-        <span>Import and compare</span>
-        <small>Check an existing tenant export</small>
+        <span>Audit</span>
+        <small>Check an existing tenant</small>
       </button>
     </nav>
 
-    <section class="workflow-panel active" id="strategyBuilderPanel" role="tabpanel" aria-labelledby="tabButtonStrategyBuilder" data-tab-panel="strategy-builder">
-      <section class="tab-context" aria-label="Strategy builder guidance">
-        <div>
-          <span>Use this when</span>
-          <p>You need a broad Conditional Access design based on business and security requirements.</p>
+    <section class="workflow-panel active" id="startPanel" role="tabpanel" aria-labelledby="tabButtonStart" data-tab-panel="start">
+      <section class="start-panel" aria-labelledby="startTitle">
+        <div class="start-head">
+          <p class="eyebrow">Start here</p>
+          <h3 id="startTitle">What do you need to do?</h3>
         </div>
-        <div>
-          <span>You will need</span>
-          <p>The requirements to protect, preferred strictness, and rollout tolerance.</p>
-        </div>
-        <div>
-          <span>Next step</span>
-          <p>Apply the generated strategy to the rebuild set, then review it in Policy recommendations.</p>
+        <div class="start-actions" aria-label="Choose a CA Architect workflow">
+          <article class="start-card">
+            <span>Design</span>
+            <strong>Build from requirements</strong>
+            <p>Create a broad Conditional Access strategy from the protections your tenant needs.</p>
+            <button class="btn primary" type="button" data-tab="strategy-builder">Start strategy</button>
+          </article>
+          <article class="start-card">
+            <span>Design</span>
+            <strong>Build from an access scenario</strong>
+            <p>Create a focused policy pack for one group, resource, partner, or exception.</p>
+            <button class="btn primary" type="button" data-tab="scenario-planner">Start scenario</button>
+          </article>
+          <article class="start-card">
+            <span>Audit</span>
+            <strong>Audit an existing tenant</strong>
+            <p>Paste or drop an export to compare current Conditional Access policies with the rebuild set.</p>
+            <button class="btn primary" type="button" data-tab="import-compare">Start audit</button>
+          </article>
         </div>
       </section>
+    </section>
+
+    <section class="workflow-panel" id="strategyBuilderPanel" role="tabpanel" aria-labelledby="tabButtonStrategyBuilder" data-tab-panel="strategy-builder" hidden>
       <section class="panel strategy-attack-panel">
         <div class="panel-head compact">
           <div>
@@ -137,6 +109,10 @@
             <div>
               <p class="eyebrow">Best-practice strategy</p>
               <h3>Requirements</h3>
+            </div>
+            <div class="intro-actions" id="introActions">
+              <button class="btn primary" id="loadRecommendedBtn">Load recommended strategy</button>
+              <button class="btn secondary" id="resetBtn">Clear strategy</button>
             </div>
           </div>
           <div class="strategy-form">
@@ -295,20 +271,6 @@
     </section>
 
     <section class="workflow-panel" id="scenarioPlannerPanel" role="tabpanel" aria-labelledby="tabButtonScenarioPlanner" data-tab-panel="scenario-planner" hidden>
-      <section class="tab-context" aria-label="Scenario planner guidance">
-        <div>
-          <span>Use this when</span>
-          <p>You need policies for one real access case, exception, partner group, or sensitive resource.</p>
-        </div>
-        <div>
-          <span>You will need</span>
-          <p>The target group, resource, device trust, location, risk tolerance, and any object IDs for export.</p>
-        </div>
-        <div>
-          <span>Next step</span>
-          <p>Apply the scenario pack to the rebuild set, then review the resulting policies.</p>
-        </div>
-      </section>
       <section class="scenario-grid">
         <aside class="panel scenario-input-panel">
           <div class="panel-head compact">
@@ -337,98 +299,104 @@
               <input type="text" id="scenarioLocationId" placeholder="Only required for trusted-location scenarios">
               <small>Needed when the scenario limits access to, or excludes, a trusted network location.</small>
             </label>
-            <div class="scenario-custom-grid" aria-label="Custom scenario inputs">
-              <label class="strategy-field">
-                <span>Account type</span>
-                <select id="scenarioAccountType">
-                  <option value="externalGuest">External guest or partner</option>
-                  <option value="internalUser">Internal user</option>
-                  <option value="admin">Privileged/admin user</option>
-                  <option value="serviceAccount">Service account or automation</option>
-                  <option value="agentIdentity">Copilot or agent identity</option>
-                </select>
-              </label>
-              <label class="strategy-field">
-                <span>Target app/resource</span>
-                <select id="scenarioResource">
-                  <option value="sharepoint">SharePoint or OneDrive</option>
-                  <option value="exchange">Exchange Online or Microsoft 365 mail</option>
-                  <option value="office365">Microsoft 365 core apps</option>
-                  <option value="adminPortals">Admin portals</option>
-                  <option value="allApps">All cloud apps</option>
-                  <option value="agentResources">Agent resources</option>
-                </select>
-              </label>
-              <label class="strategy-field">
-                <span>Device trust</span>
-                <select id="scenarioDeviceTrust">
-                  <option value="unmanaged">Unmanaged or untrusted</option>
-                  <option value="managed">Managed/compliant required</option>
-                  <option value="browserOnly">Browser-only limited access</option>
-                  <option value="trustedLocation">Trusted location/device exception</option>
-                </select>
-              </label>
-              <label class="strategy-field">
-                <span>Allowed platforms</span>
-                <select id="scenarioPlatforms">
-                  <option value="any">Any platform</option>
-                  <option value="windows">Windows only</option>
-                  <option value="mobile">iOS and Android only</option>
-                  <option value="unknownBlocked">Block unknown platforms</option>
-                </select>
-              </label>
-              <label class="strategy-field">
-                <span>Location/network</span>
-                <select id="scenarioLocation">
-                  <option value="any">Any network</option>
-                  <option value="trustedOnly">Trusted named locations only</option>
-                  <option value="excludeTrusted">Apply outside trusted locations</option>
-                </select>
-              </label>
-              <label class="strategy-field">
-                <span>Risk tolerance</span>
-                <select id="scenarioRiskTolerance">
-                  <option value="low">Low friction</option>
-                  <option value="balanced">Balanced</option>
-                  <option value="strict">Strict</option>
-                </select>
-              </label>
-              <label class="strategy-field">
-                <span>Authentication requirement</span>
-                <select id="scenarioAuthRequirement">
-                  <option value="standardMfa">Standard MFA</option>
-                  <option value="passwordlessMfa">Passwordless MFA</option>
-                  <option value="phishingResistantMfa">Phishing-resistant MFA</option>
-                </select>
-                <small>Uses Entra authentication strengths where stronger method quality is required.</small>
-              </label>
-              <label class="strategy-field">
-                <span>Session strictness</span>
-                <select id="scenarioSession">
-                  <option value="standard">Standard</option>
-                  <option value="short">Short session</option>
-                  <option value="browserLocked">Browser locked down</option>
-                </select>
-                <div id="scenarioSessionHelp" class="scenario-choice-help"></div>
-              </label>
-              <label class="strategy-field">
-                <span>Access duration</span>
-                <select id="scenarioDuration">
-                  <option value="ongoing">Ongoing</option>
-                  <option value="temporary">Temporary / time-boxed</option>
-                  <option value="emergency">Emergency only</option>
-                </select>
-                <div id="scenarioDurationHelp" class="scenario-choice-help"></div>
-              </label>
-              <label class="strategy-field">
-                <span>Data sensitivity</span>
-                <select id="scenarioSensitivity">
-                  <option value="standard">Standard business data</option>
-                  <option value="sensitive">Sensitive business data</option>
-                  <option value="highlySensitive">Highly sensitive or regulated</option>
-                </select>
-              </label>
-            </div>
+            <details class="scenario-advanced-settings">
+              <summary>
+                <span>Advanced scenario settings</span>
+                <small>Adjust account type, resource, device, location, session, and sensitivity.</small>
+              </summary>
+              <div class="scenario-custom-grid" aria-label="Custom scenario inputs">
+                <label class="strategy-field">
+                  <span>Account type</span>
+                  <select id="scenarioAccountType">
+                    <option value="externalGuest">External guest or partner</option>
+                    <option value="internalUser">Internal user</option>
+                    <option value="admin">Privileged/admin user</option>
+                    <option value="serviceAccount">Service account or automation</option>
+                    <option value="agentIdentity">Copilot or agent identity</option>
+                  </select>
+                </label>
+                <label class="strategy-field">
+                  <span>Target app/resource</span>
+                  <select id="scenarioResource">
+                    <option value="sharepoint">SharePoint or OneDrive</option>
+                    <option value="exchange">Exchange Online or Microsoft 365 mail</option>
+                    <option value="office365">Microsoft 365 core apps</option>
+                    <option value="adminPortals">Admin portals</option>
+                    <option value="allApps">All cloud apps</option>
+                    <option value="agentResources">Agent resources</option>
+                  </select>
+                </label>
+                <label class="strategy-field">
+                  <span>Device trust</span>
+                  <select id="scenarioDeviceTrust">
+                    <option value="unmanaged">Unmanaged or untrusted</option>
+                    <option value="managed">Managed/compliant required</option>
+                    <option value="browserOnly">Browser-only limited access</option>
+                    <option value="trustedLocation">Trusted location/device exception</option>
+                  </select>
+                </label>
+                <label class="strategy-field">
+                  <span>Allowed platforms</span>
+                  <select id="scenarioPlatforms">
+                    <option value="any">Any platform</option>
+                    <option value="windows">Windows only</option>
+                    <option value="mobile">iOS and Android only</option>
+                    <option value="unknownBlocked">Block unknown platforms</option>
+                  </select>
+                </label>
+                <label class="strategy-field">
+                  <span>Location/network</span>
+                  <select id="scenarioLocation">
+                    <option value="any">Any network</option>
+                    <option value="trustedOnly">Trusted named locations only</option>
+                    <option value="excludeTrusted">Apply outside trusted locations</option>
+                  </select>
+                </label>
+                <label class="strategy-field">
+                  <span>Risk tolerance</span>
+                  <select id="scenarioRiskTolerance">
+                    <option value="low">Low friction</option>
+                    <option value="balanced">Balanced</option>
+                    <option value="strict">Strict</option>
+                  </select>
+                </label>
+                <label class="strategy-field">
+                  <span>Authentication requirement</span>
+                  <select id="scenarioAuthRequirement">
+                    <option value="standardMfa">Standard MFA</option>
+                    <option value="passwordlessMfa">Passwordless MFA</option>
+                    <option value="phishingResistantMfa">Phishing-resistant MFA</option>
+                  </select>
+                  <small>Uses Entra authentication strengths where stronger method quality is required.</small>
+                </label>
+                <label class="strategy-field">
+                  <span>Session strictness</span>
+                  <select id="scenarioSession">
+                    <option value="standard">Standard</option>
+                    <option value="short">Short session</option>
+                    <option value="browserLocked">Browser locked down</option>
+                  </select>
+                  <div id="scenarioSessionHelp" class="scenario-choice-help"></div>
+                </label>
+                <label class="strategy-field">
+                  <span>Access duration</span>
+                  <select id="scenarioDuration">
+                    <option value="ongoing">Ongoing</option>
+                    <option value="temporary">Temporary / time-boxed</option>
+                    <option value="emergency">Emergency only</option>
+                  </select>
+                  <div id="scenarioDurationHelp" class="scenario-choice-help"></div>
+                </label>
+                <label class="strategy-field">
+                  <span>Data sensitivity</span>
+                  <select id="scenarioSensitivity">
+                    <option value="standard">Standard business data</option>
+                    <option value="sensitive">Sensitive business data</option>
+                    <option value="highlySensitive">Highly sensitive or regulated</option>
+                  </select>
+                </label>
+              </div>
+            </details>
           </div>
         </aside>
 
@@ -492,20 +460,6 @@
     </section>
 
     <section class="workflow-panel" id="policyRecommendationsPanel" role="tabpanel" aria-labelledby="tabButtonPolicyRecommendations" data-tab-panel="policy-recommendations" hidden>
-      <section class="tab-context" aria-label="Policy recommendations guidance">
-        <div>
-          <span>Use this when</span>
-          <p>You have applied a strategy or scenario and are ready to inspect the generated build plan.</p>
-        </div>
-        <div>
-          <span>You will need</span>
-          <p>Rollout decisions, exclusions, required object names, and any edits needed before export.</p>
-        </div>
-        <div>
-          <span>Next step</span>
-          <p>Export configured JSON, copy manual build guidance, or compare it with an existing tenant.</p>
-        </div>
-      </section>
       <section class="main-grid">
       <aside class="panel policy-nav" aria-label="Conditional Access policies">
         <div class="panel-head compact">
@@ -669,20 +623,6 @@
     </section>
 
     <section class="workflow-panel" id="importComparePanel" role="tabpanel" aria-labelledby="tabButtonImportCompare" data-tab-panel="import-compare" hidden>
-      <section class="tab-context" aria-label="Import and compare guidance">
-        <div>
-          <span>Use this when</span>
-          <p>You want to assess an existing tenant against the V2 rebuild set and baseline coverage.</p>
-        </div>
-        <div>
-          <span>You will need</span>
-          <p>A Microsoft Graph or IntuneManagement Conditional Access JSON export.</p>
-        </div>
-        <div>
-          <span>Next step</span>
-          <p>Analyse the export, filter findings, then resolve missing, different, or risky policies.</p>
-        </div>
-      </section>
       <section class="panel import-panel">
       <div class="panel-head">
         <div>

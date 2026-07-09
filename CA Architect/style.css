@@ -49,7 +49,7 @@ h4 { font-size: 13px; text-transform: uppercase; margin-bottom: 10px; }
 .export-stack { flex-direction: column; padding: 0 18px 18px; }
 .btn { border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.055); border-radius: var(--radius); padding: 10px 14px; font-weight: 800; cursor: pointer; transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition), background var(--transition); min-height: 38px; color: var(--ink); backdrop-filter: blur(12px); }
 .btn:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(28,32,36,.12); }
-.btn.primary { background: var(--orange); border-color: rgba(242,157,29,.84); color: #0b1320; }
+.btn.primary { background: var(--orange); border-color: rgba(242,157,29,.84); color: #fff; }
 .btn.secondary { background: var(--surface-2); }
 .btn.tiny { padding: 6px 9px; font-size: 12px; min-height: 30px; }
 .btn:disabled { cursor: not-allowed; opacity: .48; box-shadow: none; transform: none; }
@@ -401,10 +401,10 @@ textarea { width: 100%; min-height: 245px; border: 1px solid var(--line); border
 .tab-button.active, .segmented button.active, .strategy-mode-bar button.active, .filter-chip.active {
   background: var(--orange);
   border-color: var(--orange);
-  color: #0e0e10;
+  color: #fff;
   box-shadow: inset 4px 0 0 rgba(14,14,16,.22), 4px 4px 0 rgba(0,0,0,.35);
 }
-.tab-button.active small { color: rgba(14,14,16,.72); }
+.tab-button.active small { color: rgba(255,255,255,.78); }
 .tab-button, .btn, .strategy-mode-bar, .segmented, .filter-chip, .count-pill, .status-chip, .risk-pill { border-radius: 0 !important; }
 .btn {
   border-color: rgba(255,255,255,.16);
@@ -419,7 +419,7 @@ textarea { width: 100%; min-height: 245px; border: 1px solid var(--line); border
   background: var(--orange) !important;
   border-color: var(--orange) !important;
   border-radius: 0 !important;
-  color: #0e0e10 !important;
+  color: #fff !important;
 }
 .btn.primary:hover { background: #ff8a3d !important; }
 .btn.secondary, .strategy-field select, .strategy-field input, textarea, .search-box input {
@@ -933,7 +933,7 @@ html[data-theme="light"] .strategy-mode-bar button.active,
 html[data-theme="light"] .filter-chip.active {
   background: var(--orange) !important;
   border-color: var(--orange) !important;
-  color: #0e0e10;
+  color: #fff !important;
 }
 
 html[data-theme="light"] .tab-button:hover,

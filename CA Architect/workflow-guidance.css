@@ -27,6 +27,129 @@
   text-transform: uppercase;
 }
 
+.metrics-shell[hidden] {
+  display: none;
+}
+
+.start-panel {
+  display: grid;
+  gap: 18px;
+  margin: 0 0 16px;
+  padding: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: linear-gradient(155deg, rgba(54, 54, 64, 0.9) 0%, rgba(36, 36, 40, 0.95) 52%, rgba(20, 20, 24, 0.98) 100%);
+  box-shadow: var(--shadow-soft);
+}
+
+.start-head {
+  display: grid;
+  gap: 4px;
+}
+
+.start-head h3 {
+  color: var(--ink);
+  font-size: clamp(22px, 2.2vw, 34px);
+}
+
+.start-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.start-card {
+  --path-accent: #f5d547;
+  --path-label: var(--path-accent);
+  min-height: 220px;
+  padding: 18px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-left: 5px solid var(--path-accent);
+  background: rgba(255, 255, 255, 0.04);
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.start-card:nth-child(1) {
+  --path-accent: #ff6a1a;
+  --path-label: #ff8a3d;
+}
+
+.start-card:nth-child(2) {
+  --path-accent: #f5d547;
+  --path-label: #f5d547;
+}
+
+.start-card:nth-child(3) {
+  --path-accent: #d99535;
+  --path-label: #f2b84b;
+}
+
+.start-card::after {
+  content: "";
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  width: 38px;
+  height: 38px;
+  border: 1px solid rgba(245, 213, 71, 0.22);
+  background: rgba(255, 255, 255, 0.035);
+  clip-path: polygon(9px 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%, 0 9px);
+}
+
+.start-card > span,
+.scenario-advanced-settings summary span {
+  color: var(--path-label, #f5d547);
+  font: 800 10px/1.2 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+}
+
+.start-card strong {
+  color: var(--ink);
+  font: 800 20px/1.2 'Sora', sans-serif;
+}
+
+.start-card p {
+  margin: 0;
+  color: var(--ink-soft);
+  line-height: 1.42;
+}
+
+.start-card .btn {
+  align-self: end;
+  justify-self: start;
+  margin-top: 8px;
+}
+
+.scenario-advanced-settings {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.035);
+  padding: 0;
+}
+
+.scenario-advanced-settings summary {
+  cursor: pointer;
+  display: grid;
+  gap: 5px;
+  padding: 13px;
+}
+
+.scenario-advanced-settings summary small {
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.scenario-advanced-settings .scenario-custom-grid {
+  padding: 0 13px 13px;
+}
+
+.scenario-input-panel {
+  position: static;
+}
+
 .workflow-overview {
   display: grid;
   grid-template-columns: minmax(260px, 380px) minmax(0, 1fr);
@@ -82,13 +205,76 @@
 }
 
 .workspace-tabs {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.workspace-tabs[hidden] {
+  display: none;
 }
 
 .tab-button {
+  --tab-accent: #f5d547;
+  --tab-label: var(--tab-accent);
+  position: relative;
+  overflow: hidden;
   gap: 5px;
   align-content: start;
   min-height: 104px;
+  border-top: 4px solid var(--tab-accent);
+  background: #242428;
+}
+
+.tab-button[data-tab="strategy-builder"],
+.workflow-panel[data-tab-panel="strategy-builder"] {
+  --tab-accent: #ff6a1a;
+  --tab-label: #ff8a3d;
+}
+
+.tab-button[data-tab="scenario-planner"],
+.workflow-panel[data-tab-panel="scenario-planner"] {
+  --tab-accent: #f5d547;
+  --tab-label: #f5d547;
+}
+
+.tab-button[data-tab="policy-recommendations"],
+.workflow-panel[data-tab-panel="policy-recommendations"] {
+  --tab-accent: #f2b84b;
+  --tab-label: #f2b84b;
+}
+
+.tab-button[data-tab="import-compare"],
+.workflow-panel[data-tab-panel="import-compare"] {
+  --tab-accent: #d99535;
+  --tab-label: #f2b84b;
+}
+
+.tab-button:hover {
+  border-color: var(--tab-accent);
+  background: #2e2e34;
+}
+
+.tab-button[data-tab].active {
+  background: #242428 !important;
+  border-color: var(--tab-accent) !important;
+  color: var(--ink);
+  box-shadow: inset 0 4px 0 var(--tab-accent), 4px 4px 0 rgba(0, 0, 0, 0.35);
+}
+
+.tab-button[data-tab] span {
+  color: #fff;
+}
+
+.tab-button[data-tab].active span {
+  color: #fff;
+}
+
+.tab-button[data-tab].active small {
+  color: rgba(245, 243, 239, 0.68);
+}
+
+.workflow-panel[data-tab-panel].active > .panel,
+.workflow-panel[data-tab-panel].active > section.panel {
+  border-top: 4px solid var(--tab-accent);
 }
 
 .tab-button.active .tab-group {
@@ -135,34 +321,85 @@ html[data-theme="light"] .metrics small {
 }
 
 html[data-theme="light"] .workflow-overview,
-html[data-theme="light"] .tab-context {
+html[data-theme="light"] .tab-context,
+html[data-theme="light"] .start-panel {
   background: linear-gradient(155deg, rgba(255, 255, 255, 0.96) 0%, rgba(255, 248, 238, 0.94) 52%, rgba(246, 232, 215, 0.98) 100%);
   border-color: rgba(38, 34, 30, 0.16);
   box-shadow: var(--shadow-soft);
 }
 
-html[data-theme="light"] .workflow-path {
-  background: rgba(255, 255, 255, 0.72);
+html[data-theme="light"] .workflow-path,
+html[data-theme="light"] .start-card,
+html[data-theme="light"] .scenario-advanced-settings {
+  background: rgba(255, 255, 255, 0.78);
   border-color: rgba(38, 34, 30, 0.12);
+  border-left-color: var(--path-accent, #f5d547);
 }
 
 html[data-theme="light"] .workflow-path span,
+html[data-theme="light"] .start-card > span,
 html[data-theme="light"] .tab-group,
-html[data-theme="light"] .tab-context span {
-  color: #9b3d18;
+html[data-theme="light"] .tab-context span,
+html[data-theme="light"] .scenario-advanced-settings summary span {
+  color: #8a5b00;
 }
 
-html[data-theme="light"] .workflow-path strong {
+html[data-theme="light"] .start-card:nth-child(1) > span {
+  color: #a14312;
+}
+
+html[data-theme="light"] .start-card:nth-child(2) > span {
+  color: #8a6a00;
+}
+
+html[data-theme="light"] .start-card:nth-child(3) > span {
+  color: #875315;
+}
+
+html[data-theme="light"] .workflow-path strong,
+html[data-theme="light"] .start-card strong {
   color: var(--ink);
 }
 
 html[data-theme="light"] .workflow-path small,
-html[data-theme="light"] .tab-context p {
+html[data-theme="light"] .start-card p,
+html[data-theme="light"] .tab-context p,
+html[data-theme="light"] .scenario-advanced-settings summary small {
   color: var(--ink-soft);
 }
 
 html[data-theme="light"] .tab-button.active .tab-group {
   color: rgba(14, 14, 16, 0.72);
+}
+
+html[data-theme="light"] .tab-button {
+  background: rgba(255, 255, 255, 0.78);
+  border-top-color: var(--tab-accent);
+}
+
+html[data-theme="light"] .tab-button:hover {
+  border-color: var(--tab-accent);
+  background: rgba(255, 255, 255, 0.92);
+}
+
+html[data-theme="light"] .tab-button[data-tab].active {
+  background: #ffffff !important;
+  border-color: var(--tab-accent) !important;
+  color: var(--ink);
+  box-shadow: inset 0 4px 0 var(--tab-accent), 4px 4px 0 rgba(41, 35, 29, 0.16);
+}
+
+html[data-theme="light"] .tab-button[data-tab] span {
+  color: #7a330f;
+}
+
+html[data-theme="light"] .tab-button[data-tab="scenario-planner"] span {
+  color: #8a6a00;
+}
+
+html[data-theme="light"] .tab-button[data-tab="policy-recommendations"] span,
+html[data-theme="light"] .tab-button[data-tab="import-compare"] span {
+  color: #875315;
 }
 
 @media (max-width: 1380px) {
@@ -181,6 +418,10 @@ html[data-theme="light"] .tab-button.active .tab-group {
   .workspace-tabs {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .start-actions {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 960px) {
@@ -193,11 +434,13 @@ html[data-theme="light"] .tab-button.active .tab-group {
 @media (max-width: 680px) {
   .workflow-overview,
   .tab-context,
-  .metrics-context {
+  .metrics-context,
+  .start-panel {
     padding: 14px;
   }
 
-  .workflow-paths {
+  .workflow-paths,
+  .start-actions {
     grid-template-columns: 1fr;
   }
 }

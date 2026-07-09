@@ -49,7 +49,7 @@
     objectCatalogKey(id, type),
     { id, type, name, source: 'static' }
   ]));
-  const WORKFLOW_TABS = new Set(['strategy-builder', 'scenario-planner', 'policy-recommendations', 'import-compare']);
+  const WORKFLOW_TABS = new Set(['start', 'strategy-builder', 'scenario-planner', 'policy-recommendations', 'import-compare']);
   const IMPORT_FILTERS = new Set(['all', 'exact', 'different', 'missing', 'extra', 'risk']);
   const COMPARE_FIELDS = [
     { path: ['state'], label: 'State' },
@@ -1107,7 +1107,7 @@
     appliedStrategy: null,
     guideOnly: null,
     consolidatedPolicies: [],
-    activeTab: 'strategy-builder',
+    activeTab: 'start',
     selectedPersona: 'All',
     selectedId: null,
     search: '',
@@ -2117,7 +2117,10 @@
   }
 
   function renderTabs() {
-    document.querySelectorAll('button[data-tab]').forEach(btn => {
+    const isStart = state.activeTab === 'start';
+    $('introActions').hidden = isStart;
+    $('workflowTabs').hidden = isStart;
+    document.querySelectorAll('button[role="tab"][data-tab]').forEach(btn => {
       const active = btn.dataset.tab === state.activeTab;
       btn.classList.toggle('active', active);
       btn.setAttribute('aria-selected', String(active));
@@ -4226,41 +4229,12 @@
     });
   }
 
-  function metricsContextText() {
-    const importText = state.imported.length
-      ? ` Import match compares ${state.imported.length} imported tenant polic${state.imported.length === 1 ? 'y' : 'ies'} with this set.`
-      : ' Import match stays at 0% until a tenant export is analysed.';
-    if (state.appliedStrategy?.type === 'scenario' || state.appliedStrategy?.type === 'scenario-guide') {
-      return `Showing recommendations from the applied scenario.${importText}`;
-    }
-    if (state.appliedStrategy) {
-      return `Showing recommendations from the applied strategy.${importText}`;
-    }
-    return `Showing the default recommendation set. Apply a strategy or scenario to rebuild it.${importText}`;
-  }
-
   function renderMetrics() {
     const selected = selectedPolicies();
     const exportBlocked = selected.some(isGuideOnlyPolicy);
     ['exportConfiguredBtn', 'exportReportBtn', 'exportDisabledBtn'].forEach(id => {
       $(id).disabled = !selected.length || exportBlocked;
     });
-    $('metricsContext').textContent = metricsContextText();
-    $('metricPoliciesHelp').textContent = state.appliedStrategy ? 'current rebuild set' : 'default rebuild set';
-    $('metricWarningsHelp').textContent = selected.length ? 'review before rollout' : 'no rebuild set yet';
-    $('metricImportHelp').textContent = state.imported.length ? 'analysed tenant export' : 'no import analysed';
-    $('metricThreats').textContent = state.selectedThreats.size;
-    $('metricPolicies').textContent = selected.length;
-    $('metricMonitor').textContent = selected.filter(policy => state.decisions[policyKey(policy)] === 'monitor').length;
-    $('metricBeta').textContent = selected.filter(isPreviewPolicy).length;
-    $('metricWarnings').textContent = safetyWarnings().length;
-    if (!state.imported.length) {
-      $('metricMatched').textContent = '0%';
-      return;
-    }
-    const exact = state.compareReport?.summary.exact || 0;
-    const denominator = state.compareReport?.summary.expected || selected.length || 1;
-    $('metricMatched').textContent = `${Math.round(exact / denominator * 100)}%`;
   }
 
   function renderWarnings() {
