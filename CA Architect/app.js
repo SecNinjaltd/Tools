@@ -6,6 +6,7 @@
   const NON_REPORT_ONLY = new Set(['CA104', 'CA209']);
   const RECOMMENDED_STRATEGY_THREATS = ['T1078', 'T1110', 'T1557', 'T1621', 'T1528', 'AGENT-RISK'];
   const THEME_STORAGE_KEY = 'caArchitectTheme';
+  const EXPERT_STORAGE_KEY = 'caArchitectExpertDetail';
   const GLOBAL_PREREQUISITES = [
     'Create security group CA-BreakGlassAccounts-Exclude for break-glass and emergency access exclusions'
   ];
@@ -740,9 +741,12 @@
     location: 'any',
     riskTolerance: 'strict',
     authRequirement: 'standardMfa',
+    accessDecision: 'grant',
+    riskResponse: 'signInRisk',
     session: 'browserLocked',
     duration: 'temporary',
-    sensitivity: 'sensitive'
+    sensitivity: 'sensitive',
+    rollout: 'reportOnly'
   };
 
   const SCENARIO_TEMPLATES = [
@@ -940,9 +944,9 @@
     {
       id: 'custom',
       label: 'Custom Access Scenario',
-      desc: 'Build from the structured fields below.',
+      desc: 'Build a policy visually from identity through rollout.',
       groupName: 'CA-Scenario-CustomAccess-Users',
-      fields: { accountType: 'internalUser', resource: 'office365', deviceTrust: 'unmanaged', platforms: 'any', location: 'any', riskTolerance: 'balanced', authRequirement: 'standardMfa', session: 'short', duration: 'temporary', sensitivity: 'sensitive' },
+      fields: { accountType: 'internalUser', resource: 'office365', deviceTrust: 'managed', platforms: 'any', location: 'any', riskTolerance: 'balanced', authRequirement: 'standardMfa', accessDecision: 'grant', riskResponse: 'none', session: 'short', duration: 'temporary', sensitivity: 'sensitive', rollout: 'reportOnly' },
       controls: [],
       mitre: [],
       policyId: 'CA990C',
@@ -1098,16 +1102,150 @@
     }
   };
 
+  const VISUAL_SCENARIO_NODES = [
+    { id: 'identity', lane: 'if', step: 1, title: 'Identity', question: 'Who needs access?', fields: ['accountType', 'groupName'] },
+    { id: 'resource', lane: 'if', step: 2, title: 'Target resource', question: 'What do they need to reach?', fields: ['resource'] },
+    { id: 'device', lane: 'if', step: 3, title: 'Device and platform', question: 'What device context is acceptable?', fields: ['deviceTrust', 'platforms'] },
+    { id: 'context', lane: 'if', step: 4, title: 'Context and risk', question: 'When should this access path apply?', fields: ['location', 'riskTolerance', 'sensitivity', 'duration'] },
+    { id: 'grant', lane: 'then', step: 5, title: 'Access decision', question: 'What must happen before access is granted?', fields: ['accessDecision', 'authRequirement', 'riskResponse'] },
+    { id: 'session', lane: 'then', step: 6, title: 'Session controls', question: 'How tightly should the session be controlled?', fields: ['session'] },
+    { id: 'rollout', lane: 'then', step: 7, title: 'Rollout', question: 'How should the policy be introduced?', fields: ['rollout'] }
+  ];
+
+  const VISUAL_FIELD_OPTIONS = {
+    accountType: {
+      label: 'Identity type',
+      options: [
+        ['internalUser', 'Internal identity', 'A member account managed by this tenant.'],
+        ['externalGuest', 'External identity', 'A B2B guest or partner account accessing tenant resources.'],
+        ['admin', 'Privileged identity', 'An identity with elevated directory or service permissions.'],
+        ['serviceAccount', 'Automation identity', 'A non-human account that should have a narrow access boundary.'],
+        ['agentIdentity', 'Agent identity', 'A Copilot or agent identity using preview Conditional Access capabilities.']
+      ]
+    },
+    resource: {
+      label: 'Target resource',
+      options: [
+        ['sharepoint', 'SharePoint or OneDrive', 'Collaboration content; folder boundaries remain a SharePoint permission decision.'],
+        ['exchange', 'Exchange Online', 'Mailbox and browser-based Microsoft 365 mail access.'],
+        ['office365', 'Microsoft 365 core apps', 'The Office 365 resource set rather than every cloud application.'],
+        ['adminPortals', 'Admin portals', 'Microsoft administrative interfaces and privileged operations.'],
+        ['allApps', 'All cloud apps', 'Broadest resource coverage; review exclusions carefully.'],
+        ['agentResources', 'Agent resources', 'Preview/beta agent resource targeting.']
+      ]
+    },
+    deviceTrust: {
+      label: 'Device trust',
+      options: [
+        ['managed', 'Managed and compliant', 'Require a device that reports compliant through the tenant device-management model.'],
+        ['browserOnly', 'Browser-only limited access', 'Prefer a limited browser experience for unmanaged devices.'],
+        ['unmanaged', 'Unmanaged device allowed', 'Allow an untrusted device with compensating authentication and session controls.'],
+        ['trustedLocation', 'Trusted network boundary', 'Use a named location as an explicit access boundary.']
+      ]
+    },
+    platforms: {
+      label: 'Allowed platforms',
+      options: [
+        ['any', 'Any known platform', 'Do not limit the policy to one operating-system family.'],
+        ['windows', 'Windows only', 'Apply this access path only to Windows.'],
+        ['mobile', 'iOS and Android', 'Apply this access path to supported mobile platforms.'],
+        ['unknownBlocked', 'Unknown platforms blocked', 'Create a strict platform boundary for unrecognised devices.']
+      ]
+    },
+    location: {
+      label: 'Network location',
+      options: [
+        ['any', 'Any network', 'Do not rely on source network as a trust signal.'],
+        ['trustedOnly', 'Trusted locations only', 'Limit access to a maintained named-location boundary.'],
+        ['excludeTrusted', 'Apply outside trusted locations', 'Use stronger controls whenever the sign-in is outside trusted locations.']
+      ]
+    },
+    riskTolerance: {
+      label: 'Risk tolerance',
+      options: [
+        ['low', 'Lower friction', 'Use fewer adaptive risk controls for this access path.'],
+        ['balanced', 'Balanced', 'Add safeguards without making every risk signal a block.'],
+        ['strict', 'Strict', 'Use separate risk guardrails where licensing and signals support them.']
+      ]
+    },
+    sensitivity: {
+      label: 'Data sensitivity',
+      options: [
+        ['standard', 'Standard business data', 'Normal organizational information.'],
+        ['sensitive', 'Sensitive business data', 'Information requiring tighter authentication and session handling.'],
+        ['highlySensitive', 'Highly sensitive or regulated', 'High-impact data requiring the strongest practical controls.']
+      ]
+    },
+    duration: {
+      label: 'Access duration',
+      options: [
+        ['ongoing', 'Ongoing', ACCESS_DURATION_HELP.ongoing.meaning],
+        ['temporary', 'Temporary or time-boxed', ACCESS_DURATION_HELP.temporary.meaning],
+        ['emergency', 'Emergency only', ACCESS_DURATION_HELP.emergency.meaning]
+      ]
+    },
+    accessDecision: {
+      label: 'Access result',
+      options: [
+        ['grant', 'Grant with controls', 'Allow access only after the selected authentication and device controls are satisfied.'],
+        ['block', 'Block access', 'Prevent this identity and context from accessing the selected resource.']
+      ]
+    },
+    authRequirement: {
+      label: 'Authentication requirement',
+      options: [
+        ['standardMfa', 'Standard MFA', 'Require multifactor authentication without restricting the accepted method quality.'],
+        ['passwordlessMfa', 'Passwordless MFA', 'Require a passwordless authentication strength.'],
+        ['phishingResistantMfa', 'Phishing-resistant MFA', 'Require the strongest built-in authentication strength for high-value access.']
+      ]
+    },
+    riskResponse: {
+      label: 'Identity risk response',
+      options: [
+        ['none', 'No risk policy', 'Do not add an Identity Protection risk branch.'],
+        ['signInRisk', 'Block high sign-in risk', 'Create a separate high sign-in-risk block policy.'],
+        ['signInAndUserRisk', 'Block high sign-in and user risk', 'Create two separate risk policies so each signal remains independently supportable.']
+      ]
+    },
+    session: {
+      label: 'Session strictness',
+      options: [
+        ['standard', 'Standard session', SESSION_STRICTNESS_HELP.standard.meaning],
+        ['short', 'Short session', SESSION_STRICTNESS_HELP.short.meaning],
+        ['browserLocked', 'Browser locked down', SESSION_STRICTNESS_HELP.browserLocked.meaning]
+      ]
+    },
+    rollout: {
+      label: 'Initial rollout',
+      options: [
+        ['reportOnly', 'Report-only first', 'Evaluate policy impact in sign-in logs before enforcement.'],
+        ['disabled', 'Leave disabled', 'Create the policy without evaluating or enforcing it.'],
+        ['enabled', 'Enable immediately', 'Enforce immediately; use only after equivalent pilot and What If validation.']
+      ]
+    }
+  };
+
   const state = {
     selectedIdentity: 'all_users',
     selectedTarget: 'all_resources',
     selectedThreats: new Set(),
     strategy: { ...STRATEGY_DEFAULTS },
     scenario: { ...SCENARIO_DEFAULTS },
+    scenarioVisual: {
+      activeNode: 'identity',
+      completed: new Set(),
+      history: [],
+      flyout: null,
+      threatOpen: false
+    },
     appliedStrategy: null,
     guideOnly: null,
     consolidatedPolicies: [],
     activeTab: 'start',
+    workflowStage: { strategy: 'requirements', scenario: 'template' },
+    detailView: 'overview',
+    reviewedPolicies: new Set(),
+    expertMode: savedExpertMode(),
     selectedPersona: 'All',
     selectedId: null,
     search: '',
@@ -1120,16 +1258,19 @@
     compare: new Map(),
     extra: [],
     compareReport: null,
-    importFilter: 'all'
+    importFilter: 'all',
+    auditTarget: 'baseline'
   };
 
   const $ = id => document.getElementById(id);
   const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const clone = obj => JSON.parse(JSON.stringify(obj));
   const policyKey = item => item.sourceFile;
+  let visualFlyoutOpener = null;
 
   function init() {
     applyTheme(savedTheme());
+    applyExpertMode(state.expertMode);
     allPolicies().forEach(item => {
       state.decisions[policyKey(item)] = 'exclude';
     });
@@ -1142,6 +1283,7 @@
   function setActiveTab(tabId) {
     if (!WORKFLOW_TABS.has(tabId)) return;
     state.activeTab = tabId;
+    if (tabId === 'policy-recommendations' && state.detailView === 'export') state.detailView = 'overview';
     renderTabs();
   }
 
@@ -1150,9 +1292,36 @@
       const nextTheme = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
       applyTheme(nextTheme, true);
     });
+    $('expertModeToggle').addEventListener('click', () => applyExpertMode(!state.expertMode, true));
     document.querySelectorAll('button[data-tab]').forEach(btn => {
       btn.addEventListener('click', () => setActiveTab(btn.dataset.tab));
     });
+    $('strategyBuilderPanel').addEventListener('click', e => {
+      const btn = e.target.closest('button[data-strategy-stage]');
+      if (btn) setStrategyStage(btn.dataset.strategyStage);
+    });
+    $('scenarioPlannerPanel').addEventListener('click', e => {
+      const btn = e.target.closest('button[data-scenario-stage]');
+      if (btn) setScenarioStage(btn.dataset.scenarioStage);
+      const node = e.target.closest('button[data-visual-node]');
+      if (node) openVisualScenarioNode(node.dataset.visualNode, node);
+      const choice = e.target.closest('button[data-visual-choice]');
+      if (choice) updateVisualScenarioChoice(choice.dataset.visualField, choice.dataset.visualChoice);
+      const close = e.target.closest('button[data-visual-close]');
+      if (close) closeVisualFlyout(close.dataset.visualClose);
+      const policy = e.target.closest('button[data-scenario-open]');
+      if (policy) openScenarioBuildGuide(policy.dataset.scenarioOpen);
+    });
+    $('scenarioPlannerPanel').addEventListener('input', e => {
+      if (e.target.id !== 'visualScenarioGroupName') return;
+      updateVisualScenarioChoice('groupName', e.target.value, true);
+    });
+    $('scenarioPlannerPanel').addEventListener('change', e => {
+      if (e.target.id !== 'visualScenarioGroupName') return;
+      renderScenarioPlanner();
+    });
+    $('strategyContinueBtn').addEventListener('click', () => setStrategyStage('architecture'));
+    $('strategyReviewBtn').addEventListener('click', () => applyBestPracticeStrategy());
     $('loadRecommendedBtn').addEventListener('click', loadRecommendedStrategy);
     $('resetBtn').addEventListener('click', clearStrategy);
     $('clearThreatsBtn').addEventListener('click', () => {
@@ -1208,19 +1377,27 @@
         const key = id.replace(/^scenario/, '');
         const stateKey = key.charAt(0).toLowerCase() + key.slice(1);
         state.scenario[stateKey] = e.target.value;
-        if (state.scenario.template !== 'custom') state.scenario.template = 'custom';
         state.appliedStrategy = null;
         state.guideOnly = null;
         renderScenarioPlanner();
       });
     });
-    $('scenarioPolicyPack').addEventListener('click', e => {
-      const btn = e.target.closest('button[data-scenario-open]');
-      if (!btn) return;
-      openScenarioBuildGuide(btn.dataset.scenarioOpen);
-    });
     $('applyScenarioBtn').addEventListener('click', () => applyScenarioPlan());
+    $('scenarioSettingsBtn').addEventListener('click', () => setScenarioStage('settings'));
+    $('scenarioTemplateBackBtn').addEventListener('click', () => setScenarioStage('template'));
+    $('scenarioPlanBtn').addEventListener('click', () => setScenarioStage('plan'));
+    $('scenarioSettingsBackBtn').addEventListener('click', () => setScenarioStage('settings'));
+    $('scenarioPrepareBtn').addEventListener('click', () => setScenarioStage('prepare'));
+    $('scenarioPlanBackBtn').addEventListener('click', () => setScenarioStage('plan'));
     $('downloadScenarioBtn').addEventListener('click', downloadScenarioSummary);
+    $('visualBackBtn').addEventListener('click', () => moveVisualScenarioNode(-1));
+    $('visualContinueBtn').addEventListener('click', () => moveVisualScenarioNode(1, true));
+    $('visualUndoBtn').addEventListener('click', undoVisualScenarioChange);
+    $('visualResetBtn').addEventListener('click', resetVisualScenarioRecommendations);
+    $('visualAcceptBtn').addEventListener('click', acceptVisualScenarioDecision);
+    $('visualThreatImpactBtn').addEventListener('click', openVisualThreatFlyout);
+    $('visualFlyoutBackdrop').addEventListener('click', () => closeVisualFlyout('control'));
+    document.addEventListener('keydown', handleVisualFlyoutKeydown);
     $('strategySummary').addEventListener('click', e => {
       const btn = e.target.closest('button[data-strategy-open]');
       if (!btn) return;
@@ -1228,6 +1405,34 @@
     });
     $('applyStrategyBtn').addEventListener('click', applyBestPracticeStrategy);
     $('downloadStrategyBtn').addEventListener('click', downloadStrategySummary);
+    $('auditTarget').addEventListener('change', e => {
+      state.auditTarget = e.target.value === 'rebuild' ? 'rebuild' : 'baseline';
+      if (state.imported.length) compareImported();
+      renderImport();
+      renderPolicyPlanSummary();
+    });
+    $('policyDetailTabs').addEventListener('click', e => {
+      const btn = e.target.closest('button[data-detail-view]');
+      if (!btn) return;
+      setPolicyDetailView(btn.dataset.detailView);
+    });
+    $('policyDetailTabs').addEventListener('keydown', e => {
+      if (!['ArrowLeft', 'ArrowRight'].includes(e.key)) return;
+      const buttons = [...$('policyDetailTabs').querySelectorAll('button[data-detail-view]')].filter(btn => !btn.hidden && getComputedStyle(btn).display !== 'none');
+      const index = buttons.indexOf(e.target);
+      if (index < 0) return;
+      e.preventDefault();
+      const next = e.key === 'ArrowRight' ? Math.min(buttons.length - 1, index + 1) : Math.max(0, index - 1);
+      setPolicyDetailView(buttons[next].dataset.detailView);
+      buttons[next].focus();
+    });
+    document.querySelectorAll('button[data-review-stage]').forEach(btn => {
+      btn.addEventListener('click', () => setPolicyDetailView(btn.dataset.reviewStage === 'export' ? 'export' : 'overview'));
+    });
+    $('previousPolicyBtn').addEventListener('click', () => moveSelectedPolicy(-1));
+    $('nextPolicyBtn').addEventListener('click', () => moveSelectedPolicy(1));
+    $('markReviewedBtn').addEventListener('click', toggleSelectedPolicyReviewed);
+    $('reviewExportBtn').addEventListener('click', () => setPolicyDetailView(state.detailView === 'export' ? 'overview' : 'export'));
     $('searchInput').addEventListener('input', e => {
       state.search = e.target.value.trim().toLowerCase();
       state.activeTab = 'policy-recommendations';
@@ -1350,6 +1555,99 @@
         // Theme persistence is optional; the current session still updates.
       }
     }
+  }
+
+  function savedExpertMode() {
+    try {
+      return localStorage.getItem(EXPERT_STORAGE_KEY) === 'true';
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function applyExpertMode(enabled, persist = false) {
+    state.expertMode = Boolean(enabled);
+    document.documentElement.dataset.expert = state.expertMode ? 'on' : 'off';
+    const toggle = $('expertModeToggle');
+    if (toggle) {
+      toggle.textContent = `Expert detail: ${state.expertMode ? 'on' : 'off'}`;
+      toggle.setAttribute('aria-pressed', String(state.expertMode));
+      toggle.setAttribute('aria-label', state.expertMode ? 'Hide expert detail' : 'Show expert detail');
+    }
+    if (!state.expertMode && ['adjust', 'json'].includes(state.detailView)) state.detailView = 'overview';
+    if (persist) {
+      try {
+        localStorage.setItem(EXPERT_STORAGE_KEY, String(state.expertMode));
+      } catch (_) {
+        // Expert preference persistence is optional.
+      }
+    }
+    if (document.readyState !== 'loading') renderAll();
+  }
+
+  function setStrategyStage(stage) {
+    if (!['requirements', 'architecture'].includes(stage)) return;
+    const plan = strategyPlan();
+    if (stage === 'architecture' && plan.empty) {
+      toast('Select at least one requirement before reviewing the architecture');
+      return;
+    }
+    state.workflowStage.strategy = stage;
+    state.activeTab = 'strategy-builder';
+    renderStrategyBuilder();
+    renderTabs();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function setScenarioStage(stage) {
+    if (!['template', 'settings', 'plan', 'prepare'].includes(stage)) return;
+    state.workflowStage.scenario = stage;
+    state.activeTab = 'scenario-planner';
+    renderScenarioPlanner();
+    renderTabs();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function setPolicyDetailView(view) {
+    const allowed = ['overview', 'build', 'adjust', 'json', 'export'];
+    if (!allowed.includes(view)) return;
+    if (!state.expertMode && ['adjust', 'json'].includes(view)) view = 'overview';
+    state.detailView = view;
+    state.activeTab = 'policy-recommendations';
+    renderPolicyDetailView();
+    renderTabs();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function reviewPolicyList() {
+    const list = recommendedPolicies().length ? recommendedPolicies() : selectedPolicies();
+    return groupedPolicies(list).flatMap(group => group.policies);
+  }
+
+  function moveSelectedPolicy(direction) {
+    const list = reviewPolicyList();
+    const index = list.findIndex(policy => policyKey(policy) === state.selectedId);
+    if (!list.length || index < 0) return;
+    const nextIndex = Math.max(0, Math.min(list.length - 1, index + direction));
+    if (nextIndex === index) return;
+    state.selectedId = policyKey(list[nextIndex]);
+    state.detailView = 'overview';
+    renderPolicyPlanSummary();
+    renderPolicyList();
+    renderSelected();
+    renderPolicyReviewFooter();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function toggleSelectedPolicyReviewed() {
+    const policy = selectedPolicy();
+    if (!policy) return;
+    const key = policyKey(policy);
+    if (state.reviewedPolicies.has(key)) state.reviewedPolicies.delete(key);
+    else state.reviewedPolicies.add(key);
+    renderPolicyPlanSummary();
+    renderPolicyList();
+    renderPolicyReviewFooter();
   }
 
   function allPolicies() {
@@ -1829,6 +2127,7 @@
     state.appliedStrategy = null;
     state.activeTab = 'strategy-builder';
     state.touchedDecisions.clear();
+    state.reviewedPolicies.clear();
     syncRecommendations();
     selectFirstVisible();
     renderAll();
@@ -1852,9 +2151,11 @@
     state.appliedStrategy = null;
     state.guideOnly = null;
     state.activeTab = 'strategy-builder';
+    state.workflowStage.strategy = 'architecture';
     state.selectedPersona = 'All';
     state.policyView = 'recommended';
     state.touchedDecisions.clear();
+    state.reviewedPolicies.clear();
     state.overrides = {};
     allPolicies().forEach(item => {
       state.decisions[policyKey(item)] = 'exclude';
@@ -1871,7 +2172,9 @@
     state.appliedStrategy = null;
     state.guideOnly = null;
     state.activeTab = 'strategy-builder';
+    state.workflowStage.strategy = 'requirements';
     state.touchedDecisions.clear();
+    state.reviewedPolicies.clear();
     state.overrides = {};
     allPolicies().forEach(item => {
       state.decisions[policyKey(item)] = 'exclude';
@@ -2063,9 +2366,9 @@
   }
 
   function decisionLabel(decision) {
-    if (decision === 'include') return 'Will export enabled';
+    if (decision === 'include') return 'Enable';
     if (decision === 'monitor') return 'Report-only first';
-    return 'Not in export';
+    return 'Leave out';
   }
 
   function whatPolicyProtects(policy) {
@@ -2250,6 +2553,7 @@
     }
     state.activeTab = 'strategy-builder';
     state.touchedDecisions.clear();
+    state.reviewedPolicies.clear();
     syncRecommendations();
     selectFirstVisible();
     renderAll();
@@ -2291,15 +2595,22 @@
     });
     $('applyStrategyBtn').disabled = plan.empty;
     $('downloadStrategyBtn').disabled = plan.empty;
+    $('strategyContinueBtn').disabled = plan.empty;
+    $('strategyReviewBtn').disabled = plan.empty;
+    $('strategyRequirementHint').textContent = plan.empty
+      ? 'Select at least one requirement to continue.'
+      : `${plan.selectedRequirements.length} requirement${plan.selectedRequirements.length === 1 ? '' : 's'} selected. ${plan.consolidatedPolicies.length} policies will be proposed.`;
+    renderGuidedStage('strategy', state.workflowStage.strategy);
     renderStrategyAttackVectors(plan);
+    $('strategyMitreSummary').textContent = plan.empty
+      ? 'Select requirements first'
+      : `${plan.score}% coverage - ${strategyAttackVectors(plan).length} addressed - ${strategyUnaddressedMitre(plan).length} gaps`;
 
-    $('strategySummary').innerHTML = `<div class="strategy-score-grid">
+    $('strategySummary').innerHTML = `<div class="strategy-score-grid primary-metrics">
       <article><span>Managed policies</span><strong>${esc(plan.consolidatedPolicies.length)}</strong><em>${esc(policySavingsText(plan))}</em></article>
       <article><span>MITRE coverage</span><strong>${esc(plan.score)}%</strong><em>${esc(mitreSummaryText(plan))}</em></article>
-      <article><span>Friction score</span><strong>${esc(plan.friction)}</strong><em>${esc(frictionLabel(plan.friction))}</em></article>
-      <article><span>Rollout risk</span><strong>${esc(plan.rolloutRisk)}</strong><em>${esc(rolloutLabel(plan.requirements.rollout, plan.empty))}</em></article>
     </div>
-    <p>${esc(plan.level.desc)} Requirement checkboxes are authoritative: if a requirement is not selected, it will not generate policies.</p>
+    <div class="strategy-context-line"><strong>${esc(frictionLabel(plan.friction))}</strong><span>Rollout risk: ${esc(plan.rolloutRisk)}. ${esc(rolloutLabel(plan.requirements.rollout, plan.empty))}</span></div>
     ${plan.empty ? strategyEmptyState(plan) : strategyBuildOrder(plan)}
     ${state.appliedStrategy ? '<div class="strategy-applied">This strategy is currently applied to the rebuild set.</div>' : ''}`;
 
@@ -2311,7 +2622,9 @@
 
   function renderScenarioPlanner() {
     const plan = scenarioPlan();
+    const custom = plan.template.id === 'custom';
     syncScenarioFields();
+    if (!custom) renderScenarioRelevantFields(plan);
     syncScenarioObjectCatalog();
     $('scenarioTemplates').innerHTML = SCENARIO_TEMPLATES.map(template => `<button class="scenario-template-card ${template.id === state.scenario.template ? 'active' : ''}" type="button" data-scenario-template="${esc(template.id)}">
       <strong>${esc(template.label)}</strong>
@@ -2321,12 +2634,465 @@
     $('applyScenarioBtn').disabled = !plan.canApply;
     $('downloadScenarioBtn').disabled = false;
     $('scenarioSummary').innerHTML = renderScenarioSummary(plan);
+    $('scenarioPrepareSummary').innerHTML = renderScenarioPrepareSummary(plan);
+    $('scenarioPrepareHint').textContent = plan.canApply
+      ? 'Required objects are ready. Continue to policy review and export.'
+      : `Add ${plan.missing.map(item => item.field).join(' and ')} to continue.`;
+    $('scenarioLocationField').hidden = !plan.missing.some(item => item.type === 'location') && state.scenario.location === 'any' && state.scenario.deviceTrust !== 'trustedLocation';
+    $('scenarioMitreSummary').textContent = `${plan.score}% coverage - ${scenarioAddressedMitre(plan).length} addressed - ${scenarioUnaddressedMitre(plan).length} gaps`;
+    renderGuidedStage('scenario', state.workflowStage.scenario);
     $('scenarioSessionHelp').innerHTML = renderScenarioSessionHelp(plan);
     $('scenarioDurationHelp').innerHTML = renderScenarioDurationHelp(plan);
     $('scenarioMitre').innerHTML = renderScenarioMitre(plan);
     $('scenarioPolicyPack').innerHTML = renderScenarioPolicyPack(plan);
     $('scenarioPrerequisites').innerHTML = scenarioChecklist(plan.prerequisites);
     $('scenarioGuidance').innerHTML = scenarioChecklist([...plan.guidance, ...plan.warnings]);
+    $('scenarioStandardEditor').hidden = custom;
+    $('scenarioVisualDesigner').hidden = !custom;
+    $('scenarioPlanBtn').textContent = custom ? 'Review visual policy plan' : 'Review policy plan';
+    $('scenarioSettingsHint').textContent = custom
+      ? 'Complete the visual path, then review the minimum safe policy set.'
+      : 'Review the recommended defaults before continuing.';
+    if (custom) renderVisualScenarioDesigner(plan);
+    else closeVisualFlyout('control', false);
+  }
+
+  function renderScenarioRelevantFields(plan) {
+    const custom = plan.template.id === 'custom';
+    const accountType = plan.inputs.accountType;
+    const show = new Set(['scenarioGroupName', 'scenarioDuration']);
+    if (custom) {
+      ['scenarioAccountType', 'scenarioResource', 'scenarioDeviceTrust', 'scenarioPlatforms', 'scenarioLocation', 'scenarioRiskTolerance', 'scenarioAuthRequirement', 'scenarioSession', 'scenarioSensitivity'].forEach(id => show.add(id));
+    } else {
+      if (!['serviceAccount', 'agentIdentity'].includes(accountType)) {
+        ['scenarioDeviceTrust', 'scenarioPlatforms', 'scenarioAuthRequirement', 'scenarioSession', 'scenarioSensitivity'].forEach(id => show.add(id));
+      }
+      if (accountType === 'admin' || plan.inputs.sensitivity === 'highlySensitive') show.add('scenarioRiskTolerance');
+      if (accountType === 'serviceAccount' || plan.inputs.location !== 'any' || plan.inputs.deviceTrust === 'trustedLocation') show.add('scenarioLocation');
+      if (accountType === 'agentIdentity') show.add('scenarioRiskTolerance');
+    }
+    ['scenarioAccountType', 'scenarioResource', 'scenarioDeviceTrust', 'scenarioPlatforms', 'scenarioLocation', 'scenarioRiskTolerance', 'scenarioAuthRequirement', 'scenarioSession', 'scenarioDuration', 'scenarioSensitivity'].forEach(id => {
+      const field = $(id)?.closest('label');
+      if (field) field.hidden = !show.has(id);
+    });
+  }
+
+  function renderVisualScenarioDesigner(plan) {
+    const visual = state.scenarioVisual;
+    const addressed = scenarioAddressedMitre(plan);
+    const gaps = scenarioUnaddressedMitre(plan);
+    const readiness = plan.missing.length ? `${plan.missing.length} tenant object${plan.missing.length === 1 ? '' : 's'} needed later` : 'Ready to apply';
+    $('scenarioVisualOutcome').innerHTML = [
+      ['Policies required', plan.policies.length, plan.policies.length > 1 ? 'Safe branches included' : 'One focused policy'],
+      ['Threats addressed', addressed.length, `${plan.score}% identity coverage`],
+      ['Remaining gaps', gaps.length, gaps.length ? 'Other controls still required' : 'No mapped CA gaps'],
+      ['User friction', visualScenarioFriction(plan.inputs), visualScenarioFrictionHelp(plan.inputs)],
+      ['Export readiness', readiness, plan.missing.length ? 'Guidance remains available' : 'Required IDs supplied']
+    ].map(([label, value, help]) => `<article><span>${esc(label)}</span><strong>${esc(value)}</strong><small>${esc(help)}</small></article>`).join('');
+
+    const lanes = [
+      { id: 'if', eyebrow: 'IF this access happens', title: 'Assignments and conditions' },
+      { id: 'then', eyebrow: 'THEN apply', title: 'Access and session controls' }
+    ];
+    $('scenarioVisualMap').innerHTML = lanes.map(lane => `<section class="visual-map-lane visual-lane-${lane.id}" aria-label="${esc(lane.eyebrow)}">
+      <div class="visual-lane-label"><span>${esc(lane.eyebrow)}</span><strong>${esc(lane.title)}</strong></div>
+      <div class="visual-node-track">${VISUAL_SCENARIO_NODES.filter(node => node.lane === lane.id).map(node => visualScenarioNode(node, plan)).join('')}</div>
+    </section>`).join('<div class="visual-if-then-bridge" aria-hidden="true"><span>THEN</span></div>');
+
+    const activeIndex = Math.max(0, VISUAL_SCENARIO_NODES.findIndex(node => node.id === visual.activeNode));
+    $('visualBackBtn').disabled = activeIndex === 0;
+    $('visualContinueBtn').textContent = activeIndex === VISUAL_SCENARIO_NODES.length - 1 ? 'Review policy plan' : 'Continue';
+    $('visualNodeProgress').innerHTML = `<strong>Decision ${activeIndex + 1} of ${VISUAL_SCENARIO_NODES.length}</strong><span>${esc(VISUAL_SCENARIO_NODES[activeIndex].question)}</span>`;
+    $('visualUndoBtn').disabled = visual.history.length === 0;
+    $('scenarioVisualBlueprint').innerHTML = renderVisualPolicyBlueprint(plan);
+    if (visual.flyout) renderVisualControlFlyout(plan);
+    if (visual.threatOpen) renderVisualThreatFlyout(plan);
+  }
+
+  function visualScenarioNode(node, plan) {
+    const status = visualScenarioNodeStatus(node, plan);
+    const summary = visualScenarioNodeSummary(node);
+    return `<button class="visual-policy-node status-${esc(status.id)} ${state.scenarioVisual.activeNode === node.id ? 'active' : ''}" type="button" data-visual-node="${esc(node.id)}" aria-haspopup="dialog" aria-expanded="${state.scenarioVisual.flyout === node.id ? 'true' : 'false'}">
+      <span class="visual-node-step">${String(node.step).padStart(2, '0')}</span>
+      <span class="visual-node-copy"><small>${esc(status.label)}</small><strong>${esc(node.title)}</strong><em>${esc(summary)}</em></span>
+      <span class="visual-node-arrow" aria-hidden="true">›</span>
+    </button>`;
+  }
+
+  function visualScenarioNodeStatus(node, plan) {
+    if (node.fields.some(field => field === 'groupName' && !String(state.scenario.groupName || '').trim())) return { id: 'needs-input', label: 'Needs input' };
+    if (plan.policies.length > 1 && ['context', 'grant'].includes(node.id) && state.scenarioVisual.completed.has(node.id)) return { id: 'split', label: 'Separate policy required' };
+    if (state.scenarioVisual.completed.has(node.id)) {
+      const modified = node.fields.some(field => state.scenario[field] !== visualRecommendedValue(field, state.scenario));
+      return modified ? { id: 'modified', label: 'Modified' } : { id: 'selected', label: 'Selected' };
+    }
+    return { id: 'recommended', label: 'Recommended' };
+  }
+
+  function visualScenarioNodeSummary(node) {
+    return node.fields.map(field => visualFieldValueLabel(field, state.scenario[field])).filter(Boolean).join(' · ');
+  }
+
+  function visualFieldValueLabel(field, value) {
+    if (field === 'groupName') return value || 'Group name required';
+    const option = VISUAL_FIELD_OPTIONS[field]?.options.find(item => item[0] === value);
+    return option?.[1] || value || 'Choose an option';
+  }
+
+  function renderVisualPolicyBlueprint(plan) {
+    if (!plan.policies.length) return '<div class="empty-state">Complete the policy path to generate a blueprint.</div>';
+    const split = plan.policies.length > 1
+      ? `<div class="visual-split-explanation"><strong>${plan.policies.length} policies are required</strong><span>${esc(visualPolicySplitSummary(plan))}</span></div>`
+      : '<div class="visual-merge-explanation"><strong>One policy is enough</strong><span>The selected assignments, grant controls, and session controls can coexist without changing the intended logic.</span></div>';
+    return `${split}<div class="visual-blueprint-cards">${renderScenarioPolicyPack(plan)}</div>`;
+  }
+
+  function visualPolicySplitSummary(plan) {
+    const reasons = [];
+    if (plan.controls.includes('sign_in_risk')) reasons.push('High sign-in risk is kept as an independent block policy');
+    if (plan.controls.includes('user_risk')) reasons.push('High user risk is evaluated independently from sign-in risk');
+    if (state.scenario.accessDecision === 'block' && plan.controls.some(control => ['mfa', 'phish_mfa', 'device_compliance'].includes(control))) reasons.push('Block and grant requirements cannot share one access decision');
+    if (state.scenario.accountType === 'agentIdentity') reasons.push('Preview agent targeting remains isolated from ordinary user controls');
+    return `${reasons.join('. ')}. This is the minimum set that preserves the intended Conditional Access evaluation.`;
+  }
+
+  function openVisualScenarioNode(nodeId, opener) {
+    if (!VISUAL_SCENARIO_NODES.some(node => node.id === nodeId)) return;
+    state.scenarioVisual.activeNode = nodeId;
+    state.scenarioVisual.flyout = nodeId;
+    state.scenarioVisual.threatOpen = false;
+    visualFlyoutOpener = opener || document.activeElement;
+    renderScenarioPlanner();
+    $('visualFlyoutBackdrop').hidden = false;
+    $('visualControlFlyout').hidden = false;
+    $('visualThreatFlyout').hidden = true;
+    requestAnimationFrame(() => $('visualControlFlyout').focus());
+  }
+
+  function renderVisualControlFlyout(plan) {
+    const node = VISUAL_SCENARIO_NODES.find(item => item.id === state.scenarioVisual.flyout);
+    if (!node) return;
+    $('visualFlyoutStep').textContent = `Decision ${node.step} of ${VISUAL_SCENARIO_NODES.length}`;
+    $('visualFlyoutTitle').textContent = node.question;
+    $('visualFlyoutContent').innerHTML = `<div class="visual-recommendation-banner">
+      <span>Recommended configuration</span>
+      <strong>${esc(node.fields.map(field => visualFieldValueLabel(field, visualRecommendedValue(field, state.scenario))).join(' · '))}</strong>
+      <p>${esc(visualNodeRecommendationReason(node, state.scenario))}</p>
+    </div>
+    <div class="visual-option-groups">${node.fields.map(field => renderVisualFieldOptions(field)).join('')}</div>
+    ${renderVisualDecisionImpact(node, plan)}`;
+    $('visualFlyoutBackdrop').hidden = false;
+    $('visualControlFlyout').hidden = false;
+  }
+
+  function renderVisualFieldOptions(field) {
+    if (field === 'groupName') {
+      return `<label class="visual-text-option"><span>Scenario security group</span><input id="visualScenarioGroupName" type="text" value="${esc(state.scenario.groupName || '')}" placeholder="CA-Scenario-CustomAccess-Users"><small>Use a dedicated group so ownership, expiry, and removal remain obvious. The object ID is requested later.</small></label>`;
+    }
+    const config = VISUAL_FIELD_OPTIONS[field];
+    if (!config) return '';
+    const recommended = visualRecommendedValue(field, state.scenario);
+    return `<fieldset class="visual-option-group"><legend>${esc(config.label)}</legend>${config.options.map(([value, label, desc]) => `<button class="visual-choice ${state.scenario[field] === value ? 'selected' : ''}" type="button" data-visual-field="${esc(field)}" data-visual-choice="${esc(value)}" aria-pressed="${state.scenario[field] === value ? 'true' : 'false'}">
+      <span><strong>${esc(label)}</strong>${value === recommended ? '<em>Recommended</em>' : ''}</span><small>${esc(desc)}</small>
+    </button>`).join('')}</fieldset>`;
+  }
+
+  function renderVisualDecisionImpact(node, plan) {
+    const impacts = visualDecisionImpact(node, plan);
+    return `<section class="visual-decision-impact"><h4>What this decision changes</h4><dl>
+      <dt>Security</dt><dd>${esc(impacts.security)}</dd>
+      <dt>User experience</dt><dd>${esc(impacts.user)}</dd>
+      <dt>Entra configuration</dt><dd>${esc(impacts.entra)}</dd>
+      <dt>Prerequisites</dt><dd>${esc(impacts.prerequisite)}</dd>
+    </dl></section>`;
+  }
+
+  function visualDecisionImpact(node, plan) {
+    const inputs = plan.inputs;
+    if (node.id === 'identity') return {
+      security: 'Limits the policy to a dedicated scenario population instead of changing access for everyone.',
+      user: 'Only members of the scenario group receive the selected prompts and restrictions.',
+      entra: `Assignments > Users or workload identities: ${visualFieldValueLabel('accountType', inputs.accountType)} via ${inputs.groupName || 'a dedicated group'}.`,
+      prerequisite: 'Create the group, assign an owner, and add its object ID only when preparing the export.'
+    };
+    if (node.id === 'resource') return {
+      security: 'Reduces blast radius by targeting only the resource required for the access pattern.',
+      user: `The controls apply when accessing ${scenarioApplications(inputs.resource).map(scenarioApplicationLabel).join(', ')}.`,
+      entra: `Target resources: ${scenarioApplications(inputs.resource).map(scenarioApplicationLabel).join(', ')}.`,
+      prerequisite: scenarioKnownLimitation(inputs)
+    };
+    if (node.id === 'device') return {
+      security: inputs.deviceTrust === 'managed' ? 'Uses device compliance as a strong access signal.' : 'Compensates for weaker device trust with browser or session restrictions.',
+      user: inputs.deviceTrust === 'managed' ? 'Users need a compliant managed device.' : 'Desktop clients or downloads may be restricted.',
+      entra: `${visualFieldValueLabel('deviceTrust', inputs.deviceTrust)}; ${visualFieldValueLabel('platforms', inputs.platforms)}.`,
+      prerequisite: inputs.deviceTrust === 'managed' ? 'Requires a working Intune compliance policy and accurate device inventory.' : 'Confirm supported app-enforced restrictions for the target resource.'
+    };
+    if (node.id === 'context') return {
+      security: `${visualFieldValueLabel('riskTolerance', inputs.riskTolerance)} risk posture for ${visualFieldValueLabel('sensitivity', inputs.sensitivity).toLowerCase()}.`,
+      user: `${visualFieldValueLabel('duration', inputs.duration)} access from ${visualFieldValueLabel('location', inputs.location).toLowerCase()}.`,
+      entra: 'Conditions are combined with AND, so every configured condition must match before this policy applies.',
+      prerequisite: inputs.location === 'any' ? 'No named location required.' : 'A maintained named-location object ID is required before export.'
+    };
+    if (node.id === 'grant') return {
+      security: inputs.accessDecision === 'block' ? 'Matching access is denied.' : `${scenarioAuthRequirementLabel(inputs.authRequirement)} is required before access.`,
+      user: inputs.accessDecision === 'block' ? 'The selected access path cannot be completed.' : 'Users must satisfy the selected authentication and device controls.',
+      entra: `${visualFieldValueLabel('accessDecision', inputs.accessDecision)}; ${visualFieldValueLabel('riskResponse', inputs.riskResponse)}.`,
+      prerequisite: inputs.riskResponse === 'none' ? 'No Entra ID Protection risk branch.' : 'Microsoft Entra ID P2 is required for risk conditions.'
+    };
+    if (node.id === 'session') return {
+      security: SESSION_STRICTNESS_HELP[inputs.session]?.meaning || 'Uses standard session behaviour.',
+      user: SESSION_STRICTNESS_HELP[inputs.session]?.recommended || 'Normal session behaviour.',
+      entra: scenarioSessionSettingsSummary(inputs, plan.controls),
+      prerequisite: inputs.session === 'browserLocked' ? 'App-enforced restrictions must be supported and configured by the target application.' : 'No additional application integration required.'
+    };
+    return {
+      security: inputs.rollout === 'enabled' ? 'The policy enforces immediately.' : 'The policy can be validated before enforcement.',
+      user: inputs.rollout === 'enabled' ? 'Affected users experience the controls immediately.' : 'No enforcement occurs until the rollout decision changes.',
+      entra: visualFieldValueLabel('rollout', inputs.rollout),
+      prerequisite: 'Validate with a pilot identity, the What If tool, and sign-in logs before enabling.'
+    };
+  }
+
+  function visualNodeRecommendationReason(node, inputs) {
+    if (node.id === 'identity') return 'A dedicated scenario group keeps targeting reversible and easy to review.';
+    if (node.id === 'resource') return 'Target only the resource needed; broader targeting increases impact without improving this scenario.';
+    if (node.id === 'device') return inputs.sensitivity === 'highlySensitive' ? 'Highly sensitive access should prefer managed and compliant devices.' : 'Device trust determines whether compliance or browser restrictions are the safer control.';
+    if (node.id === 'context') return 'Time-boxed access and explicit risk boundaries reduce persistent exception risk.';
+    if (node.id === 'grant') return inputs.accountType === 'admin' || inputs.sensitivity === 'highlySensitive' ? 'High-value access should use phishing-resistant authentication and separate risk guardrails.' : 'Standard MFA gives broad protection while keeping the access path supportable.';
+    if (node.id === 'session') return SESSION_STRICTNESS_HELP[visualRecommendedValue('session', inputs)]?.recommended || 'Use session controls proportionate to device and data risk.';
+    return 'Microsoft recommends validating Conditional Access impact before enforcing a new policy.';
+  }
+
+  function visualRecommendedValue(field, inputs) {
+    if (field === 'accountType') return 'internalUser';
+    if (field === 'groupName') return visualScenarioGroupName(inputs);
+    if (field === 'resource') return 'office365';
+    if (field === 'deviceTrust') {
+      if (inputs.accountType === 'externalGuest') return 'browserOnly';
+      if (inputs.accountType === 'serviceAccount') return 'trustedLocation';
+      if (inputs.accountType === 'agentIdentity' || inputs.accountType === 'admin' || inputs.sensitivity === 'highlySensitive') return 'managed';
+      return 'managed';
+    }
+    if (field === 'platforms') return 'any';
+    if (field === 'location') return inputs.accountType === 'serviceAccount' ? 'trustedOnly' : 'any';
+    if (field === 'riskTolerance') return inputs.accountType === 'admin' || inputs.sensitivity === 'highlySensitive' ? 'strict' : 'balanced';
+    if (field === 'sensitivity') return 'sensitive';
+    if (field === 'duration') return inputs.accountType === 'serviceAccount' ? 'ongoing' : 'temporary';
+    if (field === 'accessDecision') return inputs.accountType === 'serviceAccount' ? 'block' : 'grant';
+    if (field === 'authRequirement') return inputs.accountType === 'admin' || inputs.sensitivity === 'highlySensitive' ? 'phishingResistantMfa' : 'standardMfa';
+    if (field === 'riskResponse') return inputs.riskTolerance === 'strict' ? (inputs.sensitivity === 'highlySensitive' || inputs.accountType === 'admin' ? 'signInAndUserRisk' : 'signInRisk') : 'none';
+    if (field === 'session') return recommendedScenarioSession(inputs);
+    if (field === 'rollout') return 'reportOnly';
+    return inputs[field];
+  }
+
+  function visualScenarioGroupName(inputs) {
+    const identity = { internalUser: 'Internal', externalGuest: 'External', admin: 'Privileged', serviceAccount: 'Automation', agentIdentity: 'Agent' }[inputs.accountType] || 'Custom';
+    const resource = { sharepoint: 'SharePoint', exchange: 'Exchange', office365: 'M365', adminPortals: 'AdminPortals', allApps: 'AllApps', agentResources: 'AgentResources' }[inputs.resource] || 'Access';
+    return `CA-Scenario-${identity}-${resource}-Users`;
+  }
+
+  function updateVisualScenarioChoice(field, value, live = false) {
+    if (!Object.prototype.hasOwnProperty.call(state.scenario, field) || state.scenario[field] === value) return;
+    if (!live) state.scenarioVisual.history.push(visualScenarioSnapshot());
+    state.scenario[field] = value;
+    state.appliedStrategy = null;
+    state.guideOnly = null;
+    if (live) return;
+    renderScenarioPlanner();
+    requestAnimationFrame(() => {
+      const selected = document.querySelector(`button[data-visual-field="${field}"][data-visual-choice="${value}"]`);
+      if (selected) selected.focus();
+    });
+  }
+
+  function visualScenarioSnapshot() {
+    return {
+      scenario: clone(state.scenario),
+      activeNode: state.scenarioVisual.activeNode,
+      completed: [...state.scenarioVisual.completed]
+    };
+  }
+
+  function undoVisualScenarioChange() {
+    const snapshot = state.scenarioVisual.history.pop();
+    if (!snapshot) return;
+    state.scenario = snapshot.scenario;
+    state.scenarioVisual.activeNode = snapshot.activeNode;
+    state.scenarioVisual.completed = new Set(snapshot.completed);
+    renderScenarioPlanner();
+    toast('Last scenario change undone');
+  }
+
+  function resetVisualScenarioRecommendations() {
+    state.scenarioVisual.history.push(visualScenarioSnapshot());
+    const custom = SCENARIO_TEMPLATES.find(item => item.id === 'custom');
+    const preserved = { groupId: state.scenario.groupId, locationId: state.scenario.locationId };
+    const next = { ...SCENARIO_DEFAULTS, template: 'custom', ...custom.fields };
+    next.groupName = visualScenarioGroupName(next);
+    ['deviceTrust', 'platforms', 'location', 'riskTolerance', 'sensitivity', 'duration', 'accessDecision', 'authRequirement', 'riskResponse', 'session', 'rollout'].forEach(field => {
+      next[field] = visualRecommendedValue(field, next);
+    });
+    state.scenario = { ...next, ...preserved };
+    state.scenarioVisual.activeNode = 'identity';
+    state.scenarioVisual.completed = new Set();
+    state.scenarioVisual.flyout = null;
+    state.scenarioVisual.threatOpen = false;
+    renderScenarioPlanner();
+    toast('Recommended visual scenario restored');
+  }
+
+  function moveVisualScenarioNode(delta, complete = false) {
+    const current = Math.max(0, VISUAL_SCENARIO_NODES.findIndex(node => node.id === state.scenarioVisual.activeNode));
+    if (complete) state.scenarioVisual.completed.add(VISUAL_SCENARIO_NODES[current].id);
+    const next = current + delta;
+    if (next >= VISUAL_SCENARIO_NODES.length) {
+      closeVisualFlyout('control', false);
+      setScenarioStage('plan');
+      return;
+    }
+    if (next < 0) return;
+    state.scenarioVisual.activeNode = VISUAL_SCENARIO_NODES[next].id;
+    state.scenarioVisual.flyout = null;
+    state.scenarioVisual.threatOpen = false;
+    renderScenarioPlanner();
+  }
+
+  function acceptVisualScenarioDecision() {
+    const current = state.scenarioVisual.activeNode;
+    state.scenarioVisual.completed.add(current);
+    closeVisualFlyout('control', false);
+    moveVisualScenarioNode(1);
+  }
+
+  function openVisualThreatFlyout() {
+    state.scenarioVisual.threatOpen = true;
+    renderVisualThreatFlyout(scenarioPlan());
+    $('visualThreatFlyout').hidden = false;
+    requestAnimationFrame(() => $('visualThreatFlyout').focus());
+  }
+
+  function renderVisualThreatFlyout(plan) {
+    const node = VISUAL_SCENARIO_NODES.find(item => item.id === state.scenarioVisual.activeNode);
+    if (!node) return;
+    const controls = visualNodeControlIds(node, plan);
+    const coverage = mitreCoverageForControls(controls);
+    const addressed = coverage.filter(item => ['Strongly mitigated', 'Partially mitigated'].includes(item.status));
+    const gaps = coverage.filter(item => !['Strongly mitigated', 'Partially mitigated'].includes(item.status));
+    $('visualThreatTitle').textContent = `${node.title}: threat impact`;
+    $('visualThreatContent').innerHTML = `<div class="visual-threat-summary"><strong>${addressed.length} addressed</strong><span>${gaps.length} remain outside or beyond this decision</span></div>
+      <section class="visual-threat-section"><h4>Addressed by this decision</h4>${addressed.length ? addressed.map(item => visualThreatCard(item, controls)).join('') : '<p class="empty-state">This decision shapes scope or rollout and does not directly mitigate a mapped technique.</p>'}</section>
+      <section class="visual-threat-section visual-threat-gaps"><h4>Not fully addressed</h4>${gaps.map(item => visualThreatCard(item, controls)).join('')}</section>`;
+  }
+
+  function visualNodeControlIds(node, plan) {
+    const identityControls = {
+      internalUser: ['mfa', 'sign_in_risk', 'user_risk', 'device_compliance'],
+      externalGuest: ['guest_access', 'mfa', 'app_protection'],
+      admin: ['admin_mfa', 'phish_mfa', 'admin_session', 'sign_in_risk', 'user_risk'],
+      serviceAccount: ['service_account_protection', 'trusted_location'],
+      agentIdentity: ['agent_risk', 'agent_identity_block', 'users_agent_resources_block']
+    }[plan.inputs.accountType] || [];
+    const map = {
+      identity: identityControls,
+      resource: ['selected_app_block', 'users_agent_resources_block', 'app_protection'],
+      device: ['device_compliance', 'app_protection', 'unknown_platforms', 'trusted_location'],
+      context: ['trusted_location', 'sign_in_risk', 'user_risk'],
+      grant: ['mfa', 'phish_mfa', 'admin_mfa', 'device_compliance', 'sign_in_risk', 'user_risk'],
+      session: ['session_controls', 'persistent_browser', 'app_protection'],
+      rollout: []
+    };
+    return (map[node.id] || []).filter(control => plan.controls.includes(control));
+  }
+
+  function visualThreatCard(item, controls) {
+    const matched = [...(item.strongControls || []), ...(item.partialControls || [])].filter(control => controls.includes(control));
+    const explanation = item.status === 'Strongly mitigated'
+      ? 'The selected controls directly influence this identity attack path.'
+      : item.status === 'Partially mitigated'
+        ? 'Conditional Access reduces opportunity but cannot remove the attack path completely.'
+        : 'This decision does not provide a direct Conditional Access mitigation; use the additional controls described in the final readiness review.';
+    return `<article class="visual-threat-card status-${esc(item.status.toLowerCase().replace(/[^a-z0-9]+/g, '-'))}">
+      <div><span>${esc(item.id)}</span><strong>${esc(item.name)}</strong></div>
+      <em>${esc(item.status)}</em><p>${esc(explanation)}</p>
+      ${matched.length ? `<small>Related controls: ${esc(matched.map(id => CONTROLS[id]?.label || id).join(', '))}</small>` : '<small>Requires another security control outside this decision.</small>'}
+    </article>`;
+  }
+
+  function closeVisualFlyout(layer = 'control', restoreFocus = true) {
+    if (!$('visualControlFlyout')) return;
+    if (layer === 'threat') {
+      state.scenarioVisual.threatOpen = false;
+      $('visualThreatFlyout').hidden = true;
+      if (restoreFocus && !$('visualControlFlyout').hidden) $('visualThreatImpactBtn').focus();
+      return;
+    }
+    state.scenarioVisual.flyout = null;
+    state.scenarioVisual.threatOpen = false;
+    $('visualControlFlyout').hidden = true;
+    $('visualThreatFlyout').hidden = true;
+    $('visualFlyoutBackdrop').hidden = true;
+    if (restoreFocus && visualFlyoutOpener?.isConnected) visualFlyoutOpener.focus();
+    visualFlyoutOpener = null;
+  }
+
+  function handleVisualFlyoutKeydown(event) {
+    const top = !$('visualThreatFlyout')?.hidden ? $('visualThreatFlyout') : !$('visualControlFlyout')?.hidden ? $('visualControlFlyout') : null;
+    if (!top) return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closeVisualFlyout(top === $('visualThreatFlyout') ? 'threat' : 'control');
+      return;
+    }
+    if (event.key !== 'Tab') return;
+    const focusable = [...top.querySelectorAll('button:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])')].filter(item => !item.hidden);
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
+
+  function visualScenarioFriction(inputs) {
+    if (inputs.accessDecision === 'block') return 'Low';
+    let score = 1;
+    if (inputs.authRequirement === 'passwordlessMfa') score += 1;
+    if (inputs.authRequirement === 'phishingResistantMfa') score += 2;
+    if (inputs.deviceTrust === 'managed') score += 2;
+    if (inputs.deviceTrust === 'browserOnly') score += 2;
+    if (inputs.session === 'short') score += 1;
+    if (inputs.session === 'browserLocked') score += 2;
+    if (inputs.location !== 'any') score += 1;
+    return score <= 2 ? 'Low' : score <= 5 ? 'Moderate' : 'High';
+  }
+
+  function visualScenarioFrictionHelp(inputs) {
+    const friction = visualScenarioFriction(inputs);
+    if (friction === 'High') return 'Strong controls; communicate user impact';
+    if (friction === 'Moderate') return 'Balanced prompts and restrictions';
+    return 'Minimal additional interaction';
+  }
+
+  function renderGuidedStage(flow, stage) {
+    document.querySelectorAll(`[data-${flow}-stage-panel]`).forEach(panel => {
+      panel.hidden = panel.dataset[`${flow}StagePanel`] !== stage;
+    });
+    const order = flow === 'strategy'
+      ? ['requirements', 'architecture']
+      : ['template', 'settings', 'plan', 'prepare'];
+    const activeIndex = order.indexOf(stage);
+    document.querySelectorAll(`button[data-${flow}-stage]`).forEach(btn => {
+      const index = order.indexOf(btn.dataset[`${flow}Stage`]);
+      btn.classList.toggle('active', index === activeIndex);
+      btn.classList.toggle('complete', index >= 0 && index < activeIndex);
+      btn.setAttribute('aria-current', index === activeIndex ? 'step' : 'false');
+      if (flow === 'scenario' && btn.closest('.guided-progress')) btn.disabled = index > activeIndex + 1;
+    });
   }
 
   function syncScenarioFields() {
@@ -2349,6 +3115,14 @@
       groupId: '',
       locationId: '',
       ...template.fields
+    };
+    if (template.id === 'custom') state.scenario.groupName = visualScenarioGroupName(state.scenario);
+    state.scenarioVisual = {
+      activeNode: 'identity',
+      completed: new Set(),
+      history: [],
+      flyout: null,
+      threatOpen: false
     };
     state.appliedStrategy = null;
     state.guideOnly = null;
@@ -2389,20 +3163,22 @@
   }
 
   function scenarioControlsFromInputs(inputs) {
-    const controls = new Set(['mfa']);
-    if (inputs.accountType === 'admin') ['phish_mfa', 'admin_mfa', 'admin_session', 'persistent_browser'].forEach(id => controls.add(id));
+    const grantAccess = inputs.accessDecision !== 'block';
+    const controls = new Set(grantAccess ? ['mfa'] : ['selected_app_block']);
+    if (grantAccess && inputs.accountType === 'admin') ['phish_mfa', 'admin_mfa', 'admin_session', 'persistent_browser'].forEach(id => controls.add(id));
     if (inputs.accountType === 'externalGuest') controls.add('guest_access');
     if (inputs.accountType === 'serviceAccount') ['service_account_protection', 'trusted_location'].forEach(id => controls.add(id));
     if (inputs.accountType === 'agentIdentity') ['agent_risk', 'users_agent_resources_block'].forEach(id => controls.add(id));
-    if (inputs.deviceTrust === 'managed') controls.add('device_compliance');
-    if (inputs.deviceTrust === 'browserOnly' || inputs.deviceTrust === 'unmanaged') ['app_protection', 'session_controls', 'persistent_browser'].forEach(id => controls.add(id));
+    if (grantAccess && inputs.deviceTrust === 'managed') controls.add('device_compliance');
+    if (grantAccess && (inputs.deviceTrust === 'browserOnly' || inputs.deviceTrust === 'unmanaged')) ['app_protection', 'session_controls', 'persistent_browser'].forEach(id => controls.add(id));
     if (inputs.deviceTrust === 'trustedLocation' || inputs.location !== 'any') controls.add('trusted_location');
     if (inputs.platforms === 'unknownBlocked') controls.add('unknown_platforms');
-    if (inputs.riskTolerance === 'strict') controls.add('sign_in_risk');
-    if (inputs.session === 'short' || inputs.session === 'browserLocked') controls.add('session_controls');
-    if (inputs.session === 'browserLocked') controls.add('persistent_browser');
-    if (inputs.authRequirement === 'phishingResistantMfa') controls.add('phish_mfa');
-    if (inputs.sensitivity === 'highlySensitive') controls.add(inputs.accountType === 'externalGuest' ? 'mfa' : 'phish_mfa');
+    if (inputs.riskResponse === 'signInRisk' || inputs.riskResponse === 'signInAndUserRisk') controls.add('sign_in_risk');
+    if (inputs.riskResponse === 'signInAndUserRisk') controls.add('user_risk');
+    if (grantAccess && (inputs.session === 'short' || inputs.session === 'browserLocked')) controls.add('session_controls');
+    if (grantAccess && inputs.session === 'browserLocked') controls.add('persistent_browser');
+    if (grantAccess && inputs.authRequirement === 'phishingResistantMfa') controls.add('phish_mfa');
+    if (grantAccess && inputs.sensitivity === 'highlySensitive') controls.add(inputs.accountType === 'externalGuest' ? 'mfa' : 'phish_mfa');
     return [...controls].filter(id => CONTROLS[id]);
   }
 
@@ -2470,9 +3246,12 @@
 
   function scenarioPolicies(template, inputs, controls, missing) {
     if (template.validationOnly) return [scenarioCorePolicy(template, inputs, controls, 'disabled')];
-    const policies = [scenarioCorePolicy(template, inputs, controls, 'enabledForReportingButNotEnforced')];
+    const policies = [scenarioCorePolicy(template, inputs, controls, scenarioPolicyState(inputs))];
     if (controls.includes('sign_in_risk') && inputs.accountType !== 'externalGuest') {
       policies.push(scenarioRiskPolicy(template, inputs));
+    }
+    if (controls.includes('user_risk') && inputs.accountType !== 'externalGuest') {
+      policies.push(scenarioUserRiskPolicy(template, inputs));
     }
     return policies.filter(Boolean).map((policy, index) => ({
       ...policy,
@@ -2483,7 +3262,7 @@
       represents: [],
       scenarioTemplate: template.id,
       scenarioMissingObjects: missing,
-      rolloutDefault: 'monitor',
+      rolloutDefault: scenarioRolloutDecision(inputs),
       order: index + 1
     }));
   }
@@ -2494,13 +3273,13 @@
     const grantControls = scenarioGrantControls(template, inputs, controls);
     const policy = {
       id: template.policyId,
-      persona: template.persona || scenarioPersona(inputs.accountType),
+      persona: template.id === 'custom' ? scenarioPersona(inputs.accountType) : template.persona || scenarioPersona(inputs.accountType),
       displayName: `${template.policyId}-${template.policyName}`,
-      risk: template.risk || scenarioRisk(inputs),
+      risk: template.id === 'custom' ? scenarioRisk(inputs) : template.risk || scenarioRisk(inputs),
       summary: template.summary,
       prerequisites: [...GLOBAL_PREREQUISITES, ...(template.prerequisites || [])],
       requiredObjects: [inputs.groupName || template.groupName],
-      controls,
+      controls: controls.filter(control => !['sign_in_risk', 'user_risk'].includes(control)),
       mergeReason: 'Generated as a focused scenario policy so the access path stays easy to review and remove.',
       separateReason: 'Risk/block controls stay separate when combining would change Conditional Access evaluation semantics.',
       preview: template.preview || inputs.resource === 'agentResources',
@@ -2530,7 +3309,7 @@
     const groupId = inputs.groupId || scenarioPlaceholderId(inputs.groupName || template.groupName);
     return {
       id: `${template.policyId}R`,
-      persona: template.persona || scenarioPersona(inputs.accountType),
+      persona: template.id === 'custom' ? scenarioPersona(inputs.accountType) : template.persona || scenarioPersona(inputs.accountType),
       displayName: `${template.policyId}R-${template.policyName}-HighSignInRisk`,
       risk: 'high',
       summary: 'Separate high sign-in risk guardrail for the scenario group.',
@@ -2541,7 +3320,7 @@
       separateReason: 'Risk controls should not be hidden inside the main grant/session policy.',
       policy: {
         displayName: `${template.policyId}R-${template.policyName}-HighSignInRisk`,
-        state: 'enabledForReportingButNotEnforced',
+        state: scenarioPolicyState(inputs),
         conditions: {
           clientAppTypes: ['all'],
           signInRiskLevels: ['high'],
@@ -2561,7 +3340,57 @@
     };
   }
 
+  function scenarioUserRiskPolicy(template, inputs) {
+    const groupId = inputs.groupId || scenarioPlaceholderId(inputs.groupName || template.groupName);
+    return {
+      id: `${template.policyId}U`,
+      persona: template.id === 'custom' ? scenarioPersona(inputs.accountType) : template.persona || scenarioPersona(inputs.accountType),
+      displayName: `${template.policyId}U-${template.policyName}-HighUserRisk`,
+      risk: 'high',
+      summary: 'Separate high user-risk guardrail for the scenario group.',
+      prerequisites: [...GLOBAL_PREREQUISITES, 'Microsoft Entra ID Protection user-risk detections reviewed'],
+      requiredObjects: [inputs.groupName || template.groupName],
+      controls: ['user_risk'],
+      mergeReason: 'User risk remains separate so compromised-user response is independently testable.',
+      separateReason: 'User risk and sign-in risk use different signals and should remain separate policies.',
+      policy: {
+        displayName: `${template.policyId}U-${template.policyName}-HighUserRisk`,
+        state: scenarioPolicyState(inputs),
+        conditions: {
+          clientAppTypes: ['all'],
+          userRiskLevels: ['high'],
+          users: {
+            includeGroups: [groupId],
+            excludeGroups: ['2802b872-ccfb-4b29-a9a9-459808dfb11b']
+          },
+          applications: {
+            includeApplications: scenarioApplications(inputs.resource)
+          }
+        },
+        grantControls: {
+          operator: 'AND',
+          builtInControls: ['block']
+        }
+      }
+    };
+  }
+
+  function scenarioPolicyState(inputs) {
+    if (inputs.rollout === 'enabled') return 'enabled';
+    if (inputs.rollout === 'disabled') return 'disabled';
+    return 'enabledForReportingButNotEnforced';
+  }
+
+  function scenarioRolloutDecision(inputs) {
+    if (inputs.rollout === 'enabled') return 'include';
+    if (inputs.rollout === 'disabled') return 'exclude';
+    return 'monitor';
+  }
+
   function scenarioGrantControls(template, inputs, controls) {
+    if (inputs.accessDecision === 'block') {
+      return { operator: 'AND', builtInControls: ['block'] };
+    }
     if (inputs.accountType === 'serviceAccount' && controls.includes('trusted_location')) {
       return { operator: 'AND', builtInControls: ['block'] };
     }
@@ -2615,6 +3444,7 @@
 
   function scenarioSessionControls(inputs, controls) {
     const session = {};
+    if (inputs.accessDecision === 'block') return session;
     if (controls.includes('session_controls') || inputs.session === 'short' || inputs.session === 'browserLocked') {
       session.signInFrequency = {
         value: inputs.accountType === 'admin' || inputs.sensitivity === 'highlySensitive' ? 4 : 8,
@@ -2643,6 +3473,7 @@
     if (resource === 'sharepoint') return ['00000003-0000-0ff1-ce00-000000000000'];
     if (resource === 'exchange') return ['00000002-0000-0ff1-ce00-000000000000'];
     if (resource === 'office365') return ['Office365'];
+    if (resource === 'adminPortals') return ['MicrosoftAdminPortals'];
     if (resource === 'agentResources') return ['AllAgentIdResources'];
     return ['All'];
   }
@@ -2766,14 +3597,19 @@
   }
 
   function renderScenarioSummary(plan) {
-    return `<div class="strategy-score-grid">
-      <article><span>Scenario policies</span><strong>${esc(plan.policies.length)}</strong><em>${esc(plan.canApply ? 'Ready to apply' : 'Object ID required')}</em></article>
+    return `<div class="strategy-score-grid primary-metrics">
+      <article><span>Policies to manage</span><strong>${esc(plan.policies.length)}</strong><em>${esc(plan.policies.length === 1 ? 'One focused access policy' : 'Controls kept separate where required')}</em></article>
       <article><span>MITRE coverage</span><strong>${esc(plan.score)}%</strong><em>${esc(scenarioAddressedMitre(plan).length)}/${esc((plan.fullMitre || []).length)} addressed</em></article>
-      <article><span>Risk level</span><strong>${esc(plan.template.risk || scenarioRisk(plan.inputs))}</strong><em>${esc(plan.inputs.sensitivity)} data</em></article>
-      <article><span>Target group</span><strong>${esc(plan.inputs.groupId ? 'Ready' : 'Needed')}</strong><em>${esc(plan.inputs.groupName || plan.template.groupName)}</em></article>
     </div>
-    <p>${esc(plan.template.summary)} Scenario groups are preferred so the access path is easy to review, expire, and remove.</p>
-    ${plan.missing.length ? `<div class="scenario-object-warning">${plan.missing.map(item => `<strong>${esc(item.field)}</strong><span>${esc(item.help)}</span>`).join('')}</div>` : '<div class="strategy-applied">Required scenario objects are present. You can apply this pack to the rebuild set.</div>'}`;
+    <div class="strategy-context-line"><strong>${esc(plan.template.risk || scenarioRisk(plan.inputs))} risk</strong><span>${esc(plan.inputs.sensitivity)} data - ${esc(ACCESS_DURATION_HELP[plan.inputs.duration]?.title || plan.inputs.duration)}</span></div>
+    <p>${esc(plan.template.summary)} Scenario groups keep the access path easy to review, expire, and remove.</p>`;
+  }
+
+  function renderScenarioPrepareSummary(plan) {
+    const objectState = plan.canApply
+      ? '<div class="strategy-applied">All required tenant objects are present. The scenario is ready for policy review and Graph export.</div>'
+      : `<div class="scenario-object-warning">${plan.missing.map(item => `<strong>${esc(item.field)}</strong><span>${esc(item.help)}</span>`).join('')}</div>`;
+    return `<div class="prepare-summary-head"><strong>${esc(plan.policies.length)} polic${plan.policies.length === 1 ? 'y' : 'ies'} ready for review</strong><span>${esc(plan.inputs.groupName || plan.template.groupName)}</span></div>${objectState}`;
   }
 
   function renderScenarioMitre(plan) {
@@ -2852,13 +3688,15 @@
       </div>
       <dl>
         <dt>Purpose</dt><dd>${esc(policy.summary)}</dd>
-        <dt>Target group</dt><dd>${esc(plan.inputs.groupName || plan.template.groupName)}${plan.inputs.groupId ? ` (${esc(plan.inputs.groupId)})` : ' - object ID required'}</dd>
+        <dt>Target group</dt><dd>${esc(plan.inputs.groupName || plan.template.groupName)}${plan.inputs.groupId ? ' - ready for export' : ' - object ID required later'}</dd>
         <dt>Apps/resources</dt><dd>${esc(scenarioApplications(plan.inputs.resource).map(scenarioApplicationLabel).join(', '))}</dd>
-        <dt>Authentication</dt><dd>${esc(scenarioAuthRequirementLabel(plan.inputs.authRequirement))}</dd>
+        <dt>Access control</dt><dd>${esc(scenarioGrantSummary(policy.policy?.grantControls || {}))}</dd>
         <dt>Controls</dt><dd>${esc(policy.controls.map(id => CONTROLS[id]?.label).filter(Boolean).join(', ') || 'Scenario controls')}</dd>
-        <dt>Build note</dt><dd>${esc(buildStepSummary(policy))}</dd>
+        <dt>Why separate</dt><dd>${esc(policy.separateReason || 'Kept focused so this access path remains easy to review and remove.')}</dd>
+        <dt>Rollout</dt><dd>${esc(decisionLabel(policy.rolloutDefault || 'monitor'))}</dd>
+        <dt class="expert-only">Build note</dt><dd class="expert-only">${esc(buildStepSummary(policy))}</dd>
       </dl>
-      ${scenarioPolicySettings(policy, plan)}
+      <div class="expert-only">${scenarioPolicySettings(policy, plan)}</div>
       <button class="btn tiny" type="button" data-scenario-open="${esc(policyKey(policy))}">Open build guide</button>
     </div>`).join('');
   }
@@ -3166,6 +4004,7 @@
     const guideAction = policy.consolidated
       ? `<button class="btn tiny" type="button" data-strategy-open="${esc(key)}">Open build guide</button>`
       : '';
+    const rollout = decisionLabel(strategyDecisionForPolicy(policy, plan));
     return `<div class="strategy-policy-card">
       <div class="strategy-policy-top">
         <div>
@@ -3174,16 +4013,30 @@
         </div>
         <span class="status-chip">${esc(policy.consolidated ? 'Consolidated' : isPreviewPolicy(policy) ? 'Preview/beta' : 'Baseline')}</span>
       </div>
-      <dl>
+      <dl class="strategy-policy-essentials">
+        <dt>Purpose</dt><dd>${esc(strategyReasonForPolicy(policy, plan))}</dd>
+        <dt>Target</dt><dd>${esc(strategyPolicyTarget(policy))}</dd>
+        <dt>Controls</dt><dd>${esc(policyControls.join(', ') || 'Policy-specific controls')}</dd>
+        <dt>Why separate</dt><dd>${esc(strategyMergeDecision(policy))}</dd>
+        <dt>Rollout</dt><dd>${esc(rollout)}</dd>
+      </dl>
+      <dl class="strategy-policy-trace expert-only">
         <dt>Manual build</dt><dd>${esc(buildStepSummary(policy))}</dd>
-        <dt>Why this exists</dt><dd>${esc(strategyReasonForPolicy(policy, plan))}</dd>
         <dt>Requirement</dt><dd>${esc(strategyRequirementForPolicy(policy, plan))}</dd>
         <dt>Represents</dt><dd>${esc(represented)}</dd>
         <dt>MITRE</dt><dd>${esc(mitre)}</dd>
-        <dt>Merge decision</dt><dd>${esc(strategyMergeDecision(policy))}</dd>
       </dl>
       ${guideAction}
     </div>`;
+  }
+
+  function strategyPolicyTarget(policy) {
+    const conditions = policy.policy?.conditions || {};
+    const apps = conditions.applications?.includeApplications || [];
+    const appText = apps.length
+      ? apps.map(value => scenarioApplicationLabel(value)).join(', ')
+      : 'Configured target resources';
+    return `${policy.persona || 'Selected identities'} - ${appText}`;
   }
 
   function buildStepSummary(policy) {
@@ -3316,6 +4169,7 @@
     state.search = '';
     state.policyView = 'recommended';
     state.touchedDecisions.clear();
+    state.reviewedPolicies.clear();
     allPolicies().forEach(item => {
       const key = policyKey(item);
       state.decisions[key] = plan.policyKeys.has(key) ? strategyDecisionForPolicy(item, plan) : 'exclude';
@@ -3327,6 +4181,8 @@
     else selectFirstVisible();
     if (state.imported.length) compareImported();
     state.activeTab = 'policy-recommendations';
+    state.detailView = preferredKey ? 'build' : 'overview';
+    state.auditTarget = 'rebuild';
     renderAll();
     toast(`Applied ${plan.consolidatedPolicies.length} consolidated strategy policies`);
   }
@@ -3409,6 +4265,7 @@
     state.search = '';
     state.policyView = 'recommended';
     state.touchedDecisions.clear();
+    state.reviewedPolicies.clear();
     allPolicies().forEach(item => {
       const key = policyKey(item);
       state.decisions[key] = keys.has(key) ? item.rolloutDefault || 'monitor' : 'exclude';
@@ -3420,6 +4277,8 @@
     else selectFirstVisible();
     if (state.imported.length) compareImported();
     state.activeTab = 'policy-recommendations';
+    state.detailView = 'overview';
+    state.auditTarget = 'rebuild';
     renderAll();
     toast(`Applied ${plan.policies.length} scenario polic${plan.policies.length === 1 ? 'y' : 'ies'}`);
   }
@@ -3458,6 +4317,7 @@
     state.search = '';
     state.policyView = 'recommended';
     state.touchedDecisions.clear();
+    state.reviewedPolicies.clear();
     allPolicies().forEach(item => {
       const key = policyKey(item);
       state.decisions[key] = keys.has(key) ? item.rolloutDefault || 'monitor' : 'exclude';
@@ -3469,6 +4329,8 @@
     else selectFirstVisible();
     if (state.imported.length) compareImported();
     state.activeTab = 'policy-recommendations';
+    state.detailView = 'build';
+    state.auditTarget = 'rebuild';
     renderAll();
     toast(plan.canApply ? 'Scenario build guide opened' : 'Scenario build guide opened. Add object IDs before export.');
   }
@@ -3546,22 +4408,27 @@
       : state.policyView === 'selected'
         ? 'Included in export'
         : 'Recommended build plan';
+    const reviewList = reviewPolicyList();
+    const currentIndex = reviewList.findIndex(policy => policyKey(policy) === state.selectedId);
+    const reviewedCount = reviewList.filter(policy => state.reviewedPolicies.has(policyKey(policy))).length;
     $('policyPlanSummary').innerHTML = `<div class="plan-summary-title">
       <strong>${esc(viewLabel)}</strong>
       <span>${esc(selectedIdentity().label)} -> ${esc(selectedTarget().label)}</span>
     </div>
     <div class="plan-summary-grid">
-      <span><strong>${esc(state.selectedThreats.size)}</strong> confirmed threats</span>
-      <span><strong>${esc(controlsForStrategy().length)}</strong> controls</span>
-      <span><strong>${esc(selected.length)}</strong> policies in export</span>
-      <span><strong>${esc(list.length)}</strong> visible now</span>
+      <span><strong>${esc(reviewList.length)}</strong> policies in this plan</span>
+      <span><strong>${esc(reviewedCount)}</strong> reviewed</span>
     </div>
-    <p>${esc(state.guideOnly ? `${guideOnlyText()} Review the manual guide now, then return to Scenario Planner to add object IDs before export.` : 'Review the grouped recommendations, choose rollout for each policy, add exclusions where needed, then export the rebuild set.')}</p>`;
+    <p>${esc(state.guideOnly ? `${guideOnlyText()} Use the build guide now, then return to Scenario Planner before export.` : currentIndex >= 0 ? `Reviewing policy ${currentIndex + 1} of ${reviewList.length}.` : `${selected.length} policies are currently included in export.`)}</p>`;
+    $('appliedSourceBanner').textContent = appliedSourceText();
+    $('auditComparisonTarget').textContent = `Comparison target: ${state.auditTarget === 'baseline' ? 'full baseline library' : appliedSourceText().replace(/^Current rebuild set: /, '')}.`;
   }
 
   function renderPolicyList() {
     const list = visiblePolicies();
-    $('policyCount').textContent = `${list.length}/${allPolicies().length}`;
+    const reviewList = reviewPolicyList();
+    const currentIndex = reviewList.findIndex(policy => policyKey(policy) === state.selectedId);
+    $('policyCount').textContent = reviewList.length ? `${Math.max(1, currentIndex + 1)} of ${reviewList.length}` : '0 policies';
     $('policyList').innerHTML = groupedPolicies(list).map(group => `<section class="policy-purpose-group">
       <div class="purpose-head">
         <div>
@@ -3577,6 +4444,7 @@
     $('policyList').querySelectorAll('.policy-card').forEach(btn => {
       btn.addEventListener('click', () => {
         state.selectedId = btn.dataset.key;
+        state.detailView = 'overview';
         renderPolicyList();
         renderSelected();
       });
@@ -3589,6 +4457,7 @@
       const compClass = comp ? `import-${comp.status}` : 'import-missing';
       const compLabel = comp ? comp.label : 'not imported';
       const active = policyKey(policy) === state.selectedId ? 'active' : '';
+      const reviewed = state.reviewedPolicies.has(policyKey(policy)) ? '<span class="status-chip reviewed">reviewed</span>' : '';
       const preview = isPreviewPolicy(policy) ? '<span class="status-chip beta">preview</span>' : '';
       const generated = policy.generated ? '<span class="status-chip generated">generated</span>' : '';
       const reason = recommendationReasonForPolicy(policy);
@@ -3604,6 +4473,7 @@
         <span class="policy-meta">
           <span class="status-chip ${compClass}">${esc(compLabel)}</span>
           <span class="risk-pill ${esc(policy.risk)}">${esc(policy.risk)}</span>
+          ${reviewed}
           ${preview}${generated}
         </span>
       </button>`;
@@ -3651,6 +4521,57 @@
       : isPreviewPolicy(policy) ? 'Graph beta/preview policy shape' : 'Graph v1.0 policy shape';
     $('copyJsonBtn').disabled = guideOnly;
     $('downloadPolicyBtn').disabled = guideOnly;
+    renderPolicyDetailView();
+    renderPolicyReviewFooter();
+  }
+
+  function appliedSourceText() {
+    if (!state.appliedStrategy) return 'Current rebuild set: baseline recommendations';
+    if (state.appliedStrategy.type === 'scenario' || state.appliedStrategy.type === 'scenario-guide') {
+      const template = SCENARIO_TEMPLATES.find(item => item.id === state.appliedStrategy.scenarioId);
+      return `Current rebuild set: scenario - ${template?.label || 'custom access scenario'}`;
+    }
+    return 'Current rebuild set: consolidated strategy';
+  }
+
+  function renderPolicyDetailView() {
+    const view = state.detailView || 'overview';
+    const reviewGrid = document.querySelector('.guided-review-grid');
+    const policyNav = document.querySelector('.policy-nav');
+    const detailPanel = document.querySelector('.detail-panel');
+    const exportPanel = document.querySelector('.review-export-panel');
+    const reviewFooter = $('policyReviewFooter');
+    const exportMode = view === 'export';
+    reviewGrid?.classList.toggle('export-mode', exportMode);
+    if (policyNav) policyNav.hidden = exportMode;
+    if (detailPanel) detailPanel.hidden = exportMode;
+    if (exportPanel) exportPanel.hidden = !exportMode;
+    reviewFooter?.classList.toggle('export-mode', exportMode);
+    document.querySelectorAll('[data-detail-view-panel]:not(.review-export-panel)').forEach(panel => {
+      panel.hidden = panel.dataset.detailViewPanel !== view;
+    });
+    document.querySelectorAll('#policyDetailTabs button[data-detail-view]').forEach(btn => {
+      const active = btn.dataset.detailView === view;
+      btn.classList.toggle('active', active);
+      btn.setAttribute('aria-selected', String(active));
+      btn.setAttribute('tabindex', active ? '0' : '-1');
+    });
+    document.querySelectorAll('button[data-review-stage]').forEach(btn => {
+      btn.classList.toggle('active', exportMode ? btn.dataset.reviewStage === 'export' : btn.dataset.reviewStage === 'policies');
+    });
+    $('reviewExportBtn').textContent = exportMode ? 'Back to policy review' : 'Review export readiness';
+  }
+
+  function renderPolicyReviewFooter() {
+    const list = reviewPolicyList();
+    const index = list.findIndex(policy => policyKey(policy) === state.selectedId);
+    const policy = selectedPolicy();
+    $('policyProgressText').textContent = index >= 0 ? `Policy ${index + 1} of ${list.length}` : 'No policy selected';
+    $('previousPolicyBtn').disabled = index <= 0;
+    $('nextPolicyBtn').disabled = index < 0 || index >= list.length - 1;
+    $('markReviewedBtn').disabled = !policy;
+    $('markReviewedBtn').textContent = policy && state.reviewedPolicies.has(policyKey(policy)) ? 'Reviewed' : 'Mark reviewed';
+    $('markReviewedBtn').classList.toggle('reviewed', Boolean(policy && state.reviewedPolicies.has(policyKey(policy))));
   }
 
   function selectedSummaryText(policy, controls) {
@@ -3700,28 +4621,32 @@
 
   function renderManualGuide(item, exported, decision) {
     const sections = manualGuideSections(item, exported, decision);
+    const visibleSections = sections
+      .map(section => ({ ...section, rows: state.expertMode ? section.rows : section.rows.filter(row => !row.empty) }))
+      .filter(section => section.rows.length);
     const guideOnly = isGuideOnlyPolicy(item)
       ? `<div class="manual-callout guide-only"><strong>Object IDs required before export</strong><span>${esc(guideOnlyText())} The checklist below is safe to use for manual planning, but Graph JSON copy/download is disabled until the required scenario objects are supplied.</span></div>`
       : '';
     const preview = isPreviewPolicy(item)
       ? `<div class="manual-callout beta"><strong>Preview/beta policy fields</strong><span>This policy includes agent identity or agent resource targeting. Build manually only in tenants where the current Entra and Microsoft Graph beta/preview capabilities are available.</span></div>`
       : '';
-    $('manualGuide').innerHTML = `${guideOnly}${preview}<div class="manual-section-grid">${sections.map(renderManualSection).join('')}</div>`;
+    const simpleNote = state.expertMode ? '' : '<div class="manual-callout simple"><strong>Configured settings only</strong><span>Turn on Expert detail to show raw object IDs and every unconfigured Entra section.</span></div>';
+    $('manualGuide').innerHTML = `${guideOnly}${preview}${simpleNote}<div class="manual-section-grid">${visibleSections.map(renderManualSection).join('')}</div>`;
   }
 
   function renderManualSection(section) {
-    return `<article class="manual-section">
-      <div class="manual-section-head">
+    return `<details class="manual-section" ${section.step === '01' ? 'open' : ''}>
+      <summary class="manual-section-head">
         <span>${esc(section.step)}</span>
         <div>
           <h5>${esc(section.title)}</h5>
           <p>${esc(section.desc)}</p>
         </div>
-      </div>
+      </summary>
       <dl class="manual-rows">
         ${section.rows.map(renderManualRow).join('')}
       </dl>
-    </article>`;
+    </details>`;
   }
 
   function renderManualRow(row) {
@@ -3737,7 +4662,7 @@
   function renderManualEntries(entries) {
     return entries.map(entry => {
       if (entry.lookup) return `<span class="manual-lookup-required">${esc(entry.text)}</span>`;
-      if (entry.id) return `<span class="manual-object"><strong>${esc(entry.name)}</strong><small>Object ID: ${esc(entry.id)}</small></span>`;
+      if (entry.id) return `<span class="manual-object"><strong>${esc(entry.name)}</strong>${state.expertMode ? `<small>Object ID: ${esc(entry.id)}</small>` : ''}</span>`;
       return `<span>${esc(entry.text || entry.name || '')}</span>`;
     }).join('');
   }
@@ -4244,11 +5169,12 @@
   }
 
   function renderImport() {
+    $('auditTarget').value = state.auditTarget;
     renderImportFilterButtons();
     if (!state.imported.length || !state.compareReport) {
       $('importStatus').textContent = state.objectCatalog.size
         ? `Loaded ${state.objectCatalog.size} object names for manual guide resolution. Import Conditional Access policies to run tenant comparison.`
-        : 'Import a Graph or IntuneManagement export to compare against both the V2 rebuild set and the full baseline.';
+        : `Import a Graph or IntuneManagement export to compare against the ${state.auditTarget === 'baseline' ? 'full baseline library' : 'current rebuild set'}.`;
       $('importDashboard').innerHTML = '';
       $('importFindings').innerHTML = state.objectCatalog.size
         ? '<div class="empty-state">Object catalog loaded. Return to Policy recommendations to see resolved names in the manual build guide.</div>'
@@ -4256,7 +5182,7 @@
       return;
     }
     const summary = state.compareReport.summary;
-    $('importStatus').textContent = `Compared ${summary.imported} imported tenant policies against ${summary.expected} policies in the current rebuild set.`;
+    $('importStatus').textContent = `Compared ${summary.imported} imported tenant policies against ${summary.expected} policies in the ${state.auditTarget === 'baseline' ? 'full baseline library' : 'current rebuild set'}.`;
     $('importDashboard').innerHTML = renderImportDashboard(summary);
     $('importFindings').innerHTML = renderImportReport();
   }
@@ -4270,7 +5196,7 @@
   function renderImportDashboard(summary) {
     return [
       ['Imported', summary.imported],
-      ['Rebuild set', summary.expected],
+      [state.auditTarget === 'baseline' ? 'Baseline' : 'Rebuild set', summary.expected],
       ['Exact', summary.exact],
       ['Different', summary.different],
       ['Missing', summary.missing],
@@ -4485,20 +5411,23 @@
   function manualGuideText(item) {
     const decision = state.decisions[policyKey(item)] || 'exclude';
     const exported = exportPolicy(item, 'configured');
-    return manualGuideSections(item, exported, decision).map(section => {
+    return manualGuideSections(item, exported, decision)
+      .map(section => ({ ...section, rows: state.expertMode ? section.rows : section.rows.filter(row => !row.empty) }))
+      .filter(section => section.rows.length)
+      .map(section => {
       const rows = section.rows.map(row => {
         const help = row.help ? ` (${row.help})` : '';
-        const value = row.entries ? manualEntriesText(row.entries) : row.value;
+        const value = row.entries ? manualEntriesText(row.entries, state.expertMode) : row.value;
         return `- ${row.label}: ${value}${help}`;
       }).join('\n');
       return `${section.step}. ${section.title}\n${section.desc}\n${rows}`;
     }).join('\n\n');
   }
 
-  function manualEntriesText(entries) {
+  function manualEntriesText(entries, includeIds = true) {
     return entries.map(entry => {
       if (entry.lookup) return entry.text;
-      if (entry.id) return `${entry.name} (Object ID: ${entry.id})`;
+      if (entry.id) return includeIds ? `${entry.name} (Object ID: ${entry.id})` : entry.name;
       return entry.text || entry.name || '';
     }).join('\n');
   }
@@ -4764,7 +5693,8 @@
   function compareImported() {
     const used = new Set();
     state.compare = new Map();
-    const results = selectedPolicies().map(item => compareExpectedPolicy(item, used));
+    const expectedPolicies = state.auditTarget === 'baseline' ? baselinePolicies() : selectedPolicies();
+    const results = expectedPolicies.map(item => compareExpectedPolicy(item, used));
     results.forEach(result => state.compare.set(policyKey(result.item), result));
     state.extra = state.imported.filter((_, index) => !used.has(index));
     const risks = riskFindings(results, state.extra);
@@ -4781,7 +5711,7 @@
   }
 
   function compareExpectedPolicy(item, used) {
-    const expected = exportPolicy(item, 'configured');
+    const expected = state.auditTarget === 'baseline' ? sanitizePolicy(item.policy) : exportPolicy(item, 'configured');
     const match = findImportedMatch(item, expected, used);
     if (!match) {
       return {
