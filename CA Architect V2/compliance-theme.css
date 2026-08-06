@@ -1,0 +1,671 @@
+/* Compliance Auditor visual language. Loaded last so the static app keeps its
+   existing structure and behavior while sharing the calmer operational theme. */
+:root {
+  --ca-page: #ffffff;
+  --ca-page-subtle: #f7f3ee;
+  --ca-card: #ffffff;
+  --ca-card-muted: #f3eee8;
+  --ca-card-hover: #faf7f3;
+  --ca-border: #ded4c8;
+  --ca-border-soft: #ece1d4;
+  --ca-text: #201c18;
+  --ca-text-soft: #5f5751;
+  --ca-text-muted: #867d74;
+  --ca-header: linear-gradient(180deg, #1a1a1a 0%, #212121 100%);
+  --ca-orange: #e8610a;
+  --ca-orange-dark: #c44e00;
+  --ca-orange-soft: rgba(232, 97, 10, 0.1);
+  --ca-yellow: #f0c030;
+  --ca-yellow-soft: #fff7cf;
+  --ca-green: #00a96e;
+  --ca-red: #e1063a;
+  --ca-blue: #008fd6;
+  --ca-radius: 8px;
+  --ca-radius-sm: 6px;
+  --ca-shadow: 0 4px 16px rgba(50, 37, 24, 0.06);
+}
+
+html[data-theme="dark"] {
+  --ca-page: #141414;
+  --ca-page-subtle: #1a1a1a;
+  --ca-card: #1d1d1d;
+  --ca-card-muted: #232323;
+  --ca-card-hover: #262626;
+  --ca-border: #3a3530;
+  --ca-border-soft: #302d2a;
+  --ca-text: #f5f2ee;
+  --ca-text-soft: #cfc6bc;
+  --ca-text-muted: #a59a8d;
+  --ca-orange-soft: rgba(232, 97, 10, 0.16);
+  --ca-yellow-soft: rgba(240, 192, 48, 0.16);
+  --ca-shadow: 0 5px 20px rgba(0, 0, 0, 0.24);
+}
+
+html[data-theme] body {
+  background: var(--ca-page) !important;
+  color: var(--ca-text);
+}
+
+html[data-theme] .aurora {
+  background: var(--ca-page) !important;
+}
+
+html[data-theme] .dot-grid {
+  display: none;
+}
+
+html[data-theme] .app-topbar {
+  min-height: 72px;
+  padding: 9px clamp(16px, 2.4vw, 34px);
+  background: var(--ca-header) !important;
+  border: 0;
+  border-bottom: 4px solid var(--ca-orange);
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.18);
+}
+
+html[data-theme] .brand-mark {
+  width: 50px;
+  height: 50px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--ca-radius-sm);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 -3px 0 var(--ca-orange);
+  clip-path: none;
+  color: #ffffff !important;
+}
+
+html[data-theme] .app-topbar h1,
+html[data-theme] .app-topbar .eyebrow {
+  color: #ffffff !important;
+}
+
+html[data-theme] .app-topbar .eyebrow {
+  color: #ff8748 !important;
+}
+
+html[data-theme] .topbar-meta span,
+html[data-theme] .topbar-meta a,
+html[data-theme] .theme-toggle {
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.84);
+  clip-path: none;
+}
+
+html[data-theme] .workspace {
+  width: min(1900px, calc(100% - 28px));
+  margin: 18px auto 42px;
+}
+
+html[data-theme] .workspace-tabs {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0;
+  padding: 4px;
+  margin-bottom: 14px;
+  border: 1px solid #292929;
+  border-radius: var(--ca-radius);
+  background: #1d1d1d;
+  overflow: hidden;
+}
+
+html[data-theme] .tab-button {
+  min-height: 58px;
+  padding: 9px 12px;
+  border: 0;
+  border-right: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 4px !important;
+  background: transparent !important;
+  color: rgba(255, 255, 255, 0.82);
+  box-shadow: none !important;
+}
+
+html[data-theme] .tab-button:last-child {
+  border-right: 0;
+}
+
+html[data-theme] .tab-button small,
+html[data-theme] .tab-button .tab-group {
+  color: rgba(255, 255, 255, 0.56) !important;
+}
+
+html[data-theme] .tab-button:hover {
+  border-color: transparent;
+  background: rgba(255, 255, 255, 0.07) !important;
+}
+
+html[data-theme] .tab-button[data-tab].active,
+html[data-theme] .tab-button.active {
+  border-color: var(--ca-orange) !important;
+  background: linear-gradient(135deg, var(--ca-orange) 0%, var(--ca-orange-dark) 100%) !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+}
+
+html[data-theme] .tab-button.active span,
+html[data-theme] .tab-button.active small,
+html[data-theme] .tab-button.active .tab-group {
+  color: #ffffff !important;
+}
+
+html[data-theme] .path-change-bar {
+  margin-bottom: 10px;
+}
+
+html[data-theme] .start-panel,
+html[data-theme] .workflow-overview,
+html[data-theme] .tab-context,
+html[data-theme] .guided-stage,
+html[data-theme] .guided-actions,
+html[data-theme] .applied-source-banner,
+html[data-theme] .panel,
+html[data-theme] .manual-guide-panel,
+html[data-theme] .override-panel,
+html[data-theme] .json-card,
+html[data-theme] .advanced-filters,
+html[data-theme] .advanced-threat-model,
+html[data-theme] .strategy-secondary-details,
+html[data-theme] .comparison-card {
+  border: 1px solid var(--ca-border);
+  border-radius: var(--ca-radius);
+  background: var(--ca-card) !important;
+  color: var(--ca-text);
+  box-shadow: var(--ca-shadow);
+  backdrop-filter: none;
+}
+
+html[data-theme] .start-panel,
+html[data-theme] .workflow-overview,
+html[data-theme] .guided-stage {
+  padding: 18px;
+}
+
+html[data-theme] .start-actions {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+html[data-theme] .start-head h3,
+html[data-theme] .workflow-overview h3,
+html[data-theme] .guided-stage h2,
+html[data-theme] .guided-stage h3,
+html[data-theme] .panel h2,
+html[data-theme] .panel h3,
+html[data-theme] .panel h4 {
+  color: var(--ca-text) !important;
+}
+
+html[data-theme] .start-reference,
+html[data-theme] .start-card p,
+html[data-theme] .workflow-path small,
+html[data-theme] .tab-context p,
+html[data-theme] .guided-stage p {
+  color: var(--ca-text-soft);
+}
+
+html[data-theme] .start-card,
+html[data-theme] .workflow-path {
+  min-height: 190px;
+  border: 1px solid var(--ca-border-soft);
+  border-top: 4px solid var(--path-accent, var(--ca-orange));
+  border-left: 1px solid var(--ca-border-soft);
+  border-radius: var(--ca-radius-sm);
+  background: var(--ca-card-muted);
+  box-shadow: none;
+}
+
+html[data-theme] .start-card::after {
+  display: none;
+}
+
+html[data-theme] .start-card strong,
+html[data-theme] .workflow-path strong {
+  color: var(--ca-text);
+}
+
+html[data-theme] .start-card > span,
+html[data-theme] .workflow-path span,
+html[data-theme] .tab-group,
+html[data-theme] .tab-context span {
+  color: var(--ca-orange) !important;
+}
+
+html[data-theme] .panel,
+html[data-theme] .manual-guide-panel,
+html[data-theme] .override-panel,
+html[data-theme] .json-card {
+  overflow: hidden;
+}
+
+html[data-theme] .panel-head,
+html[data-theme] .section-head,
+html[data-theme] .json-head,
+html[data-theme] .manual-section-head,
+html[data-theme] .authentication-hardening-head {
+  position: relative;
+  padding: 13px 16px;
+  border: 0;
+  border-bottom: 1px solid rgba(232, 97, 10, 0.24);
+  background: var(--ca-header) !important;
+  color: #fff;
+}
+
+html[data-theme] .panel-head::before,
+html[data-theme] .section-head::before,
+html[data-theme] .json-head::before,
+html[data-theme] .authentication-hardening-head::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  background: var(--ca-orange);
+}
+
+html[data-theme] .panel-head h2,
+html[data-theme] .panel-head h3,
+html[data-theme] .section-head h3,
+html[data-theme] .json-head h3,
+html[data-theme] .manual-section-head h4,
+html[data-theme] .authentication-hardening-head h3 {
+  color: #fff !important;
+}
+
+html[data-theme] .panel-head p:not(.eyebrow),
+html[data-theme] .section-head p:not(.eyebrow),
+html[data-theme] .json-head p:not(.eyebrow),
+html[data-theme] .authentication-hardening-head p:last-child {
+  color: rgba(255, 255, 255, 0.68) !important;
+}
+
+html[data-theme] .panel-head .eyebrow,
+html[data-theme] .section-head .eyebrow,
+html[data-theme] .json-head .eyebrow,
+html[data-theme] .manual-section-head .eyebrow {
+  color: #ff8748;
+}
+
+html[data-theme] .summary,
+html[data-theme] .choice-desc,
+html[data-theme] .strategy-summary p,
+html[data-theme] .strategy-policy-card dd,
+html[data-theme] .strategy-note p,
+html[data-theme] .scenario-summary p,
+html[data-theme] .scenario-setting-card dd,
+html[data-theme] .manual-row dd em,
+html[data-theme] .comparison-body dd,
+html[data-theme] .comparison-body p {
+  color: var(--ca-text-soft);
+}
+
+html[data-theme] .metrics {
+  gap: 10px;
+  margin: 12px 0 14px;
+}
+
+html[data-theme] .metrics article {
+  min-height: 88px;
+  padding: 14px 16px;
+  border: 1px solid #323232 !important;
+  border-radius: var(--ca-radius) !important;
+  background: var(--ca-header) !important;
+  box-shadow: none !important;
+}
+
+html[data-theme] .metrics article::before {
+  height: 3px;
+  background: var(--ca-orange);
+}
+
+html[data-theme] .metrics article::after {
+  display: none;
+}
+
+html[data-theme] .metrics span,
+html[data-theme] .metrics small {
+  color: rgba(255, 255, 255, 0.62);
+}
+
+html[data-theme] .metrics strong {
+  margin-top: 7px;
+  color: #ffffff;
+  font-size: 28px;
+  text-shadow: none;
+}
+
+html[data-theme] .metrics article:nth-child(2)::before { background: var(--ca-orange); }
+html[data-theme] .metrics article:nth-child(3)::before { background: var(--ca-green); }
+html[data-theme] .metrics article:nth-child(4)::before { background: var(--ca-blue); }
+html[data-theme] .metrics article:nth-child(5)::before { background: var(--ca-red); }
+html[data-theme] .metrics article:nth-child(6)::before { background: var(--ca-yellow); }
+
+html[data-theme] .choice-card,
+html[data-theme] .threat-card,
+html[data-theme] .control-row,
+html[data-theme] .strategy-toggle,
+html[data-theme] .scenario-template-card,
+html[data-theme] .scenario-setting-card,
+html[data-theme] .strategy-note,
+html[data-theme] .mitre-row,
+html[data-theme] .represented-list li,
+html[data-theme] .policy-answer,
+html[data-theme] .check-list li,
+html[data-theme] .manual-object,
+html[data-theme] .finding,
+html[data-theme] .diff-list li,
+html[data-theme] .strategy-score-grid article,
+html[data-theme] .risk-strip div,
+html[data-theme] .import-dashboard article,
+html[data-theme] .plan-summary-grid span,
+html[data-theme] .strategy-empty-callout,
+html[data-theme] .empty-state,
+html[data-theme] .dropzone,
+html[data-theme] .status-box,
+html[data-theme] .review-guide span,
+html[data-theme] .guided-progress button,
+html[data-theme] .policy-detail-tabs button {
+  border-color: var(--ca-border-soft);
+  border-radius: var(--ca-radius-sm);
+  background: var(--ca-card-muted) !important;
+  color: var(--ca-text);
+  box-shadow: none;
+}
+
+html[data-theme] .choice-card:hover,
+html[data-theme] .threat-card:hover,
+html[data-theme] .strategy-toggle:hover,
+html[data-theme] .scenario-template-card:hover,
+html[data-theme] .policy-card:hover {
+  border-color: var(--ca-orange);
+  background: var(--ca-card-hover) !important;
+}
+
+html[data-theme] .strategy-toggle:has(input:checked),
+html[data-theme] .scenario-template-card.active,
+html[data-theme] .policy-card.active,
+html[data-theme] .strategy-policy-card.selected {
+  border-color: #d7a900 !important;
+  background: linear-gradient(135deg, #fff8d5 0%, #f7df75 54%, #f0c030 100%) !important;
+  color: #201c18;
+  box-shadow: inset 4px 0 0 #201c18;
+}
+
+html[data-theme] .strategy-toggle:has(input:checked) strong,
+html[data-theme] .strategy-toggle:has(input:checked) small,
+html[data-theme] .scenario-template-card.active strong,
+html[data-theme] .scenario-template-card.active span,
+html[data-theme] .policy-card.active strong,
+html[data-theme] .policy-card.active span {
+  color: #201c18 !important;
+}
+
+html[data-theme] .strategy-policy-card {
+  border: 1px solid #e7cf86;
+  border-top: 3px solid var(--ca-yellow);
+  border-radius: var(--ca-radius-sm);
+  background: var(--ca-card) !important;
+  color: var(--ca-text);
+  box-shadow: none;
+}
+
+html[data-theme] .strategy-policy-card.expanded {
+  border-color: var(--ca-orange);
+  box-shadow: inset 4px 0 0 var(--ca-orange);
+}
+
+html[data-theme] .strategy-build-order {
+  padding: 14px;
+  border: 1px solid var(--ca-border);
+  border-left: 4px solid var(--ca-orange);
+  border-radius: var(--ca-radius-sm);
+  background: var(--ca-page-subtle);
+}
+
+html[data-theme] .btn {
+  min-height: 36px;
+  border: 1px solid var(--ca-border);
+  border-radius: 5px !important;
+  background: var(--ca-card) !important;
+  color: var(--ca-text);
+  clip-path: none;
+  box-shadow: none;
+  text-transform: none;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 12px;
+}
+
+html[data-theme] .btn:hover {
+  transform: none;
+  border-color: var(--ca-orange);
+  background: var(--ca-orange-soft) !important;
+}
+
+html[data-theme] .btn.primary {
+  border-color: var(--ca-orange) !important;
+  background: linear-gradient(135deg, var(--ca-orange) 0%, var(--ca-orange-dark) 100%) !important;
+  color: #fff !important;
+}
+
+html[data-theme] .btn.primary:hover {
+  background: #f26b16 !important;
+}
+
+/* The recommendation header is a charcoal decision surface. Keep its narrative and
+   evidence legend deliberately high contrast in both themes. */
+html[data-theme] .log-recommended-panel > .panel-head h3,
+html[data-theme] .log-recommended-panel > .panel-head .guided-intro,
+html[data-theme] .log-recommended-panel > .panel-head .log-basis-legend li > span:last-child,
+html[data-theme] .log-recommended-panel > .panel-head .log-basis-legend strong {
+  color: #ffffff !important;
+}
+
+html[data-theme] .log-recommended-panel > .panel-head .guided-intro,
+html[data-theme] .log-recommended-panel > .panel-head .log-basis-legend li > span:last-child {
+  color: rgba(255, 255, 255, 0.82) !important;
+}
+
+html[data-theme] .log-recommended-panel > .panel-head .log-basis-legend li.empty {
+  opacity: 0.78;
+}
+
+html[data-theme] .log-recommended-panel > .panel-head .btn.secondary {
+  border-color: #ffffff !important;
+  background: #ffffff !important;
+  color: #201c18 !important;
+}
+
+html[data-theme] .log-basis-chip.status-chip {
+  border-width: 1px !important;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+  opacity: 1;
+}
+
+html[data-theme] .log-basis-chip.import-risk {
+  border-color: #ff5d72 !important;
+  background: #d9043d !important;
+  color: #ffffff !important;
+}
+
+html[data-theme] .log-basis-chip.import-different {
+  border-color: #ffb07b !important;
+  background: #ff6a00 !important;
+  color: #201c18 !important;
+}
+
+html[data-theme] .log-basis-chip.import-exact {
+  border-color: #5be0b3 !important;
+  background: #00a96e !important;
+  color: #08261d !important;
+}
+
+html[data-theme] .log-basis-chip.import-extra {
+  border-color: #ffe36c !important;
+  background: #f0c030 !important;
+  color: #201c18 !important;
+}
+
+html[data-theme] .segmented,
+html[data-theme] .strategy-mode-bar,
+html[data-theme] .filter-chip,
+html[data-theme] .count-pill,
+html[data-theme] .status-chip,
+html[data-theme] .risk-pill,
+html[data-theme] .choice-risk,
+html[data-theme] .technique,
+html[data-theme] .mitre-row em {
+  border-color: var(--ca-border);
+  border-radius: 999px !important;
+  background: var(--ca-card-muted) !important;
+  color: var(--ca-text-soft);
+}
+
+html[data-theme] .segmented button.active,
+html[data-theme] .strategy-mode-bar button.active,
+html[data-theme] .filter-chip.active,
+html[data-theme] .policy-detail-tabs button[aria-selected="true"],
+html[data-theme] .guided-progress button.active {
+  border-color: var(--ca-orange) !important;
+  background: var(--ca-orange) !important;
+  color: #fff !important;
+  box-shadow: none;
+}
+
+html[data-theme] .guided-progress button.active:disabled {
+  border-color: var(--ca-border-soft) !important;
+  background: var(--ca-card-muted) !important;
+  color: var(--ca-text-muted) !important;
+}
+
+html[data-theme] .strategy-field select,
+html[data-theme] .strategy-field input,
+html[data-theme] textarea,
+html[data-theme] .search-box input,
+html[data-theme] .audit-target-field select,
+html[data-theme] .visual-text-option input {
+  border: 1px solid var(--ca-border);
+  border-radius: 5px;
+  background: var(--ca-card) !important;
+  color: var(--ca-text);
+  box-shadow: none;
+}
+
+html[data-theme] pre {
+  border-color: var(--ca-border-soft);
+  background: #191919;
+  color: #f5f2ee;
+}
+
+html[data-theme] .policy-review-footer {
+  border: 1px solid var(--ca-border);
+  border-radius: var(--ca-radius);
+  background: var(--ca-card) !important;
+  box-shadow: 0 -3px 16px rgba(50, 37, 24, 0.08);
+}
+
+html[data-theme] .manual-policy-snapshot,
+html[data-theme] .manual-path-step,
+html[data-theme] .authentication-readiness-item,
+html[data-theme] .authentication-method-plan li {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: #212121;
+}
+
+html[data-theme] .manual-path-step.active {
+  border-color: var(--ca-orange);
+  background: var(--ca-orange) !important;
+  color: #fff;
+  box-shadow: none;
+}
+
+html[data-theme] .manual-path-step.active strong,
+html[data-theme] .manual-path-step.active small,
+html[data-theme] .manual-path-step.active em,
+html[data-theme] .manual-path-step.active > span {
+  color: #fff;
+}
+
+html[data-theme] .manual-active-section,
+html[data-theme] .manual-authentication-strength,
+html[data-theme] .manual-step-guidance article,
+html[data-theme] .visual-policy-designer,
+html[data-theme] .visual-map-shell,
+html[data-theme] .visual-map-navigation,
+html[data-theme] .visual-policy-blueprint,
+html[data-theme] .visual-flyout,
+html[data-theme] .visual-flyout-head,
+html[data-theme] .visual-flyout-footer,
+html[data-theme] .visual-outcome-strip article,
+html[data-theme] .visual-policy-node,
+html[data-theme] .visual-choice,
+html[data-theme] .visual-decision-impact,
+html[data-theme] .visual-threat-card {
+  border-color: var(--ca-border);
+  background: var(--ca-card) !important;
+  color: var(--ca-text);
+}
+
+html[data-theme] .visual-policy-node.active,
+html[data-theme] .visual-choice.selected {
+  border-color: #d7a900;
+  background: linear-gradient(135deg, #fff8d5 0%, #f7df75 54%, #f0c030 100%) !important;
+  color: #201c18;
+}
+
+html[data-theme] button:focus-visible,
+html[data-theme] input:focus-visible,
+html[data-theme] select:focus-visible,
+html[data-theme] textarea:focus-visible,
+html[data-theme] summary:focus-visible,
+html[data-theme] a:focus-visible {
+  outline: 3px solid var(--ca-yellow);
+  outline-offset: 2px;
+}
+
+@media (max-width: 1100px) {
+  html[data-theme] .workspace-tabs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  html[data-theme] .tab-button:nth-child(3) {
+    border-right: 0;
+  }
+
+  html[data-theme] .start-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  html[data-theme] .app-topbar {
+    padding: 8px 10px;
+  }
+
+  html[data-theme] .workspace {
+    width: min(100% - 18px, 1900px);
+    margin-top: 10px;
+  }
+
+  html[data-theme] .workspace-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  html[data-theme] .tab-button,
+  html[data-theme] .tab-button:nth-child(3) {
+    min-height: 52px;
+    border-right: 1px solid rgba(255, 255, 255, 0.09);
+  }
+
+  html[data-theme] .tab-button:nth-child(2n) {
+    border-right: 0;
+  }
+
+  html[data-theme] .start-panel,
+  html[data-theme] .workflow-overview,
+  html[data-theme] .guided-stage {
+    padding: 12px;
+  }
+
+  html[data-theme] .start-actions {
+    grid-template-columns: 1fr;
+  }
+}
