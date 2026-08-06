@@ -261,20 +261,31 @@ html[data-theme] .authentication-hardening-head::before {
   background: var(--ca-orange);
 }
 
+html[data-theme] .panel-head h1,
 html[data-theme] .panel-head h2,
 html[data-theme] .panel-head h3,
+html[data-theme] .panel-head h4,
+html[data-theme] .panel-head h5,
+html[data-theme] .section-head h2,
 html[data-theme] .section-head h3,
+html[data-theme] .section-head h4,
+html[data-theme] .section-head h5,
+html[data-theme] .json-head h2,
 html[data-theme] .json-head h3,
+html[data-theme] .json-head h4,
 html[data-theme] .manual-section-head h4,
-html[data-theme] .authentication-hardening-head h3 {
+html[data-theme] .manual-section-head h5,
+html[data-theme] .authentication-hardening-head h3,
+html[data-theme] .authentication-hardening-head h4 {
   color: #fff !important;
 }
 
 html[data-theme] .panel-head p:not(.eyebrow),
 html[data-theme] .section-head p:not(.eyebrow),
 html[data-theme] .json-head p:not(.eyebrow),
+html[data-theme] .manual-section-head p,
 html[data-theme] .authentication-hardening-head p:last-child {
-  color: rgba(255, 255, 255, 0.68) !important;
+  color: rgba(255, 255, 255, 0.74) !important;
 }
 
 html[data-theme] .panel-head .eyebrow,
@@ -282,6 +293,16 @@ html[data-theme] .section-head .eyebrow,
 html[data-theme] .json-head .eyebrow,
 html[data-theme] .manual-section-head .eyebrow {
   color: #ff8748;
+}
+
+html[data-theme] .manual-section-head > span {
+  border-color: rgba(255, 255, 255, 0.24) !important;
+  background: #303030 !important;
+  color: #ffffff !important;
+}
+
+html[data-theme] .manual-section-head b {
+  color: #f6d44a !important;
 }
 
 html[data-theme] .summary,
