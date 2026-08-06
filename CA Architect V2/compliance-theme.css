@@ -525,7 +525,6 @@ html[data-theme] .log-basis-chip.import-extra {
   color: #201c18 !important;
 }
 
-html[data-theme] .segmented,
 html[data-theme] .strategy-mode-bar,
 html[data-theme] .filter-chip,
 html[data-theme] .count-pill,
@@ -538,6 +537,44 @@ html[data-theme] .mitre-row em {
   border-radius: 999px !important;
   background: var(--ca-card-muted) !important;
   color: var(--ca-text-soft);
+}
+
+html[data-theme] .segmented {
+  border-color: var(--ca-border);
+  border-radius: 6px !important;
+  background: var(--ca-card-muted) !important;
+  color: var(--ca-text-soft);
+  overflow: hidden;
+}
+
+html[data-theme] .segmented.stacked {
+  align-items: stretch;
+  grid-template-columns: 1fr;
+}
+
+html[data-theme] .segmented.stacked button {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 10px 12px;
+  border-right: 0;
+  border-bottom: 1px solid var(--ca-border);
+  border-radius: 0 !important;
+  color: var(--ca-text);
+  font-size: 13px;
+  line-height: 1.25;
+  text-align: left;
+}
+
+html[data-theme] .segmented.stacked button:last-child {
+  border-bottom: 0;
+}
+
+html[data-theme] .segmented.stacked button span {
+  display: block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 html[data-theme] .segmented button.active,
@@ -688,5 +725,9 @@ html[data-theme] a:focus-visible {
 
   html[data-theme] .start-actions {
     grid-template-columns: 1fr;
+  }
+
+  html[data-theme] .segmented.stacked button {
+    min-height: 44px;
   }
 }
