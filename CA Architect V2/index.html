@@ -8,11 +8,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="icon" href="data:,">
-  <script src="appearance-init.js?v=2.2.0"></script>
+  <script src="appearance-init.js?v=2.2.1"></script>
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=2.2.0">
-  <link rel="stylesheet" href="workflow-guidance.css?v=2.2.0">
-  <link rel="stylesheet" href="compliance-theme.css?v=2.2.0">
+  <link rel="stylesheet" href="style.css?v=2.2.1">
+  <link rel="stylesheet" href="workflow-guidance.css?v=2.2.1">
+  <link rel="stylesheet" href="compliance-theme.css?v=2.2.1">
 </head>
 <body>
   <div class="aurora" aria-hidden="true"></div>
@@ -24,7 +24,7 @@
         <p class="eyebrow">Security Ninja Tools</p>
         <div class="brand-title-row">
           <h1>CA Architect V2</h1>
-          <span class="app-version" aria-label="Application version 2.2.0">v2.2.0</span>
+          <span class="app-version" aria-label="Application version 2.2.1">v2.2.1</span>
         </div>
       </div>
     </div>
@@ -857,7 +857,7 @@
         <div>
           <p class="eyebrow">Log analysis</p>
           <h3>Entra sign-in log gap analysis</h3>
-          <p class="guided-intro">Add one or more Entra sign-in log exports. JSON provides the richest policy detail, CSV is also supported, and every file is analysed locally in your browser.</p>
+          <p class="guided-intro">Add interactive, non-interactive or service-principal sign-in exports. JSON provides the richest policy detail, CSV is also supported, and every file is analysed locally in your browser.</p>
         </div>
         <div class="import-actions">
           <button class="btn primary" id="logExportBtn" type="button">Export gap report (.docx)</button>
@@ -867,8 +867,8 @@
       <div class="log-upload-stage" id="logUploadStage">
         <div class="dropzone log-dropzone" id="logDropzone">
           <strong>Drop Entra sign-in logs here</strong>
-          <span>Choose one or more JSON or CSV exports, or drag them onto this area.</span>
-          <small>Multiple files are merged into one assessment. Nothing leaves your browser.</small>
+          <span>Choose interactive, non-interactive or service-principal JSON or CSV exports.</span>
+          <small>Multiple supported files are merged locally. Nothing leaves your browser.</small>
           <input id="logFileInput" type="file" multiple accept=".json,.csv,application/json,text/csv">
         </div>
         <div id="logStatus" class="status-box" hidden></div>
@@ -896,7 +896,6 @@
             <button class="filter-chip" data-log-source-filter="interactive">Interactive</button>
             <button class="filter-chip" data-log-source-filter="nonInteractive">Non-interactive</button>
             <button class="filter-chip" data-log-source-filter="application">Service principal</button>
-            <button class="filter-chip" data-log-source-filter="msi">Managed identity</button>
           </div>
           <div id="logFindings" class="finding-list"></div>
         </div>
@@ -909,7 +908,7 @@
   </main>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="baseline-data.js?v=2.2.0"></script>
-  <script src="app.js?v=2.2.0"></script>
+  <script src="baseline-data.js?v=2.2.1"></script>
+  <script src="app.js?v=2.2.1"></script>
 </body>
 </html>

@@ -92,11 +92,15 @@
   const WORKFLOW_TABS = new Set(['start', 'strategy-builder', 'scenario-planner', 'policy-recommendations', 'log-analysis']);
   const IMPORT_FILTERS = new Set(['all', 'exact', 'different', 'missing', 'extra', 'risk']);
   const LOG_FILTERS = new Set(['all', 'high', 'medium', 'low', 'info']);
-  const LOG_SOURCE_FILTERS = new Set(['all', 'interactive', 'nonInteractive', 'application', 'msi']);
+  const LOG_SOURCE_FILTERS = new Set(['all', 'interactive', 'nonInteractive', 'application']);
   const LOG_JOURNEY_DECISIONS = [
     { id: 'enforcing', label: 'Enforcing policy applied', icon: 'shield-check', tone: 'protected', description: 'At least one enabled Conditional Access policy applied to the event.' },
     { id: 'reportOnly', label: 'Report-only matched', icon: 'document-search', tone: 'review', description: 'A report-only policy matched, but no enabled policy enforced a control.' },
-    { id: 'byDesign', label: 'By-design exclusion', icon: 'branch', tone: 'neutral', description: 'The event was a managed identity or a recognised bootstrap or platform flow outside normal Conditional Access evaluation.' },
+    { id: 'workloadReportOnly', label: 'Workload policy matched, report-only', icon: 'document-search', tone: 'gap', description: 'An eligible workload policy matched in report-only mode while access continued.' },
+    { id: 'byDesign', label: 'By-design exclusion', icon: 'branch', tone: 'neutral', description: 'The event was a recognised bootstrap or platform flow outside normal Conditional Access evaluation.' },
+    { id: 'workloadBlindspot', label: 'Workload policy detail unavailable', icon: 'eye-off', tone: 'blind', description: 'The export did not return per-policy evaluation detail, so workload Conditional Access coverage cannot be inferred.' },
+    { id: 'outsideCa', label: 'Outside workload CA eligibility', icon: 'external', tone: 'neutral', description: 'Tenant ownership evidence identifies a Microsoft, third-party or multitenant workload that Conditional Access for workload identities cannot target.' },
+    { id: 'workloadReview', label: 'Workload policies evaluated, no match', icon: 'filter', tone: 'review', description: 'Workload policies were returned but did not apply. Review ownership, eligibility and scope before treating this as a gap.' },
     { id: 'filtered', label: 'Evaluated, no match', icon: 'filter', tone: 'gap', description: 'Policies were returned, but every policy was filtered out or did not apply.' },
     { id: 'noEvaluation', label: 'No policy evaluation returned', icon: 'shield-off', tone: 'gap', description: 'The export returned no policy evaluation for this event. CSV exports may not include the policy-level detail needed to explain why.' }
   ];
@@ -104,8 +108,12 @@
     { id: 'blocked', label: 'Blocked by CA', icon: 'blocked', tone: 'protected', description: 'Conditional Access interrupted the sign-in.' },
     { id: 'protectedSuccess', label: 'Protected access succeeded', icon: 'shield-check', tone: 'protected', description: 'The sign-in succeeded after an enforcing policy applied.' },
     { id: 'allowedReportOnly', label: 'Allowed under report-only', icon: 'document-search', tone: 'review', description: 'The sign-in succeeded while the matching policy remained report-only.' },
+    { id: 'workloadReportOnlyFlow', label: 'Workload access continued under report-only', icon: 'unlock', tone: 'gap', description: 'A matching workload policy was report-only, so its configured control was not enforced.' },
     { id: 'allowedWithoutCa', label: 'Allowed without a CA control', icon: 'unlock', tone: 'gap', description: 'The sign-in succeeded without an enforcing Conditional Access policy.' },
-    { id: 'byDesignFlow', label: 'By-design platform flow', icon: 'branch', tone: 'neutral', description: 'A platform, bootstrap, or managed-identity flow completed outside the normal user Conditional Access path.' },
+    { id: 'workloadUnknownFlow', label: 'Workload access, CA detail unknown', icon: 'eye-off', tone: 'blind', description: 'Access completed, but the export did not include enough workload policy detail to assess Conditional Access coverage.' },
+    { id: 'workloadReviewFlow', label: 'Workload access, scope needs review', icon: 'document-search', tone: 'review', description: 'Workload policy evaluation was recorded, but eligibility and intended scope must be confirmed.' },
+    { id: 'byDesignFlow', label: 'By-design platform flow', icon: 'branch', tone: 'neutral', description: 'A platform or bootstrap flow completed outside the normal user Conditional Access path.' },
+    { id: 'outsideCaFlow', label: 'Outside Conditional Access', icon: 'external', tone: 'neutral', description: 'The workload is explicitly outside Conditional Access eligibility; govern it through permissions, credentials and vendor controls.' },
     { id: 'otherFailure', label: 'Other sign-in failure', icon: 'warning', tone: 'neutral', description: 'The event failed for a reason other than an observed Conditional Access block.' }
   ];
   const LOG_LEARN_GUIDANCE = {
@@ -265,16 +273,15 @@
     {
       id: 'enforcement', label: 'Enforcement & Validation', icon: 'shield-check', summary: 'What actually applied at runtime.',
       elements: [
-        { id: 'applied-path', label: 'Applied policy path', icon: 'shield-check', findingIds: ['ca-not-applied', 'sp-no-ca'], sources: ['interactive', 'nonInteractive', 'application'], positive: 'enforcing', why: 'Runtime results show whether an enabled policy actually reached and acted on the sign-in.' },
-        { id: 'report-only-state', label: 'Report-only state', icon: 'document-search', findingIds: ['report-only'], sources: ['interactive', 'nonInteractive', 'application'], field: 'appliedPolicies', why: 'Report-only is evidence of intent and impact testing, not enforcement.' },
-        { id: 'runtime-coverage', label: 'Runtime coverage', icon: 'pulse', findingIds: [], sources: ['interactive', 'nonInteractive', 'application', 'msi'], why: 'All four sign-in sources are needed to understand user, token refresh and workload activity across the tenant.' }
+        { id: 'applied-path', label: 'Applied policy path', icon: 'shield-check', findingIds: ['ca-not-applied', 'sp-ca-review'], sources: ['interactive', 'nonInteractive', 'application'], positive: 'enforcing', why: 'Runtime results show whether an enabled policy actually reached and acted on the sign-in.' },
+        { id: 'report-only-state', label: 'Report-only state', icon: 'document-search', findingIds: ['report-only', 'sp-report-only'], sources: ['interactive', 'nonInteractive', 'application'], field: 'appliedPolicies', why: 'Report-only is evidence of intent and impact testing, not enforcement.' },
+        { id: 'runtime-coverage', label: 'Runtime coverage', icon: 'pulse', findingIds: [], sources: ['interactive', 'nonInteractive', 'application'], why: 'Interactive, non-interactive and service-principal exports provide distinct evidence. Missing sources limit only the assessment that depends on them.' }
       ]
     }
   ];
   const LOG_JOURNEY_ADJACENT = [
     { id: 'outbound-b2b', label: 'Outbound B2B', icon: 'external', findingIds: ['outbound-b2b'], sources: ['interactive', 'nonInteractive'], why: 'The destination tenant controls access. Your lever is Cross-Tenant Access outbound configuration.' },
-    { id: 'sp-credentials', label: 'Service-principal credential hygiene', icon: 'certificate', findingIds: ['sp-credential-hygiene'], sources: ['application'], why: 'Secrets, certificates and federation are application-identity controls rather than Conditional Access coverage.' },
-    { id: 'managed-identities', label: 'Managed identities & Azure RBAC', icon: 'workload', findingIds: ['msi-inventory'], sources: ['msi'], why: 'Managed identities are governed through Azure role assignments, resource scope and workload monitoring.' }
+    { id: 'sp-credentials', label: 'Service-principal credential hygiene', icon: 'certificate', findingIds: ['sp-credential-hygiene'], sources: ['application'], why: 'Secrets, certificates and federation are application-identity controls rather than Conditional Access coverage.' }
   ];
   const COMPARE_FIELDS = [
     { path: ['state'], label: 'State' },
@@ -6761,10 +6768,9 @@
   const LOG_SOURCES = {
     interactive: { key: 'interactive', label: 'Interactive user sign-ins', short: 'Interactive', scope: 'interactive sign-ins', kind: 'user' },
     nonInteractive: { key: 'nonInteractive', label: 'Non-interactive sign-ins', short: 'Non-interactive', scope: 'non-interactive sign-ins', kind: 'user' },
-    application: { key: 'application', label: 'Service principal sign-ins', short: 'Service principal', scope: 'service principal sign-ins', kind: 'workload' },
-    msi: { key: 'msi', label: 'Managed identity sign-ins', short: 'Managed identity', scope: 'managed identity sign-ins', kind: 'workload' }
+    application: { key: 'application', label: 'Service principal sign-ins', short: 'Service principal', scope: 'service principal sign-ins', kind: 'workload' }
   };
-  const LOG_SOURCE_ORDER = ['interactive', 'nonInteractive', 'application', 'msi'];
+  const LOG_SOURCE_ORDER = ['interactive', 'nonInteractive', 'application'];
   const LOG_USER_SOURCES = ['interactive', 'nonInteractive'];
   // Order matters: NonInteractiveSignIns_*.json contains the substring "InteractiveSignIns",
   // so the non-interactive pattern must be tested first or every file matches interactive.
@@ -6811,10 +6817,10 @@
     'uncovered-apps': ['interactive'],
     'possible-exclusions': ['interactive'],
     'geo-spread': LOG_USER_SOURCES,
-    'sp-no-ca': ['application'],
+    'sp-ca-review': ['application'],
+    'sp-report-only': ['application'],
     'sp-location-spread': ['application'],
-    'sp-credential-hygiene': ['application'],
-    'msi-inventory': ['msi']
+    'sp-credential-hygiene': ['application']
   };
 
   // Per-finding remediation content. `flow` renders the sign-in path so the break is visible:
@@ -7076,25 +7082,39 @@
       ],
       verify: 'Once named locations exist, sign-ins from trusted locations can be treated differently and anomalies become visible in the logs.'
     },
-    'sp-no-ca': {
+    'sp-ca-review': {
       caFixes: false,
-      cause: 'Service principals are the identities behind app registrations and third-party integrations. They authenticate with a secret or certificate rather than a user credential, and are non-interactive by nature — there is no person present to complete an MFA prompt. Standard Conditional Access policies target users and simply do not evaluate them, which is why every one of these sign-ins shows no policy applied. Targeting service principals directly requires the Workload Identities Premium licence and the clientApplications condition, which this baseline does not include.',
-      attack: 'These identities often hold broad application permissions — frequently Mail.Read, Files.ReadWrite.All or Directory.Read.All across the whole tenant — and their credentials do not expire the way a user session does. A leaked secret in a config file, CI log or repository gives an attacker persistent, MFA-free, tenant-wide API access that no user-targeted policy will interrupt.',
+      cause: 'Workload Conditional Access policies were present in the event, but the recorded assignments or conditions did not match. This is useful scope evidence, but it does not prove the workload is eligible or that an absent match is a security gap.',
+      attack: 'An eligible, organisation-owned service principal that falls outside an intended workload policy can retain access without the expected restriction. Microsoft, third-party and multitenant workloads remain outside workload Conditional Access and need different controls.',
       flow: [
         { label: 'Application authenticates with its own credential', state: 'ok' },
         { label: 'Non-interactive — no MFA possible by design', state: 'gap' },
-        { label: 'User-targeted policies do not evaluate it', state: 'gap' },
+        { label: 'Workload policy evaluated but did not match', state: 'gap' },
         { label: 'API access granted with application permissions', state: 'result' }
       ],
       fix: [
-        'Treat this as an inventory exercise first. For each service principal above, establish what it is, who owns it, and whether it is still in use — orphaned integrations from cancelled trials are common and should simply be deleted.',
-        'Review the API permissions granted to each one in Entra ID > App registrations > API permissions. Application permissions apply tenant-wide with no user context, so Mail.Read means every mailbox. Cut anything not strictly required.',
-        'Scope the access where the API supports it. For Microsoft Graph mail and calendar access, application access policies in Exchange Online restrict a service principal to a specific set of mailboxes rather than all of them.',
-        'For the human-operated service accounts in your tenant (as opposed to app registrations), the baseline policies below do apply — they target a service account group and restrict it to trusted locations.',
-        'Check whether Conditional Access could ever cover the identity before buying anything. Conditional Access for workload identities requires Workload Identities Premium AND only covers single-tenant service principals registered in your own tenant — Microsoft and third-party SaaS applications, including multitenant apps, are explicitly not covered. Most third-party integrations therefore stay outside Conditional Access regardless of licensing.',
-        'If you do license it, assign the policy to the service principal directly. A Conditional Access policy assigned to a group that contains a service principal is not enforced for that service principal.'
+        'Inspect the event’s conditions not satisfied and confirm whether the mismatch was deliberate.',
+        'Confirm the service principal is single-tenant and owned by your organisation before considering workload Conditional Access.',
+        'Review application permissions and ownership even where the identity is outside Conditional Access eligibility.',
+        'If eligible and licensed, pilot a workload identity policy in report-only mode and assign the service principal directly.'
       ],
-      verify: 'Re-run this analysis after removing unused service principals — the identity count should fall. Coverage will still read as notApplied for anything Conditional Access cannot target, so judge this finding by the permission reduction rather than by the coverage number.'
+      verify: 'Re-run the analysis with JSON policy detail. The intended eligible service principals should show an enforcing or validated report-only workload policy; explicitly ineligible workloads should remain labelled outside CA.'
+    },
+    'sp-report-only': {
+      cause: 'A workload Conditional Access policy matched, but it remained report-only. The event therefore proves policy intent and evaluation, not enforcement.',
+      attack: 'If no separate enabled workload policy acted, access could continue without the report-only control being enforced.',
+      flow: [
+        { label: 'Service principal requests a token', state: 'ok' },
+        { label: 'Workload policy matches in report-only', state: 'gap' },
+        { label: 'Configured control is not enforced', state: 'gap' },
+        { label: 'Access continues', state: 'result' }
+      ],
+      fix: [
+        'Review the exact report-only result and confirm whether another enabled policy protected the same event.',
+        'Validate workload ownership, eligibility, licensing and exclusions before changing state.',
+        'Pilot with representative service principals, monitor impact, then enable in stages.'
+      ],
+      verify: 'Re-run the analysis after staged enablement and confirm the intended workload policy is recorded enforcing on eligible service principals.'
     },
     'sp-location-spread': {
       caFixes: false,
@@ -7132,25 +7152,6 @@
         'Credential errors such as 7000222 indicate secrets at or past expiry — these are an availability incident waiting to happen as well as a hygiene problem.'
       ],
       verify: 'Re-run this analysis after migrating. Identities using federation or certificates will no longer appear in this finding.'
-    },
-    'msi-inventory': {
-      caFixes: false,
-      cause: 'Managed identities are credentials Azure creates and rotates for its own resources — a function app, VM or logic app authenticating to Key Vault, Storage or SQL without any stored secret. From a credential-hygiene standpoint they are the best option available, which is why this is inventory rather than a gap. They are also completely outside Conditional Access: Entra excludes them from policy evaluation entirely, so no policy in this baseline — or any Conditional Access policy at all — can restrict them.',
-      attack: 'Because there is no credential to steal, the risk moves to authorisation. A managed identity with an over-broad Azure RBAC role becomes a privilege escalation path: anyone who can run code on the associated resource inherits that identity and everything it is permitted to do.',
-      flow: [
-        { label: 'Azure resource requests a token', state: 'ok' },
-        { label: 'Platform-managed credential — nothing to steal', state: 'ok' },
-        { label: 'Conditional Access does not evaluate managed identities', state: 'gap' },
-        { label: 'Access governed solely by Azure RBAC', state: 'result' }
-      ],
-      fix: [
-        'Review the Azure RBAC role assignments for each identity above. The control that matters here is the role and its scope, since Conditional Access has no reach at all.',
-        'Assign the least-privileged built-in role at the narrowest scope that works — a specific storage container or key vault rather than the subscription or resource group.',
-        'Prefer user-assigned managed identities scoped to one workload over system-assigned identities that accumulate broad roles across many resources.',
-        'Include managed identities in your access reviews. They are easy to create and easy to forget, and their permissions tend to grow over time.',
-        'Watch this log for an identity reaching a resource it has no business touching — that is the main detection signal available for these identities.'
-      ],
-      verify: 'There is no Conditional Access coverage to achieve here. Success is a reduced and correctly scoped set of RBAC role assignments.'
     }
   };
   // Windows 11 starts at build 22000. Entra's deviceDetail.operatingSystem says "Windows10"
@@ -7235,12 +7236,21 @@
     servicePrincipalId: ['serviceprincipalid'],
     servicePrincipalName: ['serviceprincipalname', 'serviceprincipal'],
     appId: ['applicationid', 'appid'],
+    eventCount: ['signins', 'numberofgroupedsignins', 'numberofsignins', 'signincount'],
+    clientCredentialType: ['clientcredentialtype'],
+    appOwnerTenantId: ['appownertenantid', 'applicationownertenantid'],
+    resourceOwnerTenantId: ['resourceownertenantid', 'resourceownertenant'],
     federatedCredentialId: ['federatedcredentialid'],
     servicePrincipalCredentialKeyId: ['serviceprincipalcredentialkeyid', 'credentialkeyid'],
     servicePrincipalCredentialThumbprint: ['serviceprincipalcredentialthumbprint', 'credentialthumbprint']
   };
 
   const normToken = value => String(value ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const representedEventCount = value => {
+    const parsed = Number(String(value ?? '').replace(/,/g, '').trim());
+    return Number.isFinite(parsed) && Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
+  };
+  const recordEventCount = record => representedEventCount(record && record.eventCount);
 
   function logFilenameHint(fileName) {
     const name = String(fileName || '');
@@ -7265,7 +7275,6 @@
     const eventTypes = new Set();
     let hasUser = false;
     let hasSp = false;
-    let hasAppShape = false;
     let interactiveTrue = false;
     let interactiveFalse = false;
     sample.forEach(row => {
@@ -7275,9 +7284,6 @@
       });
       if (row.userPrincipalName || row.userId || row.clientAppUsed || row.userType) hasUser = true;
       if (row.servicePrincipalId || row.servicePrincipalName) hasSp = true;
-      if (row.appId || row.ipAddress || row.conditionalAccessStatus || row.location ||
-        (Array.isArray(row.appliedConditionalAccessPolicies) && row.appliedConditionalAccessPolicies.length) ||
-        row.servicePrincipalCredentialKeyId || row.servicePrincipalCredentialThumbprint) hasAppShape = true;
       if (row.isInteractive === true) interactiveTrue = true;
       if (row.isInteractive === false) interactiveFalse = true;
     });
@@ -7287,15 +7293,13 @@
       const priority = ['application', 'msi', 'nonInteractive', 'interactive'].find(key => eventTypes.has(key));
       return { source: priority, detectedBy: 'eventType' };
     }
-    if (hasSp && !hasUser) {
-      return { source: hasAppShape ? 'application' : 'msi', detectedBy: 'shape' };
-    }
+    if (hasSp && !hasUser) return { source: hint === 'msi' ? 'msi' : 'application', detectedBy: hint === 'msi' ? 'filename' : 'shape' };
     if (hasUser) {
       if (interactiveTrue) return { source: 'interactive', detectedBy: 'shape' };
       if (interactiveFalse) return { source: 'nonInteractive', detectedBy: 'shape' };
       return { source: hint || 'interactive', detectedBy: hint ? 'filename' : 'default' };
     }
-    if (hasSp) return { source: hasAppShape ? 'application' : 'msi', detectedBy: 'shape' };
+    if (hasSp) return { source: hint === 'msi' ? 'msi' : 'application', detectedBy: hint === 'msi' ? 'filename' : 'shape' };
     return { source: null, detectedBy: 'none' };
   }
 
@@ -7391,8 +7395,10 @@
       return readLogFile(file)
         .then(text => {
           const info = ingestLogFile(agg, text, file, sources, warnings);
-          loaded.push(info);
-          formats.add(info.format);
+          if (!info.ignored) {
+            loaded.push(info);
+            formats.add(info.format);
+          }
         })
         .catch(err => {
           failures.push({ name: file.name, message: err.message || 'Could not read this file.' });
@@ -7431,6 +7437,19 @@
     if (!parsed.source || parsed.source === 'unknown') {
       throw new Error('Could not tell which sign-in log this is. Keep the original file name from the Entra download, or use the JSON export.');
     }
+    if (parsed.source === 'msi') {
+      warnings.push(`${file.name} is a managed-identity sign-in export and was not analysed. Managed identities are outside Conditional Access; review them through Azure RBAC, access reviews and workload monitoring instead.`);
+      return {
+        name: file.name,
+        size: file.size,
+        format: parsed.format,
+        source: 'msi',
+        importedRowCount: parsed.records.length,
+        representedEvents: parsed.records.reduce((sum, record) => sum + recordEventCount(record), 0),
+        ignored: true,
+        detectedBy: parsed.detectedBy
+      };
+    }
     if (parsed.records.length > LOG_MAX_RECORDS_PER_FILE) {
       warnings.push(`${file.name} contained ${parsed.records.length} records — only the first ${LOG_MAX_RECORDS_PER_FILE} were analysed.`);
       parsed.records.length = LOG_MAX_RECORDS_PER_FILE;
@@ -7440,13 +7459,16 @@
       warnings.push(`${file.name} is named like a ${LOG_SOURCES[hint].short} export but its contents are ${LOG_SOURCES[parsed.source].short} — treating it as ${LOG_SOURCES[parsed.source].short}.`);
     }
     parsed.warnings.forEach(w => warnings.push(w));
-    const entry = sources[parsed.source] || { fileNames: [], records: 0, empty: true, format: parsed.format };
+    const representedEvents = parsed.records.reduce((sum, record) => sum + recordEventCount(record), 0);
+    const entry = sources[parsed.source] || { fileNames: [], records: 0, importedRowCount: 0, representedEvents: 0, empty: true, format: parsed.format };
     if (entry.fileNames.length) {
       warnings.push(`Two files were detected as ${LOG_SOURCES[parsed.source].label} — records from both were merged.`);
     }
     entry.fileNames.push(file.name);
     entry.records += parsed.records.length;
-    entry.empty = entry.records === 0;
+    entry.importedRowCount += parsed.records.length;
+    entry.representedEvents += representedEvents;
+    entry.empty = entry.representedEvents === 0;
     entry.format = parsed.format;
     sources[parsed.source] = entry;
     ingestSignIns(agg, parsed.records, parsed.source);
@@ -7458,6 +7480,8 @@
       format: parsed.format,
       source: parsed.source,
       records: parsed.records.length,
+      importedRowCount: parsed.records.length,
+      representedEvents,
       empty: parsed.records.length === 0,
       detectedBy: parsed.detectedBy
     };
@@ -7467,13 +7491,16 @@
     if (!loaded.length) {
       state.logAnalysis = emptyLogAnalysis();
       state.logAnalysis.failures = failures;
+      state.logAnalysis.parseWarnings = warnings;
       renderAll();
-      showLogStatus(failures.length ? failures[0].message : 'No sign-in records found in the selected files.');
+      showLogStatus(failures.length
+        ? failures[0].message
+        : warnings.find(message => /managed-identity/i.test(message)) || 'No supported sign-in records found. Add interactive, non-interactive or service-principal logs.');
       toast('Log analysis failed');
       return;
     }
-    const totalRecords = loaded.reduce((sum, f) => sum + f.records, 0);
-    const findings = totalRecords ? runLogChecks(agg) : [];
+    const totalRecords = loaded.reduce((sum, f) => sum + f.importedRowCount, 0);
+    const findings = agg.total ? runLogChecks(agg) : [];
     state.logAnalysis = {
       ...emptyLogAnalysis(),
       files: loaded,
@@ -7492,12 +7519,12 @@
       ]
     };
     renderAll();
-    if (!totalRecords) {
+    if (!agg.total) {
       toast('No sign-in activity in the selected date range');
       return;
     }
     const failedNote = failures.length ? ` — ${failures.length} could not be read` : '';
-    toast(`Analysed ${totalRecords} sign-ins across ${loaded.length} file(s)${failedNote}`);
+    toast(`Analysed ${agg.total.toLocaleString()} represented sign-ins from ${totalRecords.toLocaleString()} imported row(s) across ${loaded.length} file(s)${failedNote}`);
   }
 
   // Friendly names for the grant/session control tokens Entra reports as enforced.
@@ -7696,7 +7723,7 @@
     appUnknown: { headline: 'app-scoped', detail: 'This policy targets specific applications and some sign-ins did not report an application id, so those cannot be counted either way.', check: 'Confirm the targeted applications are the right ones.' },
     clientAppUnknown: {
       headline: 'no legacy clients confirmed',
-      detail: 'This policy targets specific client app types — typically legacy authentication clients. Service principal and managed identity sign-ins do not report a client app at all, so those cannot be counted either way.',
+      detail: 'This policy targets specific client app types — typically legacy authentication clients. Service-principal sign-ins do not report a user client app, so those cannot be counted either way.',
       check: 'Check the Entra sign-in logs filtered to Client app = "Other clients" to confirm before enforcing.'
     },
     platformUnknown: { headline: 'platform scoped', detail: 'This policy targets specific device platforms and the platform was not reported on some sign-ins.', check: '' },
@@ -7725,30 +7752,32 @@
       const samples = [];
       const condReasons = new Map();
       const noReasons = new Map();
-      const bump = (map, key) => map.set(key, (map.get(key) || 0) + 1);
+      const bump = (map, key, amount) => map.set(key, (map.get(key) || 0) + amount);
       facts.forEach(f => {
+        const weight = representedEventCount(f.eventCount);
         const sink = { c: null, n: null };
         const verdict = coverageVerdict(item, f, sink);
         if (verdict === 'n/a') {
           // Out of scope for this policy's identity class — excluded from the denominator
           // rather than counted as a miss, which would understate coverage just as badly.
-          notApplicable += 1;
+          notApplicable += weight;
         } else if (verdict === 'yes') {
-          yes += 1;
+          yes += weight;
           if (samples.length < LOG_TOP_CAP) samples.push({ time: f.time, principal: f.principal, app: f.app, source: f.source });
         } else if (verdict === 'conditional') {
-          conditional += 1;
-          bump(condReasons, sink.c || 'unevaluated');
+          conditional += weight;
+          bump(condReasons, sink.c || 'unevaluated', weight);
         } else {
-          no += 1;
-          bump(noReasons, sink.n || 'appNotTargeted');
+          no += weight;
+          bump(noReasons, sink.n || 'appNotTargeted', weight);
         }
       });
-      const applicable = facts.length - notApplicable;
+      const totalFacts = facts.reduce((sum, fact) => sum + representedEventCount(fact.eventCount), 0);
+      const applicable = totalFacts - notApplicable;
       const top = map => [...map.entries()].sort((a, b) => b[1] - a[1])[0] || null;
       out[item.id] = {
         evaluated: applicable,
-        totalFacts: facts.length,
+        totalFacts,
         notApplicable,
         // What the applicable population actually is, so the denominator can be named rather
         // than left as a bare count the reader has to interpret.
@@ -7767,7 +7796,12 @@
         samples
       };
     });
-    return { policies: out, evaluated: facts.length, capped: facts.length >= LOG_COVERAGE_CAP };
+    return {
+      policies: out,
+      evaluated: facts.reduce((sum, fact) => sum + representedEventCount(fact.eventCount), 0),
+      importedRows: facts.length,
+      capped: facts.length >= LOG_COVERAGE_CAP
+    };
   }
 
   // The policy set "Build this strategy" would actually create from these findings, with
@@ -7780,10 +7814,11 @@
     const platforms = new Map();
     const osNames = new Map();
     (agg.coverageFacts || []).forEach(f => {
+      const weight = representedEventCount(f.eventCount);
       const token = logPlatformToken(f.operatingSystem);
-      if (token) platforms.set(token, (platforms.get(token) || 0) + 1);
+      if (token) platforms.set(token, (platforms.get(token) || 0) + weight);
       const label = logOsLabel(f);
-      if (label) osNames.set(label, (osNames.get(label) || 0) + 1);
+      if (label) osNames.set(label, (osNames.get(label) || 0) + weight);
     });
     // Some aggregate maps hold a counter object rather than a bare number.
     const size = value => (value && typeof value === 'object' ? value.count || 0 : value || 0);
@@ -7797,7 +7832,6 @@
       countries: rank(agg.countries || new Map()),
       externalTenants: rank((agg.outboundB2B || {}).tenants || new Map()),
       servicePrincipals: [...(agg.spPrincipals || new Map()).keys()],
-      managedIdentities: [...(agg.msiPrincipals || new Map()).keys()],
       apps: rank(agg.apps || new Map()).slice(0, 12),
       userCount: (agg.users || new Map()).size
     };
@@ -7851,7 +7885,7 @@
 
     const includeGroups = list((c.users || {}).includeGroups);
     if (includeGroups.length && (item.controls || []).includes('service_account_protection')) {
-      const workload = profile.servicePrincipals.concat(profile.managedIdentities);
+      const workload = profile.servicePrincipals;
       rows.push({
         label: 'What this policy actually covers',
         value: 'Human-operated service accounts — user objects in the group above. It is scoped through conditions.users and grants MFA, so it applies to user identities only.',
@@ -8183,8 +8217,10 @@
       out[key] = {
         fileNames: sources[key].fileNames,
         format: sources[key].format,
-        records: sources[key].records,
-        empty: sources[key].records === 0,
+        records: sources[key].representedEvents,
+        importedRowCount: sources[key].importedRowCount,
+        representedEvents: sources[key].representedEvents,
+        empty: sources[key].representedEvents === 0,
         success: stats.success || 0,
         failure: stats.failure || 0,
         users: stats.users ? stats.users.size : 0,
@@ -8203,9 +8239,11 @@
       success: agg.success,
       failure: agg.failure,
       bySource: { ...agg.totals },
+      importedRowCount: agg.importedRowCount,
+      groupedRowCount: agg.groupedRowCount,
       users: agg.users.size,
       apps: agg.apps.size,
-      workloads: agg.spPrincipals.size + agg.msiPrincipals.size,
+      workloads: agg.spPrincipals.size,
       guests: agg.guests,
       from: Number.isFinite(agg.minTime) ? new Date(agg.minTime).toISOString() : null,
       to: Number.isFinite(agg.maxTime) ? new Date(agg.maxTime).toISOString() : null,
@@ -8227,7 +8265,7 @@
     }
     let rows = Array.isArray(data) ? data : Array.isArray(data?.value) ? data.value : data && typeof data === 'object' ? [data] : [];
     rows = rows.filter(row => row && typeof row === 'object');
-    // An empty array is legitimate — a tenant with no managed identities exports [].
+    // An empty array is legitimate for an export with no sign-in activity.
     if (!rows.length) {
       const hint = logFilenameHint(fileName);
       return { records: [], warnings: [], format: 'json', source: hint || 'unknown', detectedBy: hint ? 'filename' : 'none' };
@@ -8238,6 +8276,15 @@
       throw new Error(policyLike
         ? 'This looks like a Conditional Access policy export, not sign-in logs. Export Entra sign-in records instead.'
         : 'No sign-in records recognised. Expected an Entra ID sign-in log export (portal JSON download or Graph auditLogs/signIns).');
+    }
+    if (detected.source === 'msi') {
+      return {
+        records: rows.map(row => ({ eventCount: representedEventCount(row.eventCount || row.signInCount || row.numberOfSignIns) })),
+        warnings: [],
+        format: 'json',
+        source: 'msi',
+        detectedBy: detected.detectedBy
+      };
     }
     const isWorkload = LOG_SOURCES[detected.source].kind === 'workload';
     const signInLike = rows.filter(row =>
@@ -8257,8 +8304,10 @@
     const errorCode = Number.isFinite(Number(status.errorCode)) ? Number(status.errorCode) : null;
     const name = row.servicePrincipalName || row.servicePrincipalId || '';
     return {
+      eventCount: representedEventCount(row.eventCount || row.signInCount || row.numberOfSignIns),
+      groupedEvidence: representedEventCount(row.eventCount || row.signInCount || row.numberOfSignIns) > 1,
       source,
-      identityType: source === 'msi' ? 'managedIdentity' : 'servicePrincipal',
+      identityType: 'servicePrincipal',
       principal: name || 'unknown identity',
       time: Date.parse(row.createdDateTime || ''),
       userPrincipalName: '',
@@ -8271,7 +8320,9 @@
       servicePrincipalName: name,
       appId: row.appId || '',
       appDisplayNameRaw: row.appDisplayName || '',
-      credentialType: source === 'application' ? spCredentialType(row) : null,
+      credentialType: spCredentialType(row),
+      appOwnerTenantId: row.appOwnerTenantId || '',
+      resourceOwnerTenantId: row.resourceOwnerTenantId || row.resourceTenantId || '',
       ipAddress: row.ipAddress || '',
       clientAppUsed: '',
       conditionalAccessStatus: normToken(row.conditionalAccessStatus),
@@ -8292,8 +8343,8 @@
       deviceState: 'unknown',
       incomingTokenType: normToken(row.incomingTokenType),
       originalTransferMethod: normToken(row.originalTransferMethod),
-      homeTenantId: row.homeTenantId || '',
-      resourceTenantId: row.resourceTenantId || '',
+      homeTenantId: row.homeTenantId || row.appOwnerTenantId || '',
+      resourceTenantId: row.resourceTenantId || row.resourceOwnerTenantId || '',
       crossTenantAccessType: normToken(row.crossTenantAccessType),
       country: location.countryOrRegion || '',
       city: location.city || '',
@@ -8328,6 +8379,8 @@
           : device.isManaged === true ? 'enrolledNotCompliant'
             : device.isManaged === false ? 'registeredNotCompliant' : 'unknown';
     return {
+      eventCount: representedEventCount(row.eventCount || row.signInCount || row.numberOfSignIns),
+      groupedEvidence: representedEventCount(row.eventCount || row.signInCount || row.numberOfSignIns) > 1,
       deviceState,
       source: source || 'interactive',
       identityType: 'user',
@@ -8434,15 +8487,21 @@
     let detectedBy;
     if (hasSpColumns) {
       const workloadHint = hint === 'msi' || hint === 'application' ? hint : null;
-      source = workloadHint || ('conditionalAccessStatus' in columns || 'appId' in columns ? 'application' : 'msi');
+      source = workloadHint || 'application';
       detectedBy = workloadHint ? 'shape+filename' : 'shape';
-      warnings.push(`${fileName || 'CSV export'} was read as a ${LOG_SOURCES[source].short} log — the JSON export carries more detail for workload identities.`);
+      warnings.push(source === 'msi'
+        ? `${fileName || 'CSV export'} was detected as a managed-identity log and will be ignored because managed identities are outside Conditional Access.`
+        : `${fileName || 'CSV export'} was read as a service-principal log — the JSON export carries the policy detail needed to determine workload Conditional Access applicability.`);
     } else if (hint === 'application' || hint === 'msi') {
       source = hint;
       detectedBy = 'filename';
     } else {
       source = hint || 'interactive';
       detectedBy = hint ? 'filename' : 'default';
+    }
+    if (source === 'msi') {
+      const records = rows.slice(1).map(cells => ({ eventCount: representedEventCount('eventCount' in columns ? cells[columns.eventCount] : 1) }));
+      return { records, warnings, format: 'csv', source, detectedBy };
     }
     const isWorkload = LOG_SOURCES[source].kind === 'workload';
     const unmapped = rows[0].filter((h, i) => !claimed.has(i) && normToken(h)).slice(0, 10);
@@ -8452,6 +8511,7 @@
       const v = normToken(value);
       return v === 'yes' || v === 'true' ? true : v === 'no' || v === 'false' ? false : null;
     };
+    let invalidGroupedCountRows = 0;
     const records = rows.slice(1).map(cells => {
       const statusText = normToken(col(cells, 'status'));
       const errorRaw = col(cells, 'errorCode');
@@ -8460,9 +8520,15 @@
       const method = col(cells, 'mfaAuthMethod').toLowerCase();
       const spName = col(cells, 'servicePrincipalName') || col(cells, 'servicePrincipalId');
       const upn = col(cells, 'userPrincipalName');
+      const rawEventCount = col(cells, 'eventCount');
+      const parsedEventCount = Number(rawEventCount.replace(/,/g, ''));
+      if ('eventCount' in columns && rawEventCount && (!Number.isFinite(parsedEventCount) || parsedEventCount <= 0 || !Number.isInteger(parsedEventCount))) invalidGroupedCountRows += 1;
+      const eventCount = representedEventCount(rawEventCount);
       return {
+        eventCount,
+        groupedEvidence: eventCount > 1,
         source,
-        identityType: isWorkload ? (source === 'msi' ? 'managedIdentity' : 'servicePrincipal') : 'user',
+        identityType: isWorkload ? 'servicePrincipal' : 'user',
         principal: (isWorkload ? spName : upn || col(cells, 'userDisplayName')) || (isWorkload ? 'unknown identity' : 'unknown user'),
         time: Date.parse(col(cells, 'createdDateTime')),
         userPrincipalName: isWorkload ? '' : upn,
@@ -8475,10 +8541,13 @@
         servicePrincipalName: spName,
         appId: col(cells, 'appId'),
         credentialType: source === 'application' ? spCredentialType({
+          clientCredentialType: col(cells, 'clientCredentialType'),
           federatedCredentialId: col(cells, 'federatedCredentialId'),
           servicePrincipalCredentialThumbprint: col(cells, 'servicePrincipalCredentialThumbprint'),
           servicePrincipalCredentialKeyId: col(cells, 'servicePrincipalCredentialKeyId')
         }) : null,
+        appOwnerTenantId: col(cells, 'appOwnerTenantId'),
+        resourceOwnerTenantId: col(cells, 'resourceOwnerTenantId'),
         ipAddress: col(cells, 'ipAddress'),
         clientAppUsed: isWorkload ? '' : col(cells, 'clientAppUsed'),
         conditionalAccessStatus: normToken(col(cells, 'conditionalAccessStatus')),
@@ -8519,6 +8588,12 @@
         isInteractive: null
       };
     });
+    const groupedRows = records.filter(record => record.groupedEvidence).length;
+    if (groupedRows) {
+      const represented = records.reduce((sum, record) => sum + record.eventCount, 0);
+      warnings.push(`${fileName || 'CSV export'} contains ${groupedRows} grouped row${groupedRows === 1 ? '' : 's'} representing ${represented.toLocaleString()} sign-in events. Volumes are weighted by the portal count; time sequencing remains limited to one observation per grouped row.`);
+    }
+    if (invalidGroupedCountRows) warnings.push(`${invalidGroupedCountRows} row(s) contained an invalid sign-in count and were conservatively treated as one represented event.`);
     return { records, warnings, format: 'csv', source, detectedBy };
   }
 
@@ -8532,7 +8607,9 @@
       minTime: Infinity,
       maxTime: -Infinity,
       timeParseFailures: 0,
-      totals: { interactive: 0, nonInteractive: 0, application: 0, msi: 0 },
+      importedRowCount: 0,
+      groupedRowCount: 0,
+      totals: { interactive: 0, nonInteractive: 0, application: 0 },
       sourceStats: {},
       users: new Map(),
       apps: new Map(),
@@ -8543,7 +8620,6 @@
       travel: new Map(),
       reportOnly: new Map(),
       spPrincipals: new Map(),
-      msiPrincipals: new Map(),
       spWithCountry: 0,
       windowsUndetermined: 0,
       // Diagnosis for ca-not-applied: was Conditional Access engaged at all, and if it was,
@@ -8600,7 +8676,7 @@
     const votes = new Map();
     records.forEach(rec => {
       if (rec.userType === 'member' && rec.homeTenantId) {
-        votes.set(rec.homeTenantId, (votes.get(rec.homeTenantId) || 0) + 1);
+        votes.set(rec.homeTenantId, (votes.get(rec.homeTenantId) || 0) + recordEventCount(rec));
       }
     });
     const top = [...votes.entries()].sort((a, b) => b[1] - a[1])[0];
@@ -8618,6 +8694,16 @@
     return 'outbound';
   }
 
+  function workloadOutsideCa(rec) {
+    if (rec.identityType !== 'servicePrincipal') return '';
+    const appOwner = String(rec.appOwnerTenantId || rec.homeTenantId || '').toLowerCase();
+    const resourceOwner = String(rec.resourceOwnerTenantId || rec.resourceTenantId || '').toLowerCase();
+    if (appOwner && resourceOwner && appOwner !== resourceOwner) {
+      return 'The application owner tenant differs from the resource tenant, explicitly identifying a third-party or multitenant workload outside workload Conditional Access eligibility.';
+    }
+    return '';
+  }
+
   function classifyLogJourneyDecision(rec, source) {
     const policies = rec.appliedPolicies || [];
     const hasEnforcing = rec.conditionalAccessStatus === 'success'
@@ -8625,9 +8711,13 @@
       || policies.some(policy => policy.result === 'success' || policy.result === 'failure');
     if (hasEnforcing) return 'enforcing';
     const hasReportOnlyMatch = policies.some(policy => policy.result.startsWith('reportonly') && policy.result !== 'reportonlynotapplied');
-    if (hasReportOnlyMatch) return 'reportOnly';
-    if (source === 'msi' || isPlatformFlow(rec)) return 'byDesign';
-    if (policies.some(policy => policy.result === 'notapplied' || policy.result === 'reportonlynotapplied')) return 'filtered';
+    if (hasReportOnlyMatch) return source === 'application' ? 'workloadReportOnly' : 'reportOnly';
+    if (source === 'application' && workloadOutsideCa(rec)) return 'outsideCa';
+    if (source === 'application' && !policies.length) return 'workloadBlindspot';
+    if (isPlatformFlow(rec)) return 'byDesign';
+    if (policies.some(policy => policy.result === 'notapplied' || policy.result === 'reportonlynotapplied')) {
+      return source === 'application' ? 'workloadReview' : 'filtered';
+    }
     return 'noEvaluation';
   }
 
@@ -8637,7 +8727,11 @@
     if (decision === 'enforcing' && blocked) return 'blocked';
     if (decision === 'enforcing' && rec.success) return 'protectedSuccess';
     if (decision === 'reportOnly' && rec.success) return 'allowedReportOnly';
+    if (decision === 'workloadReportOnly' && rec.success) return 'workloadReportOnlyFlow';
     if (decision === 'byDesign' && rec.success) return 'byDesignFlow';
+    if (decision === 'outsideCa' && rec.success) return 'outsideCaFlow';
+    if (decision === 'workloadBlindspot' && rec.success) return 'workloadUnknownFlow';
+    if (decision === 'workloadReview' && rec.success) return 'workloadReviewFlow';
     if ((decision === 'filtered' || decision === 'noEvaluation') && rec.success) return 'allowedWithoutCa';
     return 'otherFailure';
   }
@@ -8658,21 +8752,22 @@
 
   function recordDeviceContext(agg, rec, source) {
     if (rec.identityType !== 'user') return;
+    const weight = recordEventCount(rec);
     const context = agg.deviceContext;
     const stateKey = LOG_DEVICE_CONTEXT_STATES.some(item => item.id === rec.deviceState) ? rec.deviceState : 'unknown';
-    context.total += 1;
-    incrementJourneyMap(context.bySource, source);
-    incrementJourneyMap(context.byState, stateKey);
+    context.total += weight;
+    incrementJourneyMap(context.bySource, source, weight);
+    incrementJourneyMap(context.byState, stateKey, weight);
     if (rec.success && (LOG_CHECK_SOURCES['noncompliant-device'] || []).includes(source) && context.findingStates.has(stateKey)) {
-      incrementJourneyMap(context.findingStates, stateKey);
+      incrementJourneyMap(context.findingStates, stateKey, weight);
     }
-    incrementJourneyMap(context.joinStates, logDeviceJoinState(rec));
-    incrementJourneyMap(context.platforms, rec.operatingSystem || 'Platform not returned');
-    incrementJourneyMap(context.ownership, rec.deviceOwnership || 'Ownership not returned');
-    incrementJourneyMap(context.browsers, rec.browser || 'Browser not returned');
-    incrementJourneyMap(context.clientApps, rec.clientAppUsed || 'Client app not returned');
-    if (normToken(rec.originalTransferMethod).includes('devicecode')) context.deviceCodeFlows += 1;
-    if (rec.userType === 'guest' && guestDirection(agg, rec) !== 'outbound') context.inboundGuests += 1;
+    incrementJourneyMap(context.joinStates, logDeviceJoinState(rec), weight);
+    incrementJourneyMap(context.platforms, rec.operatingSystem || 'Platform not returned', weight);
+    incrementJourneyMap(context.ownership, rec.deviceOwnership || 'Ownership not returned', weight);
+    incrementJourneyMap(context.browsers, rec.browser || 'Browser not returned', weight);
+    incrementJourneyMap(context.clientApps, rec.clientAppUsed || 'Client app not returned', weight);
+    if (normToken(rec.originalTransferMethod).includes('devicecode')) context.deviceCodeFlows += weight;
+    if (rec.userType === 'guest' && guestDirection(agg, rec) !== 'outbound') context.inboundGuests += weight;
     const attributes = {
       isCompliant: rec.isCompliant,
       trustType: rec.trustType,
@@ -8686,7 +8781,7 @@
       if (!returned) return;
       context.attributes.add(name);
       if (!context.attributeValues.has(name)) context.attributeValues.set(name, new Map());
-      incrementJourneyMap(context.attributeValues.get(name), typeof value === 'boolean' ? String(value) : value);
+      incrementJourneyMap(context.attributeValues.get(name), typeof value === 'boolean' ? String(value) : value, weight);
     });
     if (context.samples.length < LOG_SAMPLE_CAP) {
       context.samples.push({
@@ -8700,24 +8795,26 @@
         platform: rec.operatingSystem || 'not returned',
         ownership: rec.deviceOwnership || 'not returned',
         browser: rec.browser || rec.clientAppUsed || 'not returned',
-        deviceId: rec.deviceId || ''
+        deviceId: rec.deviceId || '',
+        representedEvents: weight
       });
     }
   }
 
   function recordLogJourneyEvent(agg, rec, source) {
+    const weight = recordEventCount(rec);
     const journey = agg.journey;
     const decision = classifyLogJourneyDecision(rec, source);
     const outcome = classifyLogJourneyOutcome(rec, decision);
     const sourceDecisionKey = `${source}|${decision}`;
     const decisionOutcomeKey = `${decision}|${outcome}`;
     const routeKey = `${source}|${decision}|${outcome}`;
-    journey.total += 1;
-    incrementJourneyMap(journey.sources, source);
-    incrementJourneyMap(journey.decisions, decision);
-    incrementJourneyMap(journey.outcomes, outcome);
-    incrementJourneyMap(journey.sourceDecision, sourceDecisionKey);
-    incrementJourneyMap(journey.decisionOutcome, decisionOutcomeKey);
+    journey.total += weight;
+    incrementJourneyMap(journey.sources, source, weight);
+    incrementJourneyMap(journey.decisions, decision, weight);
+    incrementJourneyMap(journey.outcomes, outcome, weight);
+    incrementJourneyMap(journey.sourceDecision, sourceDecisionKey, weight);
+    incrementJourneyMap(journey.decisionOutcome, decisionOutcomeKey, weight);
     const route = journey.routes.get(routeKey) || {
       source,
       decision,
@@ -8733,18 +8830,18 @@
       locations: new Map(),
       samples: []
     };
-    route.count += 1;
-    route.success += rec.success ? 1 : 0;
-    route.failure += rec.success ? 0 : 1;
-    incrementJourneyMap(route.identities, rec.principal || rec.userPrincipalName || rec.userDisplayName || 'Unknown identity');
-    incrementJourneyMap(route.apps, rec.appDisplayName || rec.resourceDisplayName || 'Unknown app');
-    incrementJourneyMap(route.locations, logLocationLabel(rec) || 'Unknown location');
+    route.count += weight;
+    route.success += rec.success ? weight : 0;
+    route.failure += rec.success ? 0 : weight;
+    incrementJourneyMap(route.identities, rec.principal || rec.userPrincipalName || rec.userDisplayName || 'Unknown identity', weight);
+    incrementJourneyMap(route.apps, rec.appDisplayName || rec.resourceDisplayName || 'Unknown app', weight);
+    incrementJourneyMap(route.locations, logLocationLabel(rec) || 'Unknown location', weight);
     (rec.appliedPolicies || []).forEach(policy => {
-      incrementJourneyMap(route.evaluatedPolicies, policy.displayName);
+      incrementJourneyMap(route.evaluatedPolicies, policy.displayName, weight);
       const matched = policy.result === 'success' || policy.result === 'failure'
         || (policy.result.startsWith('reportonly') && policy.result !== 'reportonlynotapplied');
-      if (matched) incrementJourneyMap(route.policies, policy.displayName);
-      (policy.conditionsNotSatisfied || []).forEach(condition => incrementJourneyMap(route.conditions, condition));
+      if (matched) incrementJourneyMap(route.policies, policy.displayName, weight);
+      (policy.conditionsNotSatisfied || []).forEach(condition => incrementJourneyMap(route.conditions, condition, weight));
     });
     if (route.samples.length < 8) {
       route.samples.push({
@@ -8755,6 +8852,7 @@
         location: logLocationLabel(rec) || 'Unknown location',
         caStatus: rec.conditionalAccessStatus || 'not returned',
         authenticationRequirement: rec.authenticationRequirement || 'not returned',
+        representedEvents: weight,
         policies: (rec.appliedPolicies || []).slice(0, 8).map(policy => ({
           name: policy.displayName,
           result: policy.result,
@@ -8768,8 +8866,11 @@
   function ingestSignIns(agg, records, source) {
     const isUserSource = LOG_SOURCES[source].kind === 'user';
     if (isUserSource) resolveTenantId(agg, records);
-    agg.total += records.length;
-    agg.totals[source] += records.length;
+    const representedTotal = records.reduce((sum, record) => sum + recordEventCount(record), 0);
+    agg.importedRowCount += records.length;
+    agg.groupedRowCount += records.filter(record => record.groupedEvidence).length;
+    agg.total += representedTotal;
+    agg.totals[source] += representedTotal;
     if (!agg.sourceStats[source]) {
       agg.sourceStats[source] = {
         total: 0, success: 0, failure: 0, guests: 0,
@@ -8779,7 +8880,7 @@
       };
     }
     const stats = agg.sourceStats[source];
-    stats.total += records.length;
+    stats.total += representedTotal;
     const tally = id => {
       if (!agg.tallies[id]) {
         agg.tallies[id] = { count: 0, users: new Map(), apps: new Map(), devices: new Map(), locations: new Map(), samples: [], sources: new Set(), platformFlow: 0 };
@@ -8790,17 +8891,18 @@
       const allowed = LOG_CHECK_SOURCES[id];
       if (allowed && !allowed.includes(rec.source)) return;
       const t = tally(id);
-      t.count += 1;
+      const weight = recordEventCount(rec);
+      t.count += weight;
       t.sources.add(rec.source);
       const who = rec.principal || rec.userPrincipalName || rec.userDisplayName || 'unknown identity';
       const app = rec.appDisplayName || rec.resourceDisplayName || 'unknown app';
       const device = logDeviceLabel(rec);
       const place = logLocationLabel(rec);
-      t.users.set(who, (t.users.get(who) || 0) + 1);
-      t.apps.set(app, (t.apps.get(app) || 0) + 1);
-      if (device) t.devices.set(device, (t.devices.get(device) || 0) + 1);
-      if (place) t.locations.set(place, (t.locations.get(place) || 0) + 1);
-      if (isPlatformFlow(rec)) t.platformFlow += 1;
+      t.users.set(who, (t.users.get(who) || 0) + weight);
+      t.apps.set(app, (t.apps.get(app) || 0) + weight);
+      if (device) t.devices.set(device, (t.devices.get(device) || 0) + weight);
+      if (place) t.locations.set(place, (t.locations.get(place) || 0) + weight);
+      if (isPlatformFlow(rec)) t.platformFlow += weight;
       if (t.samples.length < LOG_SAMPLE_CAP) {
         t.samples.push({
           time: Number.isFinite(rec.time) ? new Date(rec.time).toISOString().replace('T', ' ').slice(0, 16) : 'unknown time',
@@ -8816,6 +8918,7 @@
           ip: rec.ipAddress || '',
           clientApp: rec.clientAppUsed || '',
           note: extra || '',
+          representedEvents: weight,
           // Triage facts — the per-event analysis fields, kept separate from the display
           // fields above so the evidence table stays regression-stable.
           t: {
@@ -8856,20 +8959,21 @@
     };
     const seen = field => { agg.fieldsSeen.add(field); stats.fieldsSeen.add(field); };
     records.forEach(rec => {
+      const weight = recordEventCount(rec);
       recordLogJourneyEvent(agg, rec, source);
       recordDeviceContext(agg, rec, source);
-      if (rec.success) { agg.success += 1; stats.success += 1; }
-      else { agg.failure += 1; stats.failure += 1; }
-      if (rec.isInteractive === true) agg.interactive += 1;
+      if (rec.success) { agg.success += weight; stats.success += weight; }
+      else { agg.failure += weight; stats.failure += weight; }
+      if (rec.isInteractive === true) agg.interactive += weight;
       // Count only guests arriving at YOUR tenant — an outbound sign-in is one of your own
       // members visiting elsewhere, and counting it as a guest overstates external access.
-      if (rec.userType === 'guest' && guestDirection(agg, rec) !== 'outbound') { agg.guests += 1; stats.guests += 1; }
+      if (rec.userType === 'guest' && guestDirection(agg, rec) !== 'outbound') { agg.guests += weight; stats.guests += weight; }
       if (Number.isFinite(rec.time)) {
         if (rec.time < agg.minTime) agg.minTime = rec.time;
         if (rec.time > agg.maxTime) agg.maxTime = rec.time;
         if (rec.time < stats.minTime) stats.minTime = rec.time;
         if (rec.time > stats.maxTime) stats.maxTime = rec.time;
-      } else agg.timeParseFailures += 1;
+      } else agg.timeParseFailures += weight;
       if (rec.conditionalAccessStatus) seen('conditionalAccessStatus');
       if (rec.authenticationRequirement) seen('authenticationRequirement');
       if (rec.appliedPolicies.length) seen('appliedPolicies');
@@ -8889,15 +8993,15 @@
       if (app) stats.apps.add(app);
       if (isUserSource && user) {
         const u = agg.users.get(user) || { count: 0, caApplied: 0 };
-        u.count += 1;
-        if (caApplied) u.caApplied += 1;
+        u.count += weight;
+        if (caApplied) u.caApplied += weight;
         agg.users.set(user, u);
       }
       if (isUserSource && app) {
         const a = agg.apps.get(app) || { count: 0, success: 0, caApplied: 0 };
-        a.count += 1;
-        if (rec.success) a.success += 1;
-        if (caApplied) a.caApplied += 1;
+        a.count += weight;
+        if (rec.success) a.success += weight;
+        if (caApplied) a.caApplied += weight;
         agg.apps.set(app, a);
       }
       // Coverage checks are interactive-only (their thresholds are calibrated on interactive
@@ -8907,25 +9011,25 @@
         const resource = rec.resourceDisplayName || rec.appDisplayName;
         if (resource) {
           const r = agg.interactiveResources.get(resource) || { count: 0, success: 0, caApplied: 0, clients: new Map() };
-          r.count += 1;
-          if (rec.success) r.success += 1;
-          if (caApplied) r.caApplied += 1;
+          r.count += weight;
+          if (rec.success) r.success += weight;
+          if (caApplied) r.caApplied += weight;
           const client = rec.appDisplayName || 'unknown client';
-          r.clients.set(client, (r.clients.get(client) || 0) + 1);
+          r.clients.set(client, (r.clients.get(client) || 0) + weight);
           agg.interactiveResources.set(resource, r);
         }
         if (user) {
           const iu = agg.interactiveUsers.get(user) || { count: 0, caApplied: 0 };
-          iu.count += 1;
-          if (caApplied) iu.caApplied += 1;
+          iu.count += weight;
+          if (caApplied) iu.caApplied += weight;
           agg.interactiveUsers.set(user, iu);
         }
       }
-      if (isUserSource && rec.country) agg.countries.set(rec.country, (agg.countries.get(rec.country) || 0) + 1);
+      if (isUserSource && rec.country) agg.countries.set(rec.country, (agg.countries.get(rec.country) || 0) + weight);
       if (isUserSource && rec.errorCode === 50126 && rec.ipAddress && agg.sprayIps.size < 5000) {
         const ip = agg.sprayIps.get(rec.ipAddress) || { users: new Set(), count: 0 };
         if (user) ip.users.add(user);
-        ip.count += 1;
+        ip.count += weight;
         agg.sprayIps.set(rec.ipAddress, ip);
       }
       if (isUserSource && user && rec.country && Number.isFinite(rec.time)) {
@@ -8939,38 +9043,40 @@
       if (source === 'application') {
         const name = rec.servicePrincipalName || rec.principal;
         const sp = agg.spPrincipals.get(name) || {
-          id: rec.servicePrincipalId, count: 0, success: 0, failure: 0, caApplied: 0, notApplied: 0,
+          id: rec.servicePrincipalId, count: 0, success: 0, failure: 0, caApplied: 0, reportOnly: 0,
+          evaluatedNoMatch: 0, noPolicyDetail: 0, outsideCa: 0,
           countries: new Map(), credential: { federated: 0, certificate: 0, secret: 0, managedIdentity: 0, unknown: 0 },
           resources: new Map(), credErrors: new Map()
         };
-        sp.count += 1;
-        if (rec.success) sp.success += 1; else sp.failure += 1;
-        if (caApplied) sp.caApplied += 1;
-        if (rec.conditionalAccessStatus === 'notapplied' || !rec.conditionalAccessStatus) sp.notApplied += 1;
-        if (rec.country) { sp.countries.set(rec.country, (sp.countries.get(rec.country) || 0) + 1); agg.spWithCountry += 1; }
-        if (rec.credentialType && rec.credentialType in sp.credential) sp.credential[rec.credentialType] += 1;
-        if (rec.resourceDisplayName) sp.resources.set(rec.resourceDisplayName, (sp.resources.get(rec.resourceDisplayName) || 0) + 1);
+        sp.count += weight;
+        if (rec.success) sp.success += weight; else sp.failure += weight;
+        if (caApplied) sp.caApplied += weight;
+        const hasReportOnlyMatch = rec.appliedPolicies.some(policy => policy.result.startsWith('reportonly') && policy.result !== 'reportonlynotapplied');
+        const hasEvaluatedNoMatch = rec.appliedPolicies.some(policy => policy.result === 'notapplied' || policy.result === 'reportonlynotapplied');
+        const explicitlyOutsideCa = workloadOutsideCa(rec);
+        if (hasReportOnlyMatch && rec.success) sp.reportOnly += weight;
+        else if (hasEvaluatedNoMatch) sp.evaluatedNoMatch += weight;
+        else if (!rec.appliedPolicies.length) sp.noPolicyDetail += weight;
+        if (explicitlyOutsideCa) sp.outsideCa += weight;
+        if (rec.country) { sp.countries.set(rec.country, (sp.countries.get(rec.country) || 0) + weight); agg.spWithCountry += weight; }
+        if (rec.credentialType && rec.credentialType in sp.credential) sp.credential[rec.credentialType] += weight;
+        if (rec.resourceDisplayName) sp.resources.set(rec.resourceDisplayName, (sp.resources.get(rec.resourceDisplayName) || 0) + weight);
         if (!rec.success && LOG_SP_CREDENTIAL_ERRORS.has(rec.errorCode)) {
-          sp.credErrors.set(rec.errorCode, (sp.credErrors.get(rec.errorCode) || 0) + 1);
+          sp.credErrors.set(rec.errorCode, (sp.credErrors.get(rec.errorCode) || 0) + weight);
         }
         agg.spPrincipals.set(name, sp);
-        if (rec.success && (rec.conditionalAccessStatus === 'notapplied' || !rec.conditionalAccessStatus)) {
-          record('sp-no-ca', rec, rec.credentialType && rec.credentialType !== 'unknown' ? `${rec.credentialType} credential` : '');
+        if (hasReportOnlyMatch && rec.success) {
+          record('sp-report-only', rec, 'A matching workload Conditional Access policy remained report-only, so it recorded intent without enforcing the configured control.');
         }
-      }
-      if (source === 'msi') {
-        const name = rec.servicePrincipalName || rec.principal;
-        const mi = agg.msiPrincipals.get(name) || { id: rec.servicePrincipalId, count: 0, failure: 0, resources: new Map() };
-        mi.count += 1;
-        if (!rec.success) mi.failure += 1;
-        if (rec.resourceDisplayName) mi.resources.set(rec.resourceDisplayName, (mi.resources.get(rec.resourceDisplayName) || 0) + 1);
-        agg.msiPrincipals.set(name, mi);
+        if (hasEvaluatedNoMatch) {
+          record('sp-ca-review', rec, 'Workload Conditional Access policies were evaluated but did not match this event. Review scope and eligibility before treating it as a gap.');
+        }
       }
       rec.appliedPolicies.forEach(policy => {
         if (policy.result.startsWith('reportonly')) {
           const entry = agg.reportOnly.get(policy.displayName) || { total: 0, wouldBlockOrGrant: 0 };
-          entry.total += 1;
-          if (policy.result === 'reportonlyfailure' || policy.result === 'reportonlyinterrupted') entry.wouldBlockOrGrant += 1;
+          entry.total += weight;
+          if (policy.result === 'reportonlyfailure' || policy.result === 'reportonlyinterrupted') entry.wouldBlockOrGrant += weight;
           agg.reportOnly.set(policy.displayName, entry);
         }
         // Deployed-policy inventory: what exists in the tenant, how often it fires, on what.
@@ -8984,7 +9090,7 @@
           includeRules: new Map(), excludeRules: new Map(), excludedPrincipals: new Map(),
           minTime: Infinity, maxTime: -Infinity
         };
-        inv.evaluations += 1;
+        inv.evaluations += weight;
         inv.sources.add(rec.source);
         if (!inv.id && policy.id) inv.id = policy.id;
         if (Number.isFinite(rec.time)) {
@@ -8992,45 +9098,45 @@
           if (rec.time > inv.maxTime) inv.maxTime = rec.time;
         }
         const enforced = policy.result === 'success' || policy.result === 'failure';
-        if (enforced) inv.applied += 1;
-        if (policy.result === 'failure') inv.blocked += 1;
+        if (enforced) inv.applied += weight;
+        if (policy.result === 'failure') inv.blocked += weight;
         if (policy.result.startsWith('reportonly')) {
-          inv.reportOnly += 1;
-          incrementJourneyMap(inv.reportOnlyResults, policy.result);
+          inv.reportOnly += weight;
+          incrementJourneyMap(inv.reportOnlyResults, policy.result, weight);
         }
         if (policy.result === 'notapplied') {
-          inv.notApplied += 1;
+          inv.notApplied += weight;
           policy.conditionsNotSatisfied.forEach(cond => {
             const key = normToken(cond);
-            inv.notSatisfied.set(key, (inv.notSatisfied.get(key) || 0) + 1);
+            inv.notSatisfied.set(key, (inv.notSatisfied.get(key) || 0) + weight);
           });
         }
         policy.includeRules.forEach(r => {
           const k = `${r.condition}|${r.rule}`;
-          inv.includeRules.set(k, (inv.includeRules.get(k) || 0) + 1);
+          inv.includeRules.set(k, (inv.includeRules.get(k) || 0) + weight);
         });
         policy.excludeRules.forEach(r => {
           const k = `${r.condition}|${r.rule}`;
-          inv.excludeRules.set(k, (inv.excludeRules.get(k) || 0) + 1);
+          inv.excludeRules.set(k, (inv.excludeRules.get(k) || 0) + weight);
           // An exclusion that fired names the identity it spared — the one exclusion view logs give.
           if (normToken(r.condition) === 'users') {
             const who = rec.principal || 'unknown identity';
-            inv.excludedPrincipals.set(who, (inv.excludedPrincipals.get(who) || 0) + 1);
+            inv.excludedPrincipals.set(who, (inv.excludedPrincipals.get(who) || 0) + weight);
           }
         });
-        policy.grants.forEach(g => inv.grants.set(g, (inv.grants.get(g) || 0) + 1));
-        policy.sessions.forEach(s => inv.sessions.set(s, (inv.sessions.get(s) || 0) + 1));
-        if (policy.authStrength) inv.authStrength.set(policy.authStrength, (inv.authStrength.get(policy.authStrength) || 0) + 1);
+        policy.grants.forEach(g => inv.grants.set(g, (inv.grants.get(g) || 0) + weight));
+        policy.sessions.forEach(s => inv.sessions.set(s, (inv.sessions.get(s) || 0) + weight));
+        if (policy.authStrength) inv.authStrength.set(policy.authStrength, (inv.authStrength.get(policy.authStrength) || 0) + weight);
         // Who/what actually hits it — only counted where the policy really engaged.
         if (enforced || policy.result.startsWith('reportonly')) {
           const who = rec.principal || 'unknown identity';
           const app = rec.appDisplayName || rec.resourceDisplayName || 'unknown app';
           const device = logDeviceLabel(rec);
           const place = logLocationLabel(rec);
-          inv.users.set(who, (inv.users.get(who) || 0) + 1);
-          inv.apps.set(app, (inv.apps.get(app) || 0) + 1);
-          if (device) inv.devices.set(device, (inv.devices.get(device) || 0) + 1);
-          if (place) inv.locations.set(place, (inv.locations.get(place) || 0) + 1);
+          inv.users.set(who, (inv.users.get(who) || 0) + weight);
+          inv.apps.set(app, (inv.apps.get(app) || 0) + weight);
+          if (device) inv.devices.set(device, (inv.devices.get(device) || 0) + weight);
+          if (place) inv.locations.set(place, (inv.locations.get(place) || 0) + weight);
           if (inv.samples.length < LOG_SAMPLE_CAP) {
             inv.samples.push({
               time: Number.isFinite(rec.time) ? new Date(rec.time).toISOString().replace('T', ' ').slice(0, 16) : 'unknown time',
@@ -9046,6 +9152,7 @@
               ip: rec.ipAddress || '',
               clientApp: rec.clientAppUsed || '',
               result: policy.result,
+              representedEvents: weight,
               grants: policy.grants.slice(0, 6),
               sessions: policy.sessions.slice(0, 6)
             });
@@ -9075,6 +9182,7 @@
           principal: rec.principal,
           app: rec.appDisplayName || rec.resourceDisplayName || 'unknown app',
           source: LOG_SOURCES[rec.source].short,
+          eventCount: weight,
           time: Number.isFinite(rec.time) ? new Date(rec.time).toISOString().replace('T', ' ').slice(0, 16) : 'unknown time'
         });
       }
@@ -9096,20 +9204,20 @@
       if (direction === 'outbound') {
         // Your own user visiting another tenant. Your Conditional Access does not govern
         // access over there, so this is never a gap in YOUR policy set.
-        agg.outboundB2B.count += 1;
-        agg.outboundB2B.users.set(rec.principal, (agg.outboundB2B.users.get(rec.principal) || 0) + 1);
-        if (rec.resourceTenantId) agg.outboundB2B.tenants.set(rec.resourceTenantId, (agg.outboundB2B.tenants.get(rec.resourceTenantId) || 0) + 1);
+        agg.outboundB2B.count += weight;
+        agg.outboundB2B.users.set(rec.principal, (agg.outboundB2B.users.get(rec.principal) || 0) + weight);
+        if (rec.resourceTenantId) agg.outboundB2B.tenants.set(rec.resourceTenantId, (agg.outboundB2B.tenants.get(rec.resourceTenantId) || 0) + weight);
         record('outbound-b2b', rec, `to tenant ${(rec.resourceTenantId || '').slice(0, 8)}`);
       } else if ((direction === 'inbound' || direction === 'unknown')
         && (rec.conditionalAccessStatus === 'notapplied' || (rec.success && rec.authenticationRequirement === 'singlefactorauthentication'))) {
-        if (direction === 'unknown') agg.guestDirectionUnknown += 1;
+        if (direction === 'unknown') agg.guestDirectionUnknown += weight;
         record('guest-uncontrolled', rec);
       }
       if (rec.operatingSystem) {
         if (/windows/i.test(rec.operatingSystem)) {
           // Never trust the "Windows10" string — only the build number can tell 10 from 11.
           const version = windowsVersionFromBuild(rec.osBuild);
-          if (!version) agg.windowsUndetermined += 1;
+          if (!version) agg.windowsUndetermined += weight;
           else if (version.eol) record('outdated-os', rec, `${version.label} — ${version.reason}`);
         } else {
           const eol = LOG_EOL_OS_PATTERNS.find(p => p.re.test(rec.operatingSystem));
@@ -9176,23 +9284,24 @@
     const allowed = LOG_CHECK_SOURCES['ca-not-applied'];
     if (allowed && !allowed.includes(rec.source)) return '';
     const gap = agg.caGap;
+    const weight = recordEventCount(rec);
     const evaluated = rec.appliedPolicies.filter(p => p.result === 'notapplied');
     if (!rec.appliedPolicies.length) {
-      gap.notEngaged += 1;
+      gap.notEngaged += weight;
       if (isPlatformFlow(rec)) {
-        gap.platformFlow += 1;
+        gap.platformFlow += weight;
         return 'no policy evaluated — platform/token flow outside Conditional Access';
       }
       return 'no policy evaluated — Conditional Access was not engaged for this sign-in';
     }
-    gap.evaluated += 1;
+    gap.evaluated += weight;
     const reasons = [];
     evaluated.forEach(p => {
       p.conditionsNotSatisfied.forEach(cond => {
         const key = normToken(cond);
-        gap.conditions.set(key, (gap.conditions.get(key) || 0) + 1);
+        gap.conditions.set(key, (gap.conditions.get(key) || 0) + weight);
         const pkey = `${p.displayName} — ${LOG_CA_CONDITIONS[key] || cond}`;
-        gap.policies.set(pkey, (gap.policies.get(pkey) || 0) + 1);
+        gap.policies.set(pkey, (gap.policies.get(pkey) || 0) + weight);
         if (reasons.length < 2) reasons.push(`${p.displayName}: ${LOG_CA_CONDITIONS[key] || cond}`);
       });
     });
@@ -9223,7 +9332,7 @@
     if (allowed && !allowed.includes(rec.source)) return '';
     const meta = LOG_DEVICE_STATES[rec.deviceState];
     if (!meta) return '';
-    agg.deviceGap.set(rec.deviceState, (agg.deviceGap.get(rec.deviceState) || 0) + 1);
+    agg.deviceGap.set(rec.deviceState, (agg.deviceGap.get(rec.deviceState) || 0) + recordEventCount(rec));
     return meta.label.toLowerCase();
   }
 
@@ -9545,11 +9654,11 @@
     const nope = key => { why('n', key); return 'no'; };
 
     // Applicability comes before matching. A policy scoped through conditions.users cannot
-    // apply to a service principal or managed identity sign-in at all — Conditional Access
+    // apply to a service-principal sign-in at all — Conditional Access
     // covers workload identities only through conditions.clientApplications, under a separate
     // licence. Counting workload sign-ins against a user policy reported CA200C as matching
     // 100% of 4127 sign-ins when 3333 of them were service principals it could never touch.
-    const isWorkload = rec.identityType === 'servicePrincipal' || rec.identityType === 'managedIdentity';
+    const isWorkload = rec.identityType === 'servicePrincipal';
     const workloadScoped = Boolean(c.clientApplications);
     if (isWorkload !== workloadScoped) return 'n/a';
 
@@ -10025,34 +10134,6 @@
     };
   }
 
-  function triageSpNoCa(sample, ctx) {
-    const t = sample.t;
-    const cred = t.credentialType === 'secret' ? 'a client secret' : t.credentialType === 'certificate' ? 'a certificate' : t.credentialType === 'federated' ? 'workload identity federation' : 'an application credential';
-    return {
-      rootCause: { id: 'workload-ungoverned', title: 'Service principal sign-in — outside the reach of standard Conditional Access', confidence: 'definite' },
-      narrative: [
-        `On ${sample.time} UTC, the service principal ${sample.principal} authenticated to ${sample.app} using ${cred}, from ${sample.location}${sample.ip ? ` (IP ${sample.ip})` : ''}.`,
-        'A service principal is the identity of an application, not a person: it signs in with its own credential, non-interactively — there is no user present to complete an MFA prompt. Standard Conditional Access policies target users and simply do not evaluate these sign-ins, which is why this one shows notApplied. That is a product boundary, not a misconfiguration. Conditional Access for workload identities exists, but it requires Workload Identities Premium and covers only single-tenant service principals registered in your own tenant — Microsoft and third-party SaaS applications, including multitenant apps, are not covered at all.',
-        'What it holds instead of a session: whatever API permissions this app registration has been granted, tenant-wide, for as long as the credential is valid.'
-      ],
-      fix: {
-        kind: 'action', confidence: 'definite', entity: sample.principal,
-        headline: t.credentialType === 'secret'
-          ? `Replace ${sample.principal}'s client secret and cut its permissions`
-          : `Review ${sample.principal}'s permissions and owner`,
-        steps: [
-          `Entra admin centre → Enterprise applications → ${sample.principal} → Permissions: read every application permission it holds and remove anything not strictly required. Application permissions have no user context — Mail.Read means every mailbox.`,
-          t.credentialType === 'secret'
-            ? 'Replace the client secret: workload identity federation if the workload runs somewhere OIDC-capable (GitHub Actions, Azure, Kubernetes) — nothing stored to leak — otherwise a certificate credential held in a key vault.'
-            : 'Confirm the credential is still the strongest available for this integration and rotate it on a schedule.',
-          'Confirm the integration has a named owner and is still in use — orphaned integrations should be deleted, which removes this entire attack surface.',
-          `Before considering Workload Identities Premium, check whether it could even apply to ${sample.principal}. Conditional Access for workload identities covers only single-tenant service principals registered in your own tenant — Microsoft and third-party SaaS applications, including multitenant apps, are explicitly not covered. If this is a third-party integration, permission reduction and credential hygiene are the controls available to you, not Conditional Access.`,
-          'If it is a single-tenant app you own and you do license it, assign the policy to the service principal directly — a policy assigned to a group containing a service principal is not enforced for it.'
-        ]
-      }
-    };
-  }
-
   // -- entity-row handlers (evidence rows that represent an entity, not one sign-in) --
 
   function triageSprayIp(sample) {
@@ -10206,25 +10287,6 @@
     };
   }
 
-  function triageMsi(sample) {
-    const t = sample.t;
-    return {
-      rootCause: { id: 'msi-normal', title: `${t.name} — managed identity (no credential to steal)`, confidence: 'definite' },
-      narrative: [
-        `${t.name} is a managed identity: Azure creates and rotates its credential internally, so there is nothing stored to leak — from a credential-hygiene standpoint this is the best available state. It reached: ${t.resources.join(', ')}.`,
-        'Conditional Access excludes managed identities from evaluation entirely — no CA policy, in this baseline or otherwise, can restrict them. The entire control surface is the Azure RBAC role assignment.'
-      ],
-      fix: {
-        kind: 'none', confidence: 'definite', entity: t.name,
-        headline: `No CA action possible — review ${t.name}'s RBAC scope instead`,
-        steps: [
-          `Azure portal → the resource behind ${t.name} → Identity → Azure role assignments: confirm the role is least-privilege and scoped to the narrowest resource that works.`,
-          'Prefer user-assigned identities scoped to one workload over system-assigned identities that accumulate broad roles.'
-        ]
-      }
-    };
-  }
-
   const LOG_EVENT_TRIAGE = {
     'ca-not-applied': triageCaNotApplied,
     'single-factor-success': triageSingleFactor,
@@ -10235,14 +10297,12 @@
     'guest-uncontrolled': triageGuest,
     'outbound-b2b': triageOutboundB2B,
     'outdated-os': triageOutdatedOs,
-    'sp-no-ca': triageSpNoCa,
     'password-spray': triageSprayIp,
     'impossible-travel': triageTravel,
     'uncovered-apps': triageUncoveredApp,
     'possible-exclusions': triagePossibleExclusion,
     'sp-location-spread': triageSpLocation,
-    'sp-credential-hygiene': triageSpCredential,
-    'msi-inventory': triageMsi
+    'sp-credential-hygiene': triageSpCredential
   };
 
   function triageSignInEvent(sample, checkId, ctx) {
@@ -10569,15 +10629,31 @@
 
     if (agg.totals.application) {
       const sps = [...agg.spPrincipals.entries()];
-      const noCa = sps.filter(([, sp]) => sp.notApplied > 0).sort((a, b) => b[1].notApplied - a[1].notApplied);
-      if (noCa.length) {
+      const reportOnly = sps.filter(([, sp]) => sp.reportOnly > 0).sort((a, b) => b[1].reportOnly - a[1].reportOnly);
+      if (reportOnly.length) {
         push(makeLogFinding(agg, {
-          id: 'sp-no-ca', severity: 'medium',
-          title: 'Service principals with no Conditional Access applied',
-          detail: `${noCa.length} of ${sps.length} service principal(s) signed in with no Conditional Access policy applied.`,
+          id: 'sp-report-only', severity: 'medium',
+          title: 'Workload policies matched in report-only mode',
+          detail: `${reportOnly.length} service principal(s) had matching workload Conditional Access policy evidence while access continued under report-only evaluation. This records intent, not enforcement; another enabled policy may still have acted on the same event.`,
+          affected: reportOnly.reduce((sum, [, sp]) => sum + sp.reportOnly, 0),
+          topUsers: reportOnly.slice(0, LOG_TOP_CAP).map(([name, sp]) => ({ name, count: sp.reportOnly })),
+          topApps: [],
           topUsersLabel: 'Top service principals', topAppsLabel: 'Top resources',
           controlIds: [], requirements: [],
-          recommendation: `Conditional Access can only target service principals with Workload Identities Premium, and even then only single-tenant service principals registered in your own tenant — Microsoft and third-party SaaS apps, including multitenant apps, are not covered. This baseline ships no such policy: ${named(['service_account_protection'])} target the CA-ServiceAccounts group of user accounts, so they cover human-operated service accounts rather than app registrations. Treat this as inventory and governance: review each service principal's API permissions and owner, apply CA301-style trusted-location blocking where the identity is human-operated, and reduce permissions where Conditional Access cannot reach.`
+          recommendation: 'Review the report-only result and affected service principals, validate eligibility and ownership, then pilot and stage the workload policy. Do not describe the report-only evaluation as protection until an enabled policy is recorded acting.'
+        }));
+      }
+      const evaluatedNoMatch = sps.filter(([, sp]) => sp.evaluatedNoMatch > 0).sort((a, b) => b[1].evaluatedNoMatch - a[1].evaluatedNoMatch);
+      if (evaluatedNoMatch.length) {
+        push(makeLogFinding(agg, {
+          id: 'sp-ca-review', severity: 'info',
+          title: 'Workload policies evaluated but did not match',
+          detail: `${evaluatedNoMatch.length} service principal(s) had workload policies returned, but every recorded evaluation was filtered or not applied. This is a scope and applicability review—not proof of an unprotected eligible workload.`,
+          affected: evaluatedNoMatch.reduce((sum, [, sp]) => sum + sp.evaluatedNoMatch, 0),
+          topUsers: evaluatedNoMatch.slice(0, LOG_TOP_CAP).map(([name, sp]) => ({ name, count: sp.evaluatedNoMatch })),
+          topApps: [], topUsersLabel: 'Service principals to review',
+          controlIds: [], requirements: [],
+          recommendation: 'Inspect the recorded conditions that were not satisfied, confirm the service principal is single-tenant and owned by your organisation, and only then decide whether workload Conditional Access should include it.'
         }));
       }
       const spread = sps.filter(([, sp]) => sp.countries.size >= LOG_SP_COUNTRY_THRESHOLD)
@@ -10631,27 +10707,6 @@
       }
     }
 
-    if (agg.totals.msi) {
-      const identities = [...agg.msiPrincipals.entries()].sort((a, b) => b[1].count - a[1].count);
-      const resources = new Set();
-      identities.forEach(([, mi]) => mi.resources.forEach((_, name) => resources.add(name)));
-      push(makeLogFinding(agg, {
-        id: 'msi-inventory', severity: 'info',
-        title: 'Managed identity activity (inventory only)',
-        detail: `${agg.totals.msi} managed identity sign-ins from ${identities.length} identit(ies) across ${resources.size} resource(s). Conditional Access cannot target managed identities, so this is inventory rather than a gap.`,
-        affected: agg.totals.msi,
-        topUsers: identities.slice(0, LOG_TOP_CAP).map(([name, mi]) => ({ name, count: mi.count })),
-        topApps: [], topUsersLabel: 'Managed identities',
-        samples: identities.slice(0, LOG_SAMPLE_CAP).map(([name, mi]) => ({
-          kind: 'entity',
-          label: `${name} → ${[...mi.resources.keys()].slice(0, 3).join(', ') || 'unknown resource'}: ${mi.count} sign-ins`,
-          t: { name, count: mi.count, resources: [...mi.resources.keys()].slice(0, 6) }
-        })),
-        controlIds: [], requirements: [],
-        recommendation: 'Managed identities are excluded from Conditional Access evaluation entirely — no policy in this baseline, or any CA policy, can restrict them. Govern them outside Conditional Access: assign the least-privileged Azure RBAC role at the narrowest resource scope, prefer user-assigned identities scoped to a single workload over system-assigned identities with broad roles, review role assignments on a schedule, and watch this log for identities reaching resources they should not.'
-      }));
-    }
-
     const rank = { high: 0, medium: 1, low: 2, info: 3 };
     return findings.sort((a, b) =>
       rank[a.severity] - rank[b.severity] ||
@@ -10664,13 +10719,13 @@
     const loaded = key => key in sources;
     const fieldSeenIn = (field, keys) => keys.some(key => agg.sourceStats[key] && agg.sourceStats[key].fieldsSeen.has(field));
     const userKeys = LOG_USER_SOURCES.filter(loaded);
-    if (agg.timeParseFailures) warnings.push(`${agg.timeParseFailures} row(s) had unparseable timestamps and were excluded from time-based checks.`);
+    if (agg.timeParseFailures) warnings.push(`${agg.timeParseFailures} represented event(s) came from rows with unparseable timestamps and were excluded from time-based checks.`);
+    if (agg.groupedRowCount) warnings.push(`${agg.groupedRowCount} imported row(s) represented grouped sign-ins. Volume calculations use the portal counts, but impossible-travel and other sequencing checks retain only one temporal observation per grouped row.`);
     LOG_SOURCE_ORDER.filter(key => !loaded(key)).forEach(key => {
       const note = {
         interactive: 'Interactive sign-in log not loaded — MFA strength, device posture and outdated OS checks were not assessed.',
         nonInteractive: 'Non-interactive sign-in log not loaded — legacy authentication is most visible there, so that evidence may be incomplete.',
-        application: 'Service principal log not loaded — workload identity Conditional Access gaps and credential hygiene were not assessed.',
-        msi: 'Managed identity log not loaded — managed identity inventory was not assessed.'
+        application: 'Service principal log not loaded — workload policy evaluation, credential hygiene and workload location evidence were not assessed.'
       }[key];
       if (note) warnings.push(note);
     });
@@ -10687,8 +10742,8 @@
       if (!fieldSeenIn('authenticationRequirement', ['interactive'])) warnings.push('No authentication requirement data in the interactive log — single-factor checks were skipped.');
     }
     if (loaded('application')) {
-      if (!fieldSeenIn('appliedPolicies', ['application']) && sources.application.format === 'csv') {
-        warnings.push('Report-only policy results for service principals need the JSON export (per-policy results are not in the CSV).');
+      if (!fieldSeenIn('appliedPolicies', ['application'])) {
+        warnings.push('Service-principal policy evidence is a blind spot: this export returned no per-policy evaluation detail. Absence of that detail is not proof of a Conditional Access gap; use the JSON export to assess eligible workload policies.');
       }
       if (agg.totals.application && agg.spWithCountry / agg.totals.application < 0.25) {
         warnings.push('Most service principal sign-ins had no location data — location spread analysis for workload identities is incomplete.');
@@ -10860,7 +10915,7 @@
     push(docxPara('Evidence coverage and confidence', { style: 'Heading2' }));
     push(docxPara(`Loaded sources: ${sourceNames(summary.sourcesLoaded)}.`));
     push(docxPara(`Missing sources: ${sourceNames(summary.sourcesMissing)}.`));
-    if (la.files.length) push(docxPara(`Files analysed: ${la.files.map(file => `${file.name} (${file.records} records)`).join('; ')}.`));
+    if (la.files.length) push(docxPara(`Files analysed: ${la.files.map(file => `${file.name} (${file.representedEvents} represented sign-ins from ${file.importedRowCount} imported rows)`).join('; ')}.`));
     if (la.failures.length) push(docxPara(`Files that could not be analysed: ${la.failures.map(file => file.name || file).join(', ')}.`, { style: 'Callout' }));
     (la.parseWarnings || []).forEach(note => push(docxPara(note, { bullet: true, style: 'ListParagraph' })));
     push(docxPara('Important limitation: a sign-in export records what happened during its date range. It cannot prove that an unused account, application, guest route, agent identity, location, or emergency-access path is safe. Validate the recommendations against your tenant inventory before deployment.', { italic: true }));
@@ -11005,7 +11060,7 @@
     const details = detailCount
       ? `<details class="log-status-detail">
           <summary>${esc(la.files.length)} file(s) loaded${la.parseWarnings.length ? ` · ${esc(la.parseWarnings.length)} note(s)` : ''}</summary>
-          ${la.files.length ? `<ul class="log-file-list">${la.files.map(f => `<li>${esc(f.name)} — ${esc(LOG_SOURCES[f.source].label)}, ${esc(f.records)} record(s)${f.empty ? ' (none in range)' : ''}</li>`).join('')}</ul>` : ''}
+          ${la.files.length ? `<ul class="log-file-list">${la.files.map(f => `<li>${esc(f.name)} — ${esc(LOG_SOURCES[f.source].label)}, ${esc(f.representedEvents)} represented sign-in(s) from ${esc(f.importedRowCount)} imported row(s)${f.empty ? ' (none in range)' : ''}</li>`).join('')}</ul>` : ''}
           ${la.parseWarnings.length ? `<ul class="log-warnings">${la.parseWarnings.map(w => `<li>${esc(w)}</li>`).join('')}</ul>` : ''}
         </details>`
       : '';
@@ -11062,7 +11117,7 @@
 
     const consequence = missing.length || empty.length
       ? `Because ${esc([...missing, ...empty].map(k => LOG_SOURCES[k].label).join(' and '))} ${missing.length + empty.length === 1 ? 'is' : 'are'} not represented, findings below are <strong>unproven rather than disproven</strong> for the traffic those logs carry. Non-interactive sign-ins in particular hold token refresh, guest resource access and much legacy authentication.`
-      : 'All four exports contain data, so the findings below cover every sign-in type Entra records.';
+      : 'All three supported exports contain data, so the findings below cover interactive, non-interactive and service-principal activity in this window.';
 
     return `<div class="status-box log-confidence">
       <strong>What this analysis could see</strong>
@@ -11094,7 +11149,8 @@
           : '<em class="status-chip import-exact">loaded</em>';
       return `<article class="log-source-tile${entry ? '' : ' missing'}">
         <span>${esc(LOG_SOURCES[key].short)}</span>
-        <strong>${esc(entry ? entry.records : 0)}</strong>
+        <strong>${esc(entry ? entry.representedEvents : 0)}</strong>
+        ${entry && entry.importedRowCount !== entry.representedEvents ? `<small>${esc(entry.importedRowCount)} grouped row(s)</small>` : ''}
         ${chip}
       </article>`;
     }).join('');
@@ -11241,7 +11297,7 @@
   function buildLogJourneyModel() {
     const la = state.logAnalysis;
     const journey = la.agg?.journey || createSignInAgg().journey;
-    const sourceIcons = { interactive: 'users', nonInteractive: 'clock', application: 'applications', msi: 'workload' };
+    const sourceIcons = { interactive: 'users', nonInteractive: 'clock', application: 'applications' };
     const sources = LOG_SOURCE_ORDER.map(id => {
       const loaded = la.sources[id];
       return {
@@ -11617,7 +11673,7 @@
     const selected = state.logAnalysis.journeySelected;
     return `<div class="log-journey${selected ? ' has-selection' : ''}">
       <header class="log-journey-head">
-        <div><span class="eyebrow">Conditional Access visual assessment</span><h2 id="logVisualTitle">See where access is protected—and where it slips through</h2><p>${esc(model.journey.total.toLocaleString())} sign-in events classified once from identity source to CA decision and outcome. ${allSources ? 'All four log sources are represented.' : 'Missing sources remain visible as blind spots.'}</p></div>
+        <div><span class="eyebrow">Conditional Access visual assessment</span><h2 id="logVisualTitle">See where access is protected—and where it slips through</h2><p>${esc(model.journey.total.toLocaleString())} sign-in events classified once from identity source to CA decision and outcome. ${allSources ? 'All three supported log sources are represented.' : 'Missing supported sources remain visible as blind spots.'}</p></div>
         <button type="button" class="btn primary log-journey-details" data-log-show-details>Detailed findings (${esc(findingCount)})</button>
       </header>
       ${renderLogJourneySummary(model)}
@@ -11847,7 +11903,7 @@
   function renderLogJourneySamples(samples) {
     const rows = (samples || []).filter(sample => sample && typeof sample === 'object' && !sample.kind).slice(0, 6);
     if (!rows.length) return '<p class="log-journey-evidence-muted">No event-level sample was retained for this observation.</p>';
-    return `<div class="log-journey-samples">${rows.map(sample => `<article><span>${esc(sample.time || 'unknown')}</span><strong>${esc(sample.principal || 'unknown')}</strong><p>${esc(sample.app || 'unknown')} · ${esc(sample.location || 'unknown')}</p></article>`).join('')}</div>`;
+    return `<div class="log-journey-samples">${rows.map(sample => `<article><span>${esc(sample.time || 'unknown')}${sample.representedEvents > 1 ? ` · represents ${esc(sample.representedEvents)} events` : ''}</span><strong>${esc(sample.principal || 'unknown')}</strong><p>${esc(sample.app || 'unknown')} · ${esc(sample.location || 'unknown')}</p></article>`).join('')}</div>`;
   }
 
   function renderLogJourneyPolicies(policies) {
@@ -11991,9 +12047,16 @@
     const explicit = {
       'decision:reportOnly': ['report-only'],
       'decision:filtered': ['ca-not-applied', 'possible-exclusions', 'uncovered-apps'],
-      'decision:noEvaluation': ['ca-not-applied', 'sp-no-ca'],
+      'decision:noEvaluation': ['ca-not-applied'],
+      'decision:workloadReportOnly': ['sp-report-only'],
+      'decision:workloadBlindspot': [],
+      'decision:outsideCa': [],
+      'decision:workloadReview': ['sp-ca-review'],
       'outcome:allowedReportOnly': ['report-only'],
-      'outcome:allowedWithoutCa': ['ca-not-applied', 'sp-no-ca', 'single-factor-success'],
+      'outcome:workloadReportOnlyFlow': ['sp-report-only'],
+      'outcome:allowedWithoutCa': ['ca-not-applied', 'single-factor-success'],
+      'outcome:workloadUnknownFlow': [],
+      'outcome:workloadReviewFlow': ['sp-ca-review'],
       'outcome:otherFailure': ['password-spray']
     }[`${type}:${id}`] || [];
     const sources = new Set(routes.map(route => route.source));
@@ -12316,7 +12379,7 @@
           <div class="log-evidence-scroll"><table class="log-evidence">
             <thead><tr><th>When (UTC)</th><th>Identity</th><th>App</th><th>Device</th><th>Location</th><th></th></tr></thead>
             <tbody>${structured.map(({ s, idx }) => `<tr${rowAttrs(s, idx)}>
-              <td>${esc(s.time)}<em>${esc(s.source)}</em></td>
+              <td>${esc(s.time)}<em>${esc(s.source)}${s.representedEvents > 1 ? ` · represents ${esc(s.representedEvents)} events` : ''}</em></td>
               <td>${esc(s.principal)}</td>
               <td>${esc(s.app)}${s.clientApp ? `<em>${esc(s.clientApp)}</em>` : ''}${s.note ? `<em>${esc(s.note)}</em>` : ''}</td>
               <td>${esc(s.device)}${s.deviceDetail ? `<em>${esc(s.deviceDetail)}</em>` : ''}${s.posture ? `<em>${esc(s.posture)}</em>` : ''}</td>
@@ -12535,7 +12598,7 @@
         ? `<div class="log-evidence-scroll"><table class="log-evidence">
             <thead><tr><th>When (UTC)</th><th>Identity</th><th>App</th><th>Device</th><th>Result</th></tr></thead>
             <tbody>${p.samples.map(x => `<tr>
-              <td>${esc(x.time)}<em>${esc(x.source)}</em></td>
+              <td>${esc(x.time)}<em>${esc(x.source)}${x.representedEvents > 1 ? ` · represents ${esc(x.representedEvents)} events` : ''}</em></td>
               <td>${esc(x.principal)}</td>
               <td>${esc(x.app)}${x.clientApp ? `<em>${esc(x.clientApp)}</em>` : ''}</td>
               <td>${esc(x.device)}${x.deviceDetail ? `<em>${esc(x.deviceDetail)}</em>` : ''}</td>
@@ -12717,7 +12780,7 @@
     });
     groups.filter(g => !groupRows.some(r => r[0] === g)).forEach(name => {
       groupRows.push([name, /service/i.test(name)
-        ? `Service and workload accounts. Members observed in your logs: ${(profile.servicePrincipals || []).concat(profile.managedIdentities || []).join(', ') || 'none in this export'}.`
+        ? `Human-operated service accounts. Service principals observed separately in your logs: ${(profile.servicePrincipals || []).join(', ') || 'none in this export'}.`
         : 'Referenced by one or more policies in this guide. Confirm membership before enabling.']);
     });
     push(docxTable(groupRows, { header: true, widths: [38, 62] }));
@@ -12730,7 +12793,6 @@
     if ((profile.countries || []).length) envRows.push(['Countries', profile.countries.map(p => `${p.name} (${p.count})`).join(', ')]);
     if ((profile.externalTenants || []).length) envRows.push(['External tenants your users signed in to', profile.externalTenants.map(p => `${p.name} (${p.count})`).join(', ')]);
     if ((profile.servicePrincipals || []).length) envRows.push(['Service principals', profile.servicePrincipals.join(', ')]);
-    if ((profile.managedIdentities || []).length) envRows.push(['Managed identities', profile.managedIdentities.join(', ')]);
     if (profile.userCount) envRows.push(['Distinct accounts seen', String(profile.userCount)]);
     if (envRows.length > 1) push(docxTable(envRows, { header: true, widths: [38, 62] }));
 
@@ -12857,7 +12919,7 @@
   function renderBasisLegend(items) {
     const counts = {};
     items.forEach(item => { counts[item.basis.kind] = (counts[item.basis.kind] || 0) + 1; });
-    // All four always show, including zeroes: a tag the reader has not hit yet still needs
+    // All severity levels always show, including zeroes: a tag the reader has not hit yet still needs
     // explaining, and "Declared 0" tells them the answer is to use the questions above.
     const entries = LOG_BASIS_LEGEND.map(l => `<li${counts[l.kind] ? '' : ' class="empty"'}>
       <span class="status-chip ${esc(basisChip(l.kind))} log-basis-chip">${esc(l.label)}</span>
