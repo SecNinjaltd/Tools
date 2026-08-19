@@ -7,6 +7,7 @@
   const RECOMMENDED_STRATEGY_THREATS = ['T1078', 'T1110', 'T1557', 'T1621', 'T1528', 'AGENT-RISK'];
   const THEME_STORAGE_KEY = 'caArchitectComplianceTheme';
   const EXPERT_STORAGE_KEY = 'caArchitectExpertDetail';
+  const TEXT_SIZE_STORAGE_KEY = 'caArchitectTextSize';
   const SHARED_GROUPS = {
     workforce: { id: 'ceeac9b8-ddf5-48cb-afcb-e2ab8bfd1a57', name: 'APP_Microsoft365_E5' },
     breakGlass: { id: '2802b872-ccfb-4b29-a9a9-459808dfb11b', name: 'CA-BreakGlassAccounts-Exclude' },
@@ -88,10 +89,193 @@
     objectCatalogKey(id, type),
     { id, type, name, source: 'static' }
   ]));
-  const WORKFLOW_TABS = new Set(['start', 'strategy-builder', 'scenario-planner', 'policy-recommendations', 'import-compare', 'log-analysis']);
+  const WORKFLOW_TABS = new Set(['start', 'strategy-builder', 'scenario-planner', 'policy-recommendations', 'log-analysis']);
   const IMPORT_FILTERS = new Set(['all', 'exact', 'different', 'missing', 'extra', 'risk']);
   const LOG_FILTERS = new Set(['all', 'high', 'medium', 'low', 'info']);
   const LOG_SOURCE_FILTERS = new Set(['all', 'interactive', 'nonInteractive', 'application', 'msi']);
+  const LOG_JOURNEY_DECISIONS = [
+    { id: 'enforcing', label: 'Enforcing policy applied', icon: 'shield-check', tone: 'protected', description: 'At least one enabled Conditional Access policy applied to the event.' },
+    { id: 'reportOnly', label: 'Report-only matched', icon: 'document-search', tone: 'review', description: 'A report-only policy matched, but no enabled policy enforced a control.' },
+    { id: 'byDesign', label: 'By-design exclusion', icon: 'branch', tone: 'neutral', description: 'The event was a managed identity or a recognised bootstrap or platform flow outside normal Conditional Access evaluation.' },
+    { id: 'filtered', label: 'Evaluated, no match', icon: 'filter', tone: 'gap', description: 'Policies were returned, but every policy was filtered out or did not apply.' },
+    { id: 'noEvaluation', label: 'No policy evaluation returned', icon: 'shield-off', tone: 'gap', description: 'The export returned no policy evaluation for this event. CSV exports may not include the policy-level detail needed to explain why.' }
+  ];
+  const LOG_JOURNEY_OUTCOMES = [
+    { id: 'blocked', label: 'Blocked by CA', icon: 'blocked', tone: 'protected', description: 'Conditional Access interrupted the sign-in.' },
+    { id: 'protectedSuccess', label: 'Protected access succeeded', icon: 'shield-check', tone: 'protected', description: 'The sign-in succeeded after an enforcing policy applied.' },
+    { id: 'allowedReportOnly', label: 'Allowed under report-only', icon: 'document-search', tone: 'review', description: 'The sign-in succeeded while the matching policy remained report-only.' },
+    { id: 'allowedWithoutCa', label: 'Allowed without a CA control', icon: 'unlock', tone: 'gap', description: 'The sign-in succeeded without an enforcing Conditional Access policy.' },
+    { id: 'byDesignFlow', label: 'By-design platform flow', icon: 'branch', tone: 'neutral', description: 'A platform, bootstrap, or managed-identity flow completed outside the normal user Conditional Access path.' },
+    { id: 'otherFailure', label: 'Other sign-in failure', icon: 'warning', tone: 'neutral', description: 'The event failed for a reason other than an observed Conditional Access block.' }
+  ];
+  const LOG_LEARN_GUIDANCE = {
+    deviceFilters: { label: 'Filter for devices', url: 'https://learn.microsoft.com/entra/identity/conditional-access/concept-condition-filters-for-devices' },
+    grantControls: { label: 'Conditional Access grant controls', url: 'https://learn.microsoft.com/entra/identity/conditional-access/concept-conditional-access-grant' },
+    sessionControls: { label: 'Conditional Access session controls', url: 'https://learn.microsoft.com/entra/identity/conditional-access/concept-conditional-access-session' },
+    externalDeviceTrust: { label: 'External-user device trust', url: 'https://learn.microsoft.com/entra/external-id/authentication-conditional-access' },
+    reportOnly: { label: 'Report-only evaluation', url: 'https://learn.microsoft.com/entra/identity/conditional-access/concept-conditional-access-report-only' },
+    deployment: { label: 'Plan a Conditional Access deployment', url: 'https://learn.microsoft.com/entra/identity/conditional-access/plan-conditional-access' }
+  };
+  const LOG_JOURNEY_GUIDANCE = {
+    'device-identity': {
+      notes: [
+        'A device identity lets Conditional Access evaluate directory-backed device attributes. Registration or join state is useful context, but it does not prove compliance.',
+        'Device filters evaluate registered devices. When the intent is to include unregistered devices, Microsoft recommends a negative operator because their device properties are null.',
+        'The device-code OAuth flow cannot pass the authenticating device state to the device that displays the code; use an appropriate authentication control instead.'
+      ],
+      links: ['deviceFilters', 'grantControls']
+    },
+    'device-compliance': {
+      notes: [
+        'Compliance requires a registered device and a supported management path. A managed device that fails compliance needs remediation; an unmanaged device needs enrolment or a deliberate alternate access path.',
+        'Microsoft Entra hybrid joined is a Windows-specific grant and should not be the default for a cloud-native estate.',
+        'A compliant-device policy in report-only can still prompt macOS, iOS and Android users to select a device certificate during evaluation.'
+      ],
+      links: ['grantControls', 'reportOnly']
+    },
+    'byod-protection': {
+      notes: [
+        'App protection and restricted browser experiences are alternatives for supported unmanaged-device scenarios; they are not universal replacements for device compliance.',
+        'External users can present compliance or hybrid-join claims from their home tenant only when cross-tenant inbound trust is configured.'
+      ],
+      links: ['grantControls', 'externalDeviceTrust']
+    },
+    'session-protection': {
+      notes: [
+        'Sign-in frequency, persistent browser, application-enforced restrictions, Conditional Access App Control, token protection and continuous access evaluation solve different problems.',
+        'Recommend a session control only when the target application, client and operational requirement support it.'
+      ],
+      links: ['sessionControls']
+    },
+    'report-only-state': {
+      notes: [
+        'Report-only Success, Failure, User action required and Not applied describe different evaluation results. The report-only policy itself enforces nothing, but another enabled policy can still protect the same event.'
+      ],
+      links: ['reportOnly']
+    },
+    'runtime-coverage': {
+      notes: [
+        'Loaded sign-in sources and returned fields define what this assessment can prove. Policy configuration is not substituted for missing runtime evidence.'
+      ],
+      links: ['deployment']
+    }
+  };
+  const LOG_DEVICE_CONTEXT_STATES = [
+    { id: 'unregistered', label: 'No device identity' },
+    { id: 'registeredNotCompliant', label: 'Registered but unmanaged' },
+    { id: 'enrolledNotCompliant', label: 'Managed but noncompliant' },
+    { id: 'compliant', label: 'Compliant' },
+    { id: 'unknown', label: 'Posture not returned' }
+  ];
+  const LOG_RECOMMENDATION_PRIMARY_ELEMENT = {
+    mfa: 'mfa-coverage',
+    admin_mfa: 'mfa-coverage',
+    phish_mfa: 'auth-strength',
+    legacy_auth: 'legacy-controls',
+    auth_flows: 'authentication-flows',
+    unknown_platforms: 'authentication-flows',
+    device_registration_mfa: 'device-identity',
+    intune_enrollment_mfa: 'device-identity',
+    device_compliance: 'device-compliance',
+    agent_compliant_device: 'device-compliance',
+    app_protection: 'byod-protection',
+    session_controls: 'session-protection',
+    persistent_browser: 'session-protection',
+    admin_session: 'session-protection',
+    sign_in_risk: 'risk-protection',
+    user_risk: 'risk-protection',
+    trusted_location: 'location-context',
+    guest_access: 'guest-scope',
+    selected_app_block: 'application-scope',
+    users_agent_resources_block: 'application-scope',
+    service_account_protection: 'service-account-scope',
+    agent_identity_block: 'managed-identities',
+    agent_users_block: 'managed-identities',
+    agent_risk: 'managed-identities',
+    agent_user_risk: 'managed-identities',
+    agent_compliant_network: 'managed-identities'
+  };
+  const LOG_RECOMMENDATION_ACTION_TIERS = {
+    actNow: { label: 'Act now', rank: 3 },
+    validateFirst: { label: 'Validate first', rank: 2 },
+    optionalAdvanced: { label: 'Optional / advanced', rank: 1 }
+  };
+  const LOG_RECOMMENDATION_CONTROL_DECLARATIONS = {
+    device_compliance: ['intune'],
+    intune_enrollment_mfa: ['intune'],
+    app_protection: ['intune'],
+    agent_compliant_device: ['intune', 'agents'],
+    sign_in_risk: ['entraP2'],
+    user_risk: ['entraP2'],
+    trusted_location: ['locations'],
+    guest_access: ['guests'],
+    service_account_protection: ['serviceAccounts'],
+    agent_risk: ['agents'],
+    agent_identity_block: ['agents'],
+    agent_user_risk: ['agents'],
+    agent_compliant_network: ['agents', 'locations'],
+    agent_users_block: ['agents'],
+    users_agent_resources_block: ['agents']
+  };
+  const LOG_RECOMMENDATION_CAPABILITY_PREREQUISITES = {
+    app_protection: 'Confirm the target platform, application and app-protection capability are supported.',
+    session_controls: 'Confirm the selected session capability is supported by the target application and client.',
+    persistent_browser: 'Confirm browser persistence behaviour is supported and appropriate for the target client.',
+    admin_session: 'Confirm the selected administrator session controls are supported by the target application and client.',
+    auth_flows: 'Confirm which authentication flows are in use and validate a supported control for each flow.',
+    unknown_platforms: 'Confirm platform detection behaviour and the intended fallback path before blocking unknown platforms.',
+    selected_app_block: 'Confirm the exact application scope and identifiers before creating a block policy.'
+  };
+  const LOG_JOURNEY_STAGES = [
+    {
+      id: 'scope', label: 'Scope & Targeting', icon: 'target', summary: 'Who and what the policy reaches.',
+      elements: [
+        { id: 'identity-scope', label: 'Workforce & admin scope', icon: 'users', findingIds: [], sources: ['interactive', 'nonInteractive'], why: 'Workforce and administrator assignments decide which human identities reach the rest of the policy.' },
+        { id: 'guest-scope', label: 'Guest & external scope', icon: 'external', findingIds: ['guest-uncontrolled'], sources: ['interactive', 'nonInteractive'], why: 'Inbound guests remain subject to your tenant policies, while trusted claims and outbound access are governed through cross-tenant settings.' },
+        { id: 'service-account-scope', label: 'Human service-account scope', icon: 'certificate', findingIds: [], sources: ['interactive', 'nonInteractive'], defaultStatus: 'review', why: 'Human-operated service accounts are user objects and can be protected by workforce Conditional Access; workload service principals use a separate policy and licensing boundary.' },
+        { id: 'application-scope', label: 'Application scope', icon: 'applications', findingIds: ['uncovered-apps'], sources: ['interactive'], why: 'Target resources determine which applications and services are actually protected.' },
+        { id: 'exclusions-filters', label: 'Exclusions & filters', icon: 'filter', findingIds: ['possible-exclusions'], sources: ['interactive'], field: 'appliedPolicies', why: 'Exclusions and filters can create deliberate exceptions or accidental coverage gaps.' }
+      ]
+    },
+    {
+      id: 'authentication', label: 'Authentication & Grant', icon: 'key', summary: 'How access is challenged or blocked.',
+      elements: [
+        { id: 'mfa-coverage', label: 'MFA coverage', icon: 'key', findingIds: ['single-factor-success'], sources: ['interactive'], positive: 'mfa', why: 'MFA coverage answers whether a password alone was enough on the measured path.' },
+        { id: 'auth-strength', label: 'Authentication strength', icon: 'certificate', findingIds: ['weak-mfa'], sources: ['interactive'], positive: 'authStrength', why: 'Authentication strength distinguishes any MFA from passwordless or phishing-resistant methods.' },
+        { id: 'legacy-controls', label: 'Legacy authentication', icon: 'clock', findingIds: ['legacy-auth'], sources: ['interactive', 'nonInteractive'], why: 'Legacy clients cannot satisfy modern authentication controls and should be blocked after migration.' },
+        { id: 'authentication-flows', label: 'Authentication flows', icon: 'branch', findingIds: [], sources: ['interactive', 'nonInteractive'], field: 'appliedPolicies', defaultStatus: 'review', why: 'Device code, authentication transfer and similar flows require controls designed for how the authentication is completed.' }
+      ]
+    },
+    {
+      id: 'device', label: 'Device & Session', icon: 'device', summary: 'Device trust and session hardening.',
+      elements: [
+        { id: 'device-identity', label: 'Device identity', icon: 'device', findingIds: [], sources: ['interactive'], field: 'deviceIdentity', defaultStatus: 'review', why: 'Registration and join state determine whether Entra has a device object whose attributes can be evaluated.' },
+        { id: 'device-compliance', label: 'Compliance & management', icon: 'shield-check', findingIds: ['noncompliant-device', 'outdated-os'], sources: ['interactive'], field: 'devicePosture', positive: 'deviceCompliance', why: 'Management supplies posture and compliance evaluates it; join state alone is not proof of a healthy device.' },
+        { id: 'byod-protection', label: 'Unmanaged / BYOD protection', icon: 'applications', findingIds: [], sources: ['interactive'], field: 'devicePosture', positive: 'byod', defaultStatus: 'review', why: 'Supported app-protection and restricted-browser paths can contain corporate data when full device management is inappropriate.' },
+        { id: 'session-protection', label: 'Session protection', icon: 'session', findingIds: [], sources: ['interactive', 'nonInteractive'], field: 'appliedPolicies', positive: 'session', defaultStatus: 'review', why: 'Session controls limit persistence, data movement or token replay after access is granted, where the application and client support them.' }
+      ]
+    },
+    {
+      id: 'context', label: 'Context & Risk', icon: 'risk', summary: 'Risk, location and behavioural context.',
+      elements: [
+        { id: 'risk-protection', label: 'Risk protection', icon: 'risk', findingIds: ['risky-signin-success', 'password-spray', 'impossible-travel'], sources: ['interactive', 'nonInteractive'], field: 'riskLevels', why: 'Identity Protection signals should trigger an appropriate challenge or block when risk is elevated.' },
+        { id: 'location-context', label: 'Location context', icon: 'location', findingIds: ['geo-spread', 'sp-location-spread'], sources: ['interactive', 'nonInteractive', 'application'], findingStatus: 'review', why: 'Named locations and workload geography help distinguish expected access from routes that need review. Geography alone does not prove malicious access or a missing policy.' }
+      ]
+    },
+    {
+      id: 'enforcement', label: 'Enforcement & Validation', icon: 'shield-check', summary: 'What actually applied at runtime.',
+      elements: [
+        { id: 'applied-path', label: 'Applied policy path', icon: 'shield-check', findingIds: ['ca-not-applied', 'sp-no-ca'], sources: ['interactive', 'nonInteractive', 'application'], positive: 'enforcing', why: 'Runtime results show whether an enabled policy actually reached and acted on the sign-in.' },
+        { id: 'report-only-state', label: 'Report-only state', icon: 'document-search', findingIds: ['report-only'], sources: ['interactive', 'nonInteractive', 'application'], field: 'appliedPolicies', why: 'Report-only is evidence of intent and impact testing, not enforcement.' },
+        { id: 'runtime-coverage', label: 'Runtime coverage', icon: 'pulse', findingIds: [], sources: ['interactive', 'nonInteractive', 'application', 'msi'], why: 'All four sign-in sources are needed to understand user, token refresh and workload activity across the tenant.' }
+      ]
+    }
+  ];
+  const LOG_JOURNEY_ADJACENT = [
+    { id: 'outbound-b2b', label: 'Outbound B2B', icon: 'external', findingIds: ['outbound-b2b'], sources: ['interactive', 'nonInteractive'], why: 'The destination tenant controls access. Your lever is Cross-Tenant Access outbound configuration.' },
+    { id: 'sp-credentials', label: 'Service-principal credential hygiene', icon: 'certificate', findingIds: ['sp-credential-hygiene'], sources: ['application'], why: 'Secrets, certificates and federation are application-identity controls rather than Conditional Access coverage.' },
+    { id: 'managed-identities', label: 'Managed identities & Azure RBAC', icon: 'workload', findingIds: ['msi-inventory'], sources: ['msi'], why: 'Managed identities are governed through Azure role assignments, resource scope and workload monitoring.' }
+  ];
   const COMPARE_FIELDS = [
     { path: ['state'], label: 'State' },
     { path: ['conditions', 'users', 'includeUsers'], label: 'Included users' },
@@ -1340,6 +1524,7 @@
       question: 'Do you use Intune to manage devices?',
       why: 'Device compliance and enrolment policies lock out every user if Intune is not enrolling and marking devices compliant first.',
       requirements: ['managedDevices'],
+      controls: ['device_compliance', 'intune_enrollment_mfa', 'app_protection', 'unknown_platforms', 'agent_compliant_device'],
       unknownNote: 'Device management policies are included because these logs cannot confirm whether Intune is in use.'
     },
     {
@@ -1412,6 +1597,7 @@
       externalCompatibility: false
     },
     expertMode: savedExpertMode(),
+    textSize: savedTextSize(),
     selectedPersona: 'All',
     selectedId: null,
     search: '',
@@ -1434,8 +1620,14 @@
   const clone = obj => JSON.parse(JSON.stringify(obj));
   const policyKey = item => item.sourceFile;
   let visualFlyoutOpener = null;
+  let logJourneySelectionOpener = null;
+  let logJourneyResizeObserver = null;
+  let logJourneyDrawFrame = 0;
+  let logJourneyRevealFrame = 0;
+  let accessibleRegionsFrame = 0;
 
   function init() {
+    applyTextSize(state.textSize);
     applyTheme(savedTheme());
     applyExpertMode(state.expertMode);
     allPolicies().forEach(item => {
@@ -1459,6 +1651,9 @@
       applyTheme(nextTheme, true);
     });
     $('expertModeToggle').addEventListener('click', () => applyExpertMode(!state.expertMode, true));
+    $('textSizeToggle').addEventListener('click', () => {
+      applyTextSize(state.textSize === 'large' ? 'standard' : 'large', true);
+    });
     document.querySelectorAll('button[data-tab]').forEach(btn => {
       btn.addEventListener('click', () => setActiveTab(btn.dataset.tab));
     });
@@ -1789,6 +1984,19 @@
       state.logAnalysis.sourceFilter = btn.dataset.logSourceFilter;
       renderLogAnalysis();
     });
+    $('logViewControl').addEventListener('click', e => {
+      if (!e.target.closest('[data-log-show-visual]')) return;
+      state.logAnalysis.view = 'visual';
+      state.logAnalysis.journeySelected = null;
+      renderLogAnalysis();
+    });
+    $('logVisualContent').addEventListener('click', onLogVisualInteraction);
+    $('logVisualContent').addEventListener('toggle', event => {
+      const disclosure = event.target.closest?.('details.log-journey-declarations');
+      if (!disclosure || event.target !== disclosure) return;
+      state.logAnalysis.tenantAssumptionsExpanded = disclosure.open;
+    }, true);
+    document.addEventListener('keydown', onLogJourneyKeydown);
     $('logStrategyCta').addEventListener('click', e => {
       if (e.target.closest('#logBuildStrategyBtn')) buildStrategyFromFindings();
       if (e.target.closest('#logBuildGuideBtn')) exportBuildGuideDocx();
@@ -1840,14 +2048,60 @@
     }
   }
 
+  function savedTextSize() {
+    try {
+      return localStorage.getItem(TEXT_SIZE_STORAGE_KEY) === 'large' ? 'large' : 'standard';
+    } catch (_) {
+      return 'standard';
+    }
+  }
+
+  function applyTextSize(size, persist = false) {
+    state.textSize = size === 'large' ? 'large' : 'standard';
+    document.documentElement.dataset.textSize = state.textSize;
+    const toggle = $('textSizeToggle');
+    if (toggle) {
+      const isLarge = state.textSize === 'large';
+      toggle.textContent = `Text size: ${state.textSize}`;
+      toggle.setAttribute('aria-pressed', String(isLarge));
+      toggle.setAttribute('aria-label', isLarge ? 'Use standard text size' : 'Use large text size');
+    }
+    if (persist) {
+      try {
+        localStorage.setItem(TEXT_SIZE_STORAGE_KEY, state.textSize);
+      } catch (_) {
+        // Text-size persistence is optional; the current session still updates.
+      }
+    }
+    scheduleScrollableRegionEnhancement();
+  }
+
+  function scheduleScrollableRegionEnhancement() {
+    cancelAnimationFrame(accessibleRegionsFrame);
+    accessibleRegionsFrame = requestAnimationFrame(() => {
+      const regions = [
+        ['pre, .json-output, .json-preview', 'Scrollable technical output'],
+        ['.table-wrap, .comparison-table-wrap, .log-evidence-scroll', 'Scrollable data table']
+      ];
+      regions.forEach(([selector, label]) => {
+        document.querySelectorAll(selector).forEach(region => {
+          if (region.scrollWidth <= region.clientWidth + 1 && region.scrollHeight <= region.clientHeight + 1) return;
+          if (!region.hasAttribute('tabindex')) region.tabIndex = 0;
+          if (!region.hasAttribute('role')) region.setAttribute('role', 'region');
+          if (!region.hasAttribute('aria-label')) region.setAttribute('aria-label', label);
+        });
+      });
+    });
+  }
+
   function applyExpertMode(enabled, persist = false) {
     state.expertMode = Boolean(enabled);
     document.documentElement.dataset.expert = state.expertMode ? 'on' : 'off';
     const toggle = $('expertModeToggle');
     if (toggle) {
-      toggle.textContent = `Expert detail: ${state.expertMode ? 'on' : 'off'}`;
+      toggle.textContent = `Advanced detail: ${state.expertMode ? 'on' : 'off'}`;
       toggle.setAttribute('aria-pressed', String(state.expertMode));
-      toggle.setAttribute('aria-label', state.expertMode ? 'Hide expert detail' : 'Show expert detail');
+      toggle.setAttribute('aria-label', state.expertMode ? 'Hide advanced detail' : 'Show advanced detail');
     }
     if (!state.expertMode && ['adjust', 'json'].includes(state.detailView)) state.detailView = 'overview';
     if (persist) {
@@ -2881,6 +3135,7 @@
     renderImport();
     renderLogAnalysis();
     renderSegmented('policyViewControl', state.policyView, 'view');
+    scheduleScrollableRegionEnhancement();
   }
 
   function renderTabs() {
@@ -5271,7 +5526,7 @@
       ? `<div class="manual-callout guide-only"><strong>Readiness required before enabled export</strong><span>${esc(authenticationReadinessMissing(state.appliedStrategy?.requirements || state.strategy, item).map(key => AUTHENTICATION_READINESS_STEPS.find(step => step.id === key)?.label || key).join(', '))}. Report-only export remains available.</span></div>`
       : '';
     const authenticationStrength = renderAuthenticationStrengthReadiness(item, exported);
-    const simpleNote = state.expertMode ? '' : '<div class="manual-callout simple"><strong>Configured settings only</strong><span>Turn on Expert detail to show raw object IDs and every unconfigured Entra section.</span></div>';
+    const simpleNote = state.expertMode ? '' : '<div class="manual-callout simple"><strong>Configured settings only</strong><span>Turn on Advanced detail to show raw object IDs and every unconfigured Entra section.</span></div>';
     $('manualGuide').innerHTML = `${guideOnly}${authenticationBlocked}${preview}${simpleNote}${manualPolicySnapshot(exported)}${authenticationStrength}
       <div class="manual-path-layout">
         <nav class="manual-path-nav" aria-label="Entra policy build sections">
@@ -6703,8 +6958,8 @@
       verify: 'This is informational. Success is that every external tenant listed is one you recognise and intend, and that outbound access settings match that list.'
     },
     'report-only': {
-      cause: 'These policies are in report-only mode. Entra evaluates them and records what they would have done, but applies nothing. Report-only is the correct way to test a policy before enforcing it — the problem is a policy left there indefinitely, which reads as protection on the dashboard while providing none.',
-      attack: 'There is no attack path here specifically — the risk is the false sense of coverage. Your policy list looks complete, but the controls in these policies are not being applied to a single sign-in.',
+      cause: 'These policies are in report-only mode. Entra evaluates them and records what they would have done, but the report-only policy itself applies no control. Report-only is the correct way to test a policy before enforcement; another enabled policy may still protect the same sign-in.',
+      attack: 'There is no attack path here specifically. The risk is treating a report-only evaluation as runtime protection without checking whether an enabled policy actually acted on the same route.',
       flow: [
         { label: 'Policy evaluated against the sign-in', state: 'ok' },
         { label: 'Report-only — result logged, not enforced', state: 'gap' },
@@ -6712,9 +6967,9 @@
         { label: 'Sign-in proceeds as if the policy did not exist', state: 'result' }
       ],
       fix: [
-        'Review the report-only results per policy in the sign-in logs — the "would have" outcome tells you the real blast radius before you commit.',
-        'Where the impact is acceptable, switch the policy to On. Any policy that has sat in report-only for more than a few weeks is either ready to enable or should be deleted.',
-        'Where the impact is not acceptable, fix the exclusions or scope rather than leaving it parked in report-only forever.'
+        'Review Success, Failure, User action required and Not applied separately for each policy in the sign-in logs. Also confirm whether another enabled policy protected the same event.',
+        'Where the impact is acceptable, validate with pilot users and stage the policy to On. Retire it only when its intended control is no longer required or is demonstrably covered elsewhere.',
+        'Where the impact is not acceptable, fix the exclusions or scope, retest with pilot users and stage enablement rather than leaving the policy indefinitely in report-only.'
       ],
       verify: 'After enabling, confirm in the sign-in logs that the policy now reports success or failure rather than a reportOnly result.'
     },
@@ -6967,6 +7222,10 @@
     trustType: ['jointype', 'trusttype'],
     deviceName: ['device', 'devicename', 'devicedisplayname'],
     deviceId: ['deviceid'],
+    deviceOwnership: ['deviceownership', 'ownership'],
+    operatingSystemVersion: ['operatingsystemversion', 'osversion'],
+    mdmAppId: ['mdmappid', 'managementappid'],
+    enrollmentProfileName: ['enrollmentprofilename', 'enrolmentprofilename'],
     location: ['location'],
     status: ['status'],
     errorCode: ['signinerrorcode', 'errorcode'],
@@ -7098,6 +7357,10 @@
       policyInventory: null,
       recommendedPolicySet: null,
       declarations: defaultDeclarations(),
+      view: 'visual',
+      journeySelected: null,
+      observedPoliciesExpanded: false,
+      tenantAssumptionsExpanded: false,
       // Kept so a declaration change can re-simulate without re-reading the files.
       agg: null
     };
@@ -7114,13 +7377,14 @@
     state.activeTab = 'log-analysis';
     state.logAnalysis = emptyLogAnalysis();
     renderAll();
+    showLogStatus(`Preparing ${batch.length} file${batch.length === 1 ? '' : 's'} for analysis…`);
     const agg = createSignInAgg();
     const loaded = [];
     const failures = [];
     const sources = {};
     const formats = new Set();
     batch.reduce((chain, file, index) => chain.then(() => {
-      $('logStatus').textContent = `Reading ${file.name} (${index + 1} of ${batch.length})…`;
+      showLogStatus(`Reading ${file.name} (${index + 1} of ${batch.length})…`);
       if (file.size > LOG_MAX_FILE_BYTES) {
         warnings.push(`${file.name} is ${Math.round(file.size / 1048576)} MB — very large files may exhaust browser memory.`);
       }
@@ -7138,7 +7402,7 @@
       .catch(err => {
         state.logAnalysis = emptyLogAnalysis();
         renderAll();
-        $('logStatus').textContent = err.message || 'Could not analyse the sign-in logs.';
+        showLogStatus(err.message || 'Could not analyse the sign-in logs.');
         toast('Log analysis failed');
       })
       .then(() => { $('logFileInput').value = ''; });
@@ -7204,7 +7468,7 @@
       state.logAnalysis = emptyLogAnalysis();
       state.logAnalysis.failures = failures;
       renderAll();
-      $('logStatus').textContent = failures.length ? failures[0].message : 'No sign-in records found in the selected files.';
+      showLogStatus(failures.length ? failures[0].message : 'No sign-in records found in the selected files.');
       toast('Log analysis failed');
       return;
     }
@@ -7351,6 +7615,7 @@
         grants: top(inv.grants, 6).map(g => ({ ...g, label: controlLabelFor(g.name) })),
         sessions: top(inv.sessions, 6).map(s => ({ ...s, label: controlLabelFor(s.name) })),
         authStrength: top(inv.authStrength, 3),
+        reportOnlyResults: top(inv.reportOnlyResults || new Map(), 8),
         topUsers: top(inv.users),
         topApps: top(inv.apps),
         topDevices: top(inv.devices),
@@ -7656,6 +7921,122 @@
       .filter(group => group.policies.length);
   }
 
+  function logRecommendationPrimaryElement(item) {
+    const mapped = (item.controls || []).map(control => LOG_RECOMMENDATION_PRIMARY_ELEMENT[control]).filter(Boolean);
+    if (mapped.length) return mapped[0];
+    const category = policyCategory(item.id).key;
+    return {
+      admins: 'identity-scope', workforce: 'identity-scope', guests: 'guest-scope',
+      service: 'service-account-scope', agents: 'managed-identities', tenant: 'applied-path'
+    }[category] || 'applied-path';
+  }
+
+  function logRecommendationDeclarationKeys(item) {
+    const keys = new Set();
+    (item.controls || []).forEach(control => (LOG_RECOMMENDATION_CONTROL_DECLARATIONS[control] || []).forEach(key => keys.add(key)));
+    const categoryKey = policyCategory(item.id).key;
+    if (categoryKey === 'guests') keys.add('guests');
+    if (categoryKey === 'service') keys.add('serviceAccounts');
+    if (categoryKey === 'agents') keys.add('agents');
+    return [...keys];
+  }
+
+  function logRecommendationPrerequisites(item, answers) {
+    const controls = item.controls || [];
+    const declarations = answers || defaultDeclarations();
+    const records = [];
+    logRecommendationDeclarationKeys(item).forEach(key => {
+      const declaration = LOG_DECLARATIONS.find(entry => entry.key === key);
+      const answer = declarations[key] || 'unknown';
+      records.push({
+        key: `declaration:${key}`,
+        declarationKey: key,
+        label: declaration ? declaration.question.replace(/\?$/, '') : key,
+        status: answer === 'yes' ? 'confirmed' : answer === 'no' ? 'incompatible' : 'unresolved',
+        detail: answer === 'yes'
+          ? 'Confirmed by the tenant assumption answer.'
+          : answer === 'no'
+            ? 'The tenant answer makes this policy family incompatible; do not deploy it while that answer remains no.'
+            : declaration?.unknownNote || 'This prerequisite has not been confirmed.'
+      });
+    });
+    [...new Set(controls)].forEach(control => {
+      const label = LOG_RECOMMENDATION_CAPABILITY_PREREQUISITES[control];
+      if (!label) return;
+      records.push({
+        key: `capability:${control}`,
+        control,
+        label,
+        status: 'unresolved',
+        detail: 'Validate support against the exact applications, clients and platforms in scope.'
+      });
+    });
+    if (controls.some(control => control.startsWith('agent_')) || /^CA5/.test(item.id) || isPreviewPolicy(item)) {
+      records.push({
+        key: 'capability:preview',
+        label: 'Confirm preview capability, licensing and production support boundaries.',
+        status: 'unresolved',
+        detail: 'Preview features require an explicit design and support decision before production use.'
+      });
+    }
+    return [...new Map(records.map(record => [record.key, record])).values()];
+  }
+
+  function logRecommendationMetadata(item, drivers, basis, answers) {
+    const controls = item.controls || [];
+    const primaryElementId = logRecommendationPrimaryElement(item);
+    const secondaryElementIds = [...new Set(controls.map(control => LOG_RECOMMENDATION_PRIMARY_ELEMENT[control]).filter(id => id && id !== primaryElementId))];
+    const declarationKeys = logRecommendationDeclarationKeys(item);
+    const prerequisites = logRecommendationPrerequisites(item, answers);
+    const unresolvedPrerequisites = prerequisites.filter(item => item.status === 'unresolved');
+    const incompatiblePrerequisites = prerequisites.filter(item => item.status === 'incompatible');
+    const preview = controls.some(control => control.startsWith('agent_')) || /^CA5/.test(item.id) || isPreviewPolicy(item);
+    const outsideCa = primaryElementId === 'sp-credentials';
+    const reasonLabels = [];
+    if (drivers.length) reasonLabels.push('Evidence-led');
+    if (basis.kind === 'declared') reasonLabels.push('Tenant choice');
+    if (basis.kind === 'unconfirmed' || unresolvedPrerequisites.length || incompatiblePrerequisites.length) reasonLabels.push('Prerequisite');
+    if (controls.some(control => ['sign_in_risk', 'user_risk', 'agent_risk', 'agent_user_risk'].includes(control))) reasonLabels.push('Licence required');
+    if (preview) reasonLabels.push('Preview');
+    if (outsideCa) reasonLabels.push('Outside CA');
+    let actionTier = 'actNow';
+    if (!drivers.length && (basis.kind === 'unconfirmed' || preview || outsideCa)) actionTier = 'optionalAdvanced';
+    else if (unresolvedPrerequisites.length || incompatiblePrerequisites.length) actionTier = 'validateFirst';
+    const linkKeys = new Set(['deployment']);
+    const relatedElementIds = new Set([primaryElementId, ...secondaryElementIds]);
+    if (['device-identity', 'device-compliance', 'byod-protection'].some(id => relatedElementIds.has(id))) ['deviceFilters', 'grantControls'].forEach(key => linkKeys.add(key));
+    if (relatedElementIds.has('session-protection')) linkKeys.add('sessionControls');
+    if (relatedElementIds.has('guest-scope')) linkKeys.add('externalDeviceTrust');
+    return {
+      actionTier,
+      actionTierLabel: LOG_RECOMMENDATION_ACTION_TIERS[actionTier].label,
+      reasonLabels: [...new Set(reasonLabels.length ? reasonLabels : ['Baseline'])],
+      primaryElementId,
+      secondaryElementIds,
+      declarationKeys,
+      applicability: drivers.length ? 'Directly connected to measured finding evidence.' : basis.detail,
+      prerequisites,
+      unresolvedPrerequisites,
+      incompatiblePrerequisites,
+      capabilityStatus: incompatiblePrerequisites.length
+        ? 'Incompatible with a current tenant assumption'
+        : preview
+          ? 'Preview or capability-limited'
+          : unresolvedPrerequisites.length
+            ? 'Supported when prerequisites and tenant intent are confirmed'
+            : 'Broadly applicable supported control',
+      guidanceUrls: [...linkKeys].map(key => LOG_LEARN_GUIDANCE[key]).filter(Boolean)
+    };
+  }
+
+  function logRecommendationPriority(policy) {
+    const severity = { high: 4, medium: 3, low: 2, info: 1 };
+    const findingScore = policy.drivers.reduce((score, driver) => Math.max(score, severity[driver.severity] || 0), 0);
+    const affected = policy.drivers.reduce((sum, driver) => sum + (Number(driver.affected) || 0), 0);
+    const tierRank = LOG_RECOMMENDATION_ACTION_TIERS[policy.actionTier]?.rank || 0;
+    return tierRank * 1000000000 + findingScore * 100000000 + Math.min(affected, 99999999);
+  }
+
   function buildRecommendedPolicySet(agg, findings, declarations) {
     const handoff = strategyHandOffFromFindings(findings, declarations);
     if (!handoff.requirementKeys.length) return null;
@@ -7767,6 +8148,8 @@
       })),
       policies: items.map(item => {
         const drivers = driversFor(item);
+        const basis = basisFor(item, drivers);
+        const recommendation = logRecommendationMetadata(item, drivers, basis, answers);
         return {
         id: item.id,
         displayName: item.displayName,
@@ -7780,7 +8163,8 @@
         consolidated: Boolean(item.consolidated || item.kind === 'consolidated'),
         settings: policyFixSettings(item),
         drivers,
-        basis: basisFor(item, drivers),
+        basis,
+        ...recommendation,
         tailoring: policyTailoring(item, profile),
         requiredObjects: item.requiredObjects || [],
         // The original strategy item, so the Word guide can reuse manualGuideSections()
@@ -7788,7 +8172,7 @@
         source: item,
         coverage: coverage.policies[item.id] || null
         };
-      })
+      }).sort((a, b) => logRecommendationPriority(b) - logRecommendationPriority(a) || a.id.localeCompare(b.id))
     };
   }
 
@@ -7852,7 +8236,7 @@
     if (!detected.source) {
       const policyLike = rows.some(row => 'conditions' in row || 'grantControls' in row);
       throw new Error(policyLike
-        ? 'This looks like a Conditional Access policy export, not sign-in logs. Use the Audit tab to compare policies.'
+        ? 'This looks like a Conditional Access policy export, not sign-in logs. Export Entra sign-in records instead.'
         : 'No sign-in records recognised. Expected an Entra ID sign-in log export (portal JSON download or Graph auditLogs/signIns).');
     }
     const isWorkload = LOG_SOURCES[detected.source].kind === 'workload';
@@ -7900,6 +8284,10 @@
       trustType: '',
       deviceName: '',
       deviceId: '',
+      deviceOwnership: '',
+      operatingSystemVersion: '',
+      mdmAppId: '',
+      enrollmentProfileName: '',
       browser: '',
       deviceState: 'unknown',
       incomingTokenType: normToken(row.incomingTokenType),
@@ -7937,7 +8325,8 @@
     const deviceState = device.isCompliant === true ? 'compliant'
       : device.isCompliant !== false ? 'unknown'
         : !hasDeviceIdentity ? 'unregistered'
-          : device.isManaged === true ? 'enrolledNotCompliant' : 'registeredNotCompliant';
+          : device.isManaged === true ? 'enrolledNotCompliant'
+            : device.isManaged === false ? 'registeredNotCompliant' : 'unknown';
     return {
       deviceState,
       source: source || 'interactive',
@@ -7969,6 +8358,10 @@
       trustType: device.trustType || '',
       deviceName: device.displayName || '',
       deviceId: device.deviceId || '',
+      deviceOwnership: device.deviceOwnership || row.deviceOwnership || '',
+      operatingSystemVersion: device.operatingSystemVersion || row.operatingSystemVersion || '',
+      mdmAppId: device.mdmAppId || row.mdmAppId || '',
+      enrollmentProfileName: device.enrollmentProfileName || row.enrollmentProfileName || '',
       browser: device.browser || '',
       osBuild,
       osVersion: windowsVersion ? windowsVersion.label : '',
@@ -8098,6 +8491,10 @@
         trustType: col(cells, 'trustType'),
         deviceName: col(cells, 'deviceName'),
         deviceId: col(cells, 'deviceId'),
+        deviceOwnership: col(cells, 'deviceOwnership'),
+        operatingSystemVersion: col(cells, 'operatingSystemVersion'),
+        mdmAppId: col(cells, 'mdmAppId'),
+        enrollmentProfileName: col(cells, 'enrollmentProfileName'),
         browser: col(cells, 'browser'),
         originalTransferMethod: '',
         homeTenantId: '',
@@ -8106,7 +8503,8 @@
         deviceState: yesNo(col(cells, 'isCompliant')) === true ? 'compliant'
           : yesNo(col(cells, 'isCompliant')) !== false ? 'unknown'
             : (col(cells, 'deviceName') || col(cells, 'deviceId') || col(cells, 'trustType'))
-              ? (yesNo(col(cells, 'isManaged')) === true ? 'enrolledNotCompliant' : 'registeredNotCompliant')
+              ? (yesNo(col(cells, 'isManaged')) === true ? 'enrolledNotCompliant'
+                : yesNo(col(cells, 'isManaged')) === false ? 'registeredNotCompliant' : 'unknown')
               : 'unregistered',
         incomingTokenType: '',
         country: locationText ? locationText.split(',').pop().trim() : '',
@@ -8152,10 +8550,35 @@
       // which condition stopped each policy matching?
       caGap: { notEngaged: 0, evaluated: 0, platformFlow: 0, conditions: new Map(), policies: new Map() },
       deviceGap: new Map(),
+      deviceContext: {
+        total: 0,
+        bySource: new Map(),
+        byState: new Map(LOG_DEVICE_CONTEXT_STATES.map(item => [item.id, 0])),
+        findingStates: new Map(LOG_DEVICE_CONTEXT_STATES.slice(0, 3).map(item => [item.id, 0])),
+        joinStates: new Map(),
+        platforms: new Map(),
+        ownership: new Map(),
+        browsers: new Map(),
+        clientApps: new Map(),
+        attributes: new Set(),
+        attributeValues: new Map(),
+        deviceCodeFlows: 0,
+        inboundGuests: 0,
+        samples: []
+      },
       tenantId: '',
       outboundB2B: { count: 0, users: new Map(), tenants: new Map() },
       guestDirectionUnknown: 0,
       policyInventory: new Map(),
+      journey: {
+        total: 0,
+        sources: new Map(LOG_SOURCE_ORDER.map(key => [key, 0])),
+        decisions: new Map(LOG_JOURNEY_DECISIONS.map(item => [item.id, 0])),
+        outcomes: new Map(LOG_JOURNEY_OUTCOMES.map(item => [item.id, 0])),
+        sourceDecision: new Map(),
+        decisionOutcome: new Map(),
+        routes: new Map()
+      },
       coverageFacts: [],
       fieldsSeen: new Set(),
       tallies: {}
@@ -8193,6 +8616,153 @@
     if (!agg.tenantId || !rec.resourceTenantId) return 'unknown';
     if (rec.resourceTenantId === agg.tenantId) return 'inbound';
     return 'outbound';
+  }
+
+  function classifyLogJourneyDecision(rec, source) {
+    const policies = rec.appliedPolicies || [];
+    const hasEnforcing = rec.conditionalAccessStatus === 'success'
+      || rec.conditionalAccessStatus === 'failure'
+      || policies.some(policy => policy.result === 'success' || policy.result === 'failure');
+    if (hasEnforcing) return 'enforcing';
+    const hasReportOnlyMatch = policies.some(policy => policy.result.startsWith('reportonly') && policy.result !== 'reportonlynotapplied');
+    if (hasReportOnlyMatch) return 'reportOnly';
+    if (source === 'msi' || isPlatformFlow(rec)) return 'byDesign';
+    if (policies.some(policy => policy.result === 'notapplied' || policy.result === 'reportonlynotapplied')) return 'filtered';
+    return 'noEvaluation';
+  }
+
+  function classifyLogJourneyOutcome(rec, decision) {
+    const blocked = rec.conditionalAccessStatus === 'failure'
+      || (rec.appliedPolicies || []).some(policy => policy.result === 'failure');
+    if (decision === 'enforcing' && blocked) return 'blocked';
+    if (decision === 'enforcing' && rec.success) return 'protectedSuccess';
+    if (decision === 'reportOnly' && rec.success) return 'allowedReportOnly';
+    if (decision === 'byDesign' && rec.success) return 'byDesignFlow';
+    if ((decision === 'filtered' || decision === 'noEvaluation') && rec.success) return 'allowedWithoutCa';
+    return 'otherFailure';
+  }
+
+  function incrementJourneyMap(map, key, amount) {
+    map.set(key, (map.get(key) || 0) + (amount || 1));
+  }
+
+  function logDeviceJoinState(rec) {
+    const trust = normToken(rec.trustType);
+    if (trust === 'serverad' || trust.includes('hybrid')) return 'Microsoft Entra hybrid joined';
+    if (trust === 'azuread' || trust === 'entrajoined') return 'Microsoft Entra joined';
+    if (trust === 'workplace' || trust.includes('registered')) return 'Microsoft Entra registered';
+    if (rec.deviceId || rec.deviceName) return 'Registered, join type not returned';
+    if (rec.deviceState === 'unregistered') return 'No device identity';
+    return 'Join state not returned';
+  }
+
+  function recordDeviceContext(agg, rec, source) {
+    if (rec.identityType !== 'user') return;
+    const context = agg.deviceContext;
+    const stateKey = LOG_DEVICE_CONTEXT_STATES.some(item => item.id === rec.deviceState) ? rec.deviceState : 'unknown';
+    context.total += 1;
+    incrementJourneyMap(context.bySource, source);
+    incrementJourneyMap(context.byState, stateKey);
+    if (rec.success && (LOG_CHECK_SOURCES['noncompliant-device'] || []).includes(source) && context.findingStates.has(stateKey)) {
+      incrementJourneyMap(context.findingStates, stateKey);
+    }
+    incrementJourneyMap(context.joinStates, logDeviceJoinState(rec));
+    incrementJourneyMap(context.platforms, rec.operatingSystem || 'Platform not returned');
+    incrementJourneyMap(context.ownership, rec.deviceOwnership || 'Ownership not returned');
+    incrementJourneyMap(context.browsers, rec.browser || 'Browser not returned');
+    incrementJourneyMap(context.clientApps, rec.clientAppUsed || 'Client app not returned');
+    if (normToken(rec.originalTransferMethod).includes('devicecode')) context.deviceCodeFlows += 1;
+    if (rec.userType === 'guest' && guestDirection(agg, rec) !== 'outbound') context.inboundGuests += 1;
+    const attributes = {
+      isCompliant: rec.isCompliant,
+      trustType: rec.trustType,
+      deviceOwnership: rec.deviceOwnership,
+      operatingSystemVersion: rec.operatingSystemVersion,
+      mdmAppId: rec.mdmAppId,
+      enrollmentProfileName: rec.enrollmentProfileName
+    };
+    Object.entries(attributes).forEach(([name, value]) => {
+      const returned = typeof value === 'boolean' || (typeof value === 'string' && value.trim());
+      if (!returned) return;
+      context.attributes.add(name);
+      if (!context.attributeValues.has(name)) context.attributeValues.set(name, new Map());
+      incrementJourneyMap(context.attributeValues.get(name), typeof value === 'boolean' ? String(value) : value);
+    });
+    if (context.samples.length < LOG_SAMPLE_CAP) {
+      context.samples.push({
+        time: Number.isFinite(rec.time) ? new Date(rec.time).toISOString().replace('T', ' ').slice(0, 16) : 'unknown time',
+        principal: rec.principal || 'unknown identity',
+        app: rec.appDisplayName || rec.resourceDisplayName || 'unknown app',
+        location: logLocationLabel(rec) || 'Unknown location',
+        source,
+        state: stateKey,
+        joinState: logDeviceJoinState(rec),
+        platform: rec.operatingSystem || 'not returned',
+        ownership: rec.deviceOwnership || 'not returned',
+        browser: rec.browser || rec.clientAppUsed || 'not returned',
+        deviceId: rec.deviceId || ''
+      });
+    }
+  }
+
+  function recordLogJourneyEvent(agg, rec, source) {
+    const journey = agg.journey;
+    const decision = classifyLogJourneyDecision(rec, source);
+    const outcome = classifyLogJourneyOutcome(rec, decision);
+    const sourceDecisionKey = `${source}|${decision}`;
+    const decisionOutcomeKey = `${decision}|${outcome}`;
+    const routeKey = `${source}|${decision}|${outcome}`;
+    journey.total += 1;
+    incrementJourneyMap(journey.sources, source);
+    incrementJourneyMap(journey.decisions, decision);
+    incrementJourneyMap(journey.outcomes, outcome);
+    incrementJourneyMap(journey.sourceDecision, sourceDecisionKey);
+    incrementJourneyMap(journey.decisionOutcome, decisionOutcomeKey);
+    const route = journey.routes.get(routeKey) || {
+      source,
+      decision,
+      outcome,
+      count: 0,
+      success: 0,
+      failure: 0,
+      policies: new Map(),
+      evaluatedPolicies: new Map(),
+      conditions: new Map(),
+      identities: new Map(),
+      apps: new Map(),
+      locations: new Map(),
+      samples: []
+    };
+    route.count += 1;
+    route.success += rec.success ? 1 : 0;
+    route.failure += rec.success ? 0 : 1;
+    incrementJourneyMap(route.identities, rec.principal || rec.userPrincipalName || rec.userDisplayName || 'Unknown identity');
+    incrementJourneyMap(route.apps, rec.appDisplayName || rec.resourceDisplayName || 'Unknown app');
+    incrementJourneyMap(route.locations, logLocationLabel(rec) || 'Unknown location');
+    (rec.appliedPolicies || []).forEach(policy => {
+      incrementJourneyMap(route.evaluatedPolicies, policy.displayName);
+      const matched = policy.result === 'success' || policy.result === 'failure'
+        || (policy.result.startsWith('reportonly') && policy.result !== 'reportonlynotapplied');
+      if (matched) incrementJourneyMap(route.policies, policy.displayName);
+      (policy.conditionsNotSatisfied || []).forEach(condition => incrementJourneyMap(route.conditions, condition));
+    });
+    if (route.samples.length < 8) {
+      route.samples.push({
+        time: Number.isFinite(rec.time) ? new Date(rec.time).toISOString().replace('T', ' ').slice(0, 16) : 'unknown time',
+        source,
+        principal: rec.principal || rec.userPrincipalName || rec.userDisplayName || 'unknown identity',
+        app: rec.appDisplayName || rec.resourceDisplayName || 'unknown app',
+        location: logLocationLabel(rec) || 'Unknown location',
+        caStatus: rec.conditionalAccessStatus || 'not returned',
+        authenticationRequirement: rec.authenticationRequirement || 'not returned',
+        policies: (rec.appliedPolicies || []).slice(0, 8).map(policy => ({
+          name: policy.displayName,
+          result: policy.result,
+          conditions: (policy.conditionsNotSatisfied || []).slice(0, 5)
+        }))
+      });
+    }
+    journey.routes.set(routeKey, route);
   }
 
   function ingestSignIns(agg, records, source) {
@@ -8261,6 +8831,12 @@
             isCompliant: rec.isCompliant,
             isManaged: rec.isManaged,
             deviceName: rec.deviceName,
+            deviceId: rec.deviceId,
+            deviceOwnership: rec.deviceOwnership,
+            operatingSystemVersion: rec.operatingSystemVersion,
+            mdmAppId: rec.mdmAppId,
+            enrollmentProfileName: rec.enrollmentProfileName,
+            browser: rec.browser,
             operatingSystem: rec.operatingSystem,
             osVersion: rec.osVersion,
             errorCode: rec.errorCode,
@@ -8280,6 +8856,8 @@
     };
     const seen = field => { agg.fieldsSeen.add(field); stats.fieldsSeen.add(field); };
     records.forEach(rec => {
+      recordLogJourneyEvent(agg, rec, source);
+      recordDeviceContext(agg, rec, source);
       if (rec.success) { agg.success += 1; stats.success += 1; }
       else { agg.failure += 1; stats.failure += 1; }
       if (rec.isInteractive === true) agg.interactive += 1;
@@ -8297,6 +8875,11 @@
       if (rec.appliedPolicies.length) seen('appliedPolicies');
       if (rec.userType) seen('userType');
       if (rec.isCompliant !== null || rec.isManaged !== null) seen('devicePosture');
+      if (rec.deviceId || rec.deviceName || rec.trustType || rec.deviceState === 'unregistered') seen('deviceIdentity');
+      if (rec.deviceOwnership) seen('deviceOwnership');
+      if (rec.operatingSystemVersion) seen('operatingSystemVersion');
+      if (rec.mdmAppId) seen('mdmAppId');
+      if (rec.enrollmentProfileName) seen('enrollmentProfileName');
       if (rec.riskLevelDuringSignIn || rec.riskLevelAggregated) seen('riskLevels');
       if (rec.authMethods.length) seen('authMethods');
       const user = isUserSource ? rec.principal : '';
@@ -8395,6 +8978,7 @@
           id: policy.id, name: policy.displayName,
           evaluations: 0, applied: 0, blocked: 0, reportOnly: 0, notApplied: 0,
           grants: new Map(), sessions: new Map(), authStrength: new Map(),
+          reportOnlyResults: new Map(),
           users: new Map(), apps: new Map(), devices: new Map(), locations: new Map(),
           notSatisfied: new Map(), sources: new Set(), samples: [],
           includeRules: new Map(), excludeRules: new Map(), excludedPrincipals: new Map(),
@@ -8410,7 +8994,10 @@
         const enforced = policy.result === 'success' || policy.result === 'failure';
         if (enforced) inv.applied += 1;
         if (policy.result === 'failure') inv.blocked += 1;
-        if (policy.result.startsWith('reportonly')) inv.reportOnly += 1;
+        if (policy.result.startsWith('reportonly')) {
+          inv.reportOnly += 1;
+          incrementJourneyMap(inv.reportOnlyResults, policy.result);
+        }
         if (policy.result === 'notapplied') {
           inv.notApplied += 1;
           policy.conditionsNotSatisfied.forEach(cond => {
@@ -9858,9 +10445,9 @@
       push(makeLogFinding(agg, {
         id: 'report-only', severity: 'info',
         title: 'Policies still in report-only mode',
-        detail: `${entries.length} Conditional Access policies ran in report-only mode across ${affected} evaluations. They log what they would do but enforce nothing.`,
+        detail: `${entries.length} Conditional Access policies ran in report-only mode across ${affected} evaluations. The report-only policies recorded what they would do but did not themselves enforce a control; another enabled policy may still have protected the same event.`,
         affected, topUsers: [], topApps: [], samples,
-        recommendation: 'Review the report-only results and switch validated policies to On — report-only provides zero protection.'
+        recommendation: 'Review Success, Failure, User action required and Not applied separately, confirm whether enabled policies protected the same events, then pilot and stage validated policies to On.'
       }));
     }
 
@@ -9989,7 +10576,7 @@
           title: 'Service principals with no Conditional Access applied',
           detail: `${noCa.length} of ${sps.length} service principal(s) signed in with no Conditional Access policy applied.`,
           topUsersLabel: 'Top service principals', topAppsLabel: 'Top resources',
-          controlIds: ['service_account_protection'], requirements: ['serviceAccounts'],
+          controlIds: [], requirements: [],
           recommendation: `Conditional Access can only target service principals with Workload Identities Premium, and even then only single-tenant service principals registered in your own tenant — Microsoft and third-party SaaS apps, including multitenant apps, are not covered. This baseline ships no such policy: ${named(['service_account_protection'])} target the CA-ServiceAccounts group of user accounts, so they cover human-operated service accounts rather than app registrations. Treat this as inventory and governance: review each service principal's API permissions and owner, apply CA301-style trusted-location blocking where the identity is human-operated, and reduce permissions where Conditional Access cannot reach.`
         }));
       }
@@ -10008,7 +10595,7 @@
             label: `${name}: ${sp.count} sign-ins from ${[...sp.countries.keys()].join(', ')}`,
             t: { name, count: sp.count, countries: [...sp.countries.keys()] }
           })),
-          controlIds: ['trusted_location', 'service_account_protection'], requirements: ['serviceAccounts', 'trustedLocations'],
+          controlIds: [], requirements: [],
           recommendation: `Confirm each of these is expected to run from that many regions. For human-operated service accounts, ${named(['service_account_protection'])} blocks sign-ins outside approved named locations. For app registrations, the equivalent guardrail today is IP restriction on the application itself, since per-service-principal location conditions need Workload Identities Premium.`
         }));
       }
@@ -10038,7 +10625,7 @@
           affected: [...flagged.values()].reduce((sum, sp) => sum + sp.count, 0),
           topUsers: [...flagged.entries()].sort((a, b) => b[1].count - a[1].count).slice(0, LOG_TOP_CAP).map(([name, sp]) => ({ name, count: sp.count })),
           topApps: [], topUsersLabel: 'Affected service principals', samples,
-          controlIds: ['service_account_protection'], requirements: ['serviceAccounts'],
+          controlIds: [], requirements: [],
           recommendation: `Conditional Access cannot enforce credential type — this is app-registration governance rather than a CA control. Move these to workload identity federation where the workload runs somewhere OIDC-capable (GitHub Actions, Kubernetes, Azure), or to certificate credentials otherwise, and cap secret lifetimes with an Entra application management policy. The CA-side compensating control for human-operated service accounts is location restriction via ${named(['service_account_protection'])}. Credential errors such as 7000222 are an availability risk as well as a hygiene one.`
         }));
       }
@@ -10166,9 +10753,24 @@
     const la = state.logAnalysis;
     if (!LOG_DECLARATIONS.some(d => d.key === key) || !LOG_DECLARATION_ANSWERS.includes(answer)) return;
     if (la.declarations[key] === answer) return;
+    const scrollPosition = { x: window.scrollX, y: window.scrollY };
+    la.tenantAssumptionsExpanded = true;
     la.declarations = { ...la.declarations, [key]: answer };
     if (la.agg) la.recommendedPolicySet = buildRecommendedPolicySet(la.agg, la.findings, la.declarations);
+    if (la.journeySelected?.type === 'recommendedPolicy') {
+      const stillExists = (la.recommendedPolicySet?.policies || []).some(policy => policy.id === la.journeySelected.id);
+      if (!stillExists) {
+        la.journeySelected = null;
+        logJourneySelectionOpener = null;
+      }
+    }
     renderLogAnalysis();
+    window.scrollTo({ left: scrollPosition.x, top: scrollPosition.y, behavior: 'auto' });
+    requestAnimationFrame(() => {
+      window.scrollTo({ left: scrollPosition.x, top: scrollPosition.y, behavior: 'auto' });
+      const selector = `.log-journey-declarations [data-declaration="${CSS.escape(key)}"][data-answer="${CSS.escape(answer)}"]`;
+      $('logVisualContent')?.querySelector(selector)?.focus({ preventScroll: true });
+    });
   }
 
   function buildStrategyFromFindings() {
@@ -10356,7 +10958,18 @@
 
   function renderLogAnalysis() {
     const la = state.logAnalysis;
+    const hasResults = Boolean(la.summary);
+    const resultsWorkspace = $('logResultsWorkspace');
+    const visualWorkspace = $('logVisualWorkspace');
+    const viewControl = $('logViewControl');
+    const logStatus = $('logStatus');
     $('logExportBtn').disabled = !la.summary;
+    $('logExportBtn').hidden = !hasResults;
+    $('logClearBtn').hidden = !hasResults && !la.failures.length;
+    viewControl.hidden = !hasResults || la.view !== 'list';
+    resultsWorkspace.hidden = !hasResults || la.view === 'visual';
+    visualWorkspace.hidden = !hasResults || la.view !== 'visual';
+    $('logUploadStage').classList.toggle('has-results', hasResults);
     $('logFilterControl').querySelectorAll('button[data-log-filter]').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.logFilter === la.filter);
     });
@@ -10371,15 +10984,17 @@
       });
     }
     if (!la.summary) {
-      if (!la.failures.length) {
-        $('logStatus').textContent = 'Load your Entra sign-in log exports (.json or .csv) to analyse Conditional Access coverage gaps. Nothing leaves your browser.';
-      }
+      logStatus.hidden = !la.failures.length;
+      if (la.failures.length) logStatus.textContent = la.failures[0].message;
       $('logDropzone').classList.remove('compact');
       $('logDashboard').innerHTML = '';
       $('logSourceGrid').innerHTML = '';
-      $('logFindings').innerHTML = '<div class="empty-state">Drop the Entra ID sign-in log exports to see coverage findings here. You can select all four at once.</div>';
+      $('logFindings').innerHTML = '';
       $('logStrategyCta').innerHTML = '';
       $('logPolicyInventory').innerHTML = '';
+      $('logVisualContent').innerHTML = '';
+      if (logJourneyResizeObserver) logJourneyResizeObserver.disconnect();
+      logJourneySelectionOpener = null;
       return;
     }
     const s = la.summary;
@@ -10396,7 +11011,8 @@
       : '';
     // Once results are on screen the dropzone is no longer the point of the page.
     $('logDropzone').classList.add('compact');
-    $('logStatus').innerHTML = `Analysed <strong>${esc(s.total)}</strong> sign-ins${esc(range)} — ${esc(la.findings.length)} findings (${esc(s.high)} high).${details}`;
+    logStatus.hidden = false;
+    logStatus.innerHTML = `Analysed <strong>${esc(s.total)}</strong> sign-ins${esc(range)} — ${esc(la.findings.length)} findings (${esc(s.high)} high).${details}`;
     $('logDashboard').innerHTML = renderLogDashboard(s);
     $('logSourceGrid').innerHTML = renderLogSourceGrid();
     const visible = la.findings.filter(f =>
@@ -10407,6 +11023,16 @@
       : '<div class="empty-state">No findings match this filter.</div>');
     $('logStrategyCta').innerHTML = renderLogStrategyCta();
     $('logPolicyInventory').innerHTML = renderLogPolicyInventory();
+    $('logVisualContent').innerHTML = la.view === 'visual' ? renderLogVisualWorkspace() : '';
+    if (la.view === 'visual') queueLogJourneyDraw();
+    else if (logJourneyResizeObserver) logJourneyResizeObserver.disconnect();
+    scheduleScrollableRegionEnhancement();
+  }
+
+  function showLogStatus(message) {
+    const status = $('logStatus');
+    status.hidden = false;
+    status.textContent = message;
   }
 
   // What this analysis can and cannot see. Placed above the findings because it governs how
@@ -10472,6 +11098,1188 @@
         ${chip}
       </article>`;
     }).join('');
+  }
+
+  function logJourneyIcon(name, className) {
+    const paths = {
+      users: '<path d="M8.5 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm7-1a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM3 19c0-3 2.2-5 5.5-5s5.5 2 5.5 5M14 14.5c.5-.2 1-.3 1.5-.3 3 0 5 1.8 5 4.8"/>',
+      clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+      applications: '<rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/>',
+      workload: '<path d="M7 7.5h10M7 12h10M7 16.5h6"/><rect x="3.5" y="4" width="17" height="16" rx="2"/>',
+      'shield-check': '<path d="M12 3.5 19 6v5.2c0 4.5-2.7 7.6-7 9.3-4.3-1.7-7-4.8-7-9.3V6l7-2.5Z"/><path d="m8.5 12 2.2 2.2 4.8-5"/>',
+      'document-search': '<path d="M7 3.5h7l4 4V14M14 3.5v4h4M9 9h4M9 12h3"/><path d="m16.5 18.5 3 3"/><circle cx="13.5" cy="15.5" r="3.5"/>',
+      branch: '<path d="M7 4v12a4 4 0 0 0 4 4h6M7 9h6a4 4 0 0 0 4-4V4"/><circle cx="7" cy="4" r="1.5"/><circle cx="17" cy="4" r="1.5"/><circle cx="17" cy="20" r="1.5"/>',
+      filter: '<path d="M4 5h16l-6.2 7v5.5l-3.6 1.8V12L4 5Z"/>',
+      'shield-off': '<path d="M5 5.8 12 3.5 19 6v5.2c0 2-.5 3.7-1.5 5.1M15 19c-.9.6-1.9 1.1-3 1.5-4.3-1.7-7-4.8-7-9.3V8.5M3.5 3.5l17 17"/>',
+      blocked: '<circle cx="12" cy="12" r="8.5"/><path d="m6 18 12-12"/>',
+      unlock: '<rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7.5a4 4 0 0 1 7.5-2"/>',
+      warning: '<path d="m12 3 9 17H3L12 3Z"/><path d="M12 9v5M12 17.5h.01"/>',
+      target: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><path d="M12 3.5V7M20.5 12H17M12 20.5V17M3.5 12H7"/>',
+      key: '<circle cx="8.5" cy="14.5" r="4.5"/><path d="m12 11 7-7M16 7l2 2M14 9l2 2"/>',
+      device: '<rect x="3.5" y="4" width="17" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',
+      session: '<rect x="4" y="5" width="16" height="14" rx="2"/><path d="M4 9h16M8 5v4M16 5v4"/>',
+      risk: '<path d="M12 3.5 19 6v5.2c0 4.5-2.7 7.6-7 9.3-4.3-1.7-7-4.8-7-9.3V6l7-2.5Z"/><path d="M12 8v5M12 16.5h.01"/>',
+      location: '<path d="M19 10c0 5-7 10.5-7 10.5S5 15 5 10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="2.5"/>',
+      pulse: '<path d="M3 12h4l2-5 4 10 2-5h6"/>',
+      external: '<path d="M10 5H5v14h14v-5M13 4h7v7M20 4l-9 9"/>',
+      certificate: '<rect x="4" y="3.5" width="16" height="13" rx="2"/><path d="M8 8h8M8 11h5M10 16.5v4l2-1.2 2 1.2v-4"/>',
+      check: '<path d="m5 12.5 4 4L19 6.5"/>',
+      eyeOff: '<path d="M4 4l16 16M9.5 6.5A9.8 9.8 0 0 1 12 6c5.5 0 9 6 9 6a16 16 0 0 1-2.1 2.8M6.1 8.2A16 16 0 0 0 3 12s3.5 6 9 6c1 0 2-.2 2.8-.5M10 10a3 3 0 0 0 4 4"/>'
+    };
+    return `<svg class="log-journey-icon${className ? ` ${esc(className)}` : ''}" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${paths[name] || paths.pulse}</svg>`;
+  }
+
+  const LOG_JOURNEY_STATUS_META = {
+    protected: { label: 'Protected', icon: 'shield-check' },
+    gap: { label: 'Gap', icon: 'warning' },
+    partial: { label: 'Partial', icon: 'pulse' },
+    review: { label: 'Review', icon: 'document-search' },
+    blind: { label: 'Blind spot', icon: 'eyeOff' },
+    noIssue: { label: 'No issue observed', icon: 'check' }
+  };
+
+  function logJourneyTopEntries(map, cap) {
+    return [...(map || new Map()).entries()].sort((a, b) => b[1] - a[1]).slice(0, cap || 8)
+      .map(([name, count]) => ({ name, count }));
+  }
+
+  function logJourneyDomId(value) {
+    return String(value || '').toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '');
+  }
+
+  function logJourneyPositiveCount(element) {
+    const la = state.logAnalysis;
+    const policies = la.policyInventory?.policies || [];
+    if (element.positive === 'enforcing') return la.agg?.journey.decisions.get('enforcing') || 0;
+    if (element.positive === 'session') {
+      return policies.filter(policy => policy.state === 'enforcing' && policy.sessions.length)
+        .reduce((sum, policy) => sum + policy.applied, 0);
+    }
+    if (element.positive === 'mfa') {
+      return policies.filter(policy => policy.state === 'enforcing' && (
+        policy.authStrength.length || policy.grants.some(grant => /mfa|authenticationstrength/i.test(`${grant.name} ${grant.label}`))
+      )).reduce((sum, policy) => sum + policy.applied, 0);
+    }
+    if (element.positive === 'authStrength') {
+      return policies.filter(policy => policy.state === 'enforcing' && policy.authStrength.length)
+        .reduce((sum, policy) => sum + policy.applied, 0);
+    }
+    if (element.positive === 'deviceCompliance') {
+      return policies.filter(policy => policy.state === 'enforcing' && policy.grants.some(grant => (
+        /compliantdevice|domainjoineddevice|hybridjoined/i.test(`${grant.name} ${grant.label}`)
+      ))).reduce((sum, policy) => sum + policy.applied, 0);
+    }
+    if (element.positive === 'byod') {
+      return policies.filter(policy => policy.state === 'enforcing' && (
+        policy.grants.some(grant => /approvedapplication|compliantapplication|appprotection/i.test(`${grant.name} ${grant.label}`))
+        || policy.sessions.some(session => /applicationenforcedrestrictions|cloudappsecurity/i.test(`${session.name} ${session.label}`))
+      )).reduce((sum, policy) => sum + policy.applied, 0);
+    }
+    return 0;
+  }
+
+  function logJourneyEvidenceAvailable(element) {
+    const la = state.logAnalysis;
+    const sources = element.sources || [];
+    if (sources.some(key => !(key in la.sources))) return false;
+    if (!element.field) return true;
+    return sources.every(key => {
+      const loaded = la.sources[key];
+      if (!loaded || loaded.records === 0) return true;
+      return Boolean(la.agg?.sourceStats[key]?.fieldsSeen?.has(element.field));
+    });
+  }
+
+  function logJourneyElementStatus(element, findings) {
+    const available = logJourneyEvidenceAvailable(element);
+    const positive = logJourneyPositiveCount(element);
+    if (findings.length) {
+      if (positive > 0 || !available) return 'partial';
+      if (element.findingStatus) return element.findingStatus;
+      return findings.some(finding => finding.severity === 'high' || finding.severity === 'medium') ? 'gap' : 'review';
+    }
+    if (!available) return 'blind';
+    if (positive > 0) return 'protected';
+    if (element.defaultStatus) return element.defaultStatus;
+    return 'noIssue';
+  }
+
+  function logJourneyStatusReason(status, findingCount, positive) {
+    if (status === 'protected') return `${positive} observed policy application${positive === 1 ? '' : 's'} show an applicable control acting.`;
+    if (status === 'gap') return `${findingCount} observed finding${findingCount === 1 ? ' needs' : 's need'} attention.`;
+    if (status === 'partial') return 'Both useful evidence and a gap or blind spot are present.';
+    if (status === 'review') return 'The evidence is contextual, sampled or outside direct CA enforcement.';
+    if (status === 'blind') return 'A required source or policy field was not loaded.';
+    return 'Activity was assessed, with no issue or enforced control demonstrated here.';
+  }
+
+  function buildLogJourneyElement(element, parent) {
+    const findings = (state.logAnalysis.findings || []).filter(finding => element.findingIds.includes(finding.id));
+    const positive = logJourneyPositiveCount(element);
+    const status = logJourneyElementStatus(element, findings);
+    const severity = ['high', 'medium', 'low', 'info'].reduce((counts, level) => {
+      counts[level] = findings.filter(finding => finding.severity === level).length;
+      return counts;
+    }, {});
+    const observedPolicies = logJourneyPolicyEvidence(element);
+    const recommendedPolicies = logJourneyRecommendedPolicyEvidence(element);
+    return {
+      ...element,
+      parentId: parent.id,
+      parentLabel: parent.label,
+      findings,
+      severity,
+      observedPolicies,
+      recommendedPolicies,
+      guidance: LOG_JOURNEY_GUIDANCE[element.id] || null,
+      positive,
+      status,
+      statusReason: logJourneyStatusReason(status, findings.length, positive)
+    };
+  }
+
+  function buildLogJourneyModel() {
+    const la = state.logAnalysis;
+    const journey = la.agg?.journey || createSignInAgg().journey;
+    const sourceIcons = { interactive: 'users', nonInteractive: 'clock', application: 'applications', msi: 'workload' };
+    const sources = LOG_SOURCE_ORDER.map(id => {
+      const loaded = la.sources[id];
+      return {
+        id,
+        label: LOG_SOURCES[id].short,
+        description: LOG_SOURCES[id].label,
+        icon: sourceIcons[id],
+        count: journey.sources.get(id) || 0,
+        loaded: Boolean(loaded),
+        empty: Boolean(loaded && loaded.records === 0),
+        tone: loaded ? 'measured' : 'blind'
+      };
+    });
+    const decisions = LOG_JOURNEY_DECISIONS.map(item => ({ ...item, count: journey.decisions.get(item.id) || 0 }));
+    const outcomes = LOG_JOURNEY_OUTCOMES.map(item => ({ ...item, count: journey.outcomes.get(item.id) || 0 }));
+    const links = [];
+    journey.sourceDecision.forEach((value, key) => {
+      if (!value) return;
+      const [source, decision] = key.split('|');
+      const meta = LOG_JOURNEY_DECISIONS.find(item => item.id === decision);
+      links.push({ fromType: 'source', fromId: source, toType: 'decision', toId: decision, value, tone: meta?.tone || 'neutral' });
+    });
+    journey.decisionOutcome.forEach((value, key) => {
+      if (!value) return;
+      const [decision, outcome] = key.split('|');
+      const meta = LOG_JOURNEY_OUTCOMES.find(item => item.id === outcome);
+      links.push({ fromType: 'decision', fromId: decision, toType: 'outcome', toId: outcome, value, tone: meta?.tone || 'neutral' });
+    });
+    const stages = LOG_JOURNEY_STAGES.map(stage => ({
+      ...stage,
+      elements: stage.elements.map(element => buildLogJourneyElement(element, stage))
+    }));
+    const adjacent = LOG_JOURNEY_ADJACENT.map(item => buildLogJourneyElement(item, { id: 'adjacent', label: 'Adjacent controls' }));
+    const severity = ['high', 'medium', 'low', 'info'].reduce((counts, level) => {
+      counts[level] = la.findings.filter(finding => finding.severity === level).length;
+      return counts;
+    }, {});
+    const observedPolicies = la.policyInventory?.policies || [];
+    const recommendedPolicies = la.recommendedPolicySet?.policies || [];
+    return {
+      journey,
+      deviceContext: la.agg?.deviceContext || createSignInAgg().deviceContext,
+      sources,
+      decisions,
+      outcomes,
+      links,
+      stages,
+      adjacent,
+      severity,
+      observedPolicies,
+      recommendedPolicies,
+      summary: {
+        signIns: la.summary?.total || 0,
+        users: la.summary?.users || 0,
+        apps: (la.summary?.apps || 0) + (la.summary?.workloads || 0),
+        guests: la.summary?.guests || 0,
+        findings: la.findings.length
+      }
+    };
+  }
+
+  function logJourneyNodeValue(node, type) {
+    if (type === 'source' && !node.loaded) return 'Not loaded';
+    if (type === 'source' && node.empty) return 'No activity';
+    return `${node.count.toLocaleString()} event${node.count === 1 ? '' : 's'}`;
+  }
+
+  function renderLogJourneyNode(node, type) {
+    const quiet = !node.count || (type === 'source' && !node.loaded);
+    return `<button type="button" class="log-journey-node log-journey-tone-${esc(node.tone || 'neutral')}${quiet ? ' is-quiet' : ''}" data-journey-node="${esc(`${type}:${node.id}`)}" data-journey-type="${esc(type)}" data-journey-id="${esc(node.id)}" aria-label="${esc(`${node.label}, ${logJourneyNodeValue(node, type)}`)}">
+      <span class="log-journey-node-icon">${logJourneyIcon(node.icon)}</span>
+      <span class="log-journey-node-copy"><strong>${esc(node.label)}</strong><small>${esc(logJourneyNodeValue(node, type))}</small></span>
+    </button>`;
+  }
+
+  function renderLogJourneyStatus(status, compact) {
+    const meta = LOG_JOURNEY_STATUS_META[status] || LOG_JOURNEY_STATUS_META.review;
+    return `<span class="log-journey-status log-journey-status-${esc(status)}${compact ? ' is-compact' : ''}">${logJourneyIcon(meta.icon)}<span>${esc(meta.label)}</span></span>`;
+  }
+
+  function renderLogJourneySeverityCounts(counts, options) {
+    const settings = options || {};
+    const levels = ['high', 'medium', 'low', 'info'];
+    return `<div class="log-journey-severity-counts${settings.compact ? ' is-compact' : ''}" aria-label="Finding severity counts">${levels.map(level => {
+      const value = counts[level] || 0;
+      if (settings.interactive) {
+        return `<button type="button" class="log-journey-severity log-journey-severity-${level}" data-journey-type="severity" data-journey-id="${level}" aria-pressed="false"><strong>${esc(value)}</strong><span>${esc(level)}</span></button>`;
+      }
+      return value ? `<span class="log-journey-severity log-journey-severity-${level}"><strong>${esc(value)}</strong><span>${esc(level)}</span></span>` : '';
+    }).join('')}</div>`;
+  }
+
+  function renderLogJourneyElement(element) {
+    const actionCounts = element.recommendedPolicies.reduce((counts, policy) => {
+      counts[policy.actionTier] = (counts[policy.actionTier] || 0) + 1;
+      return counts;
+    }, {});
+    const recommendationSummary = element.recommendedPolicies.length
+      ? `${actionCounts.actNow || 0} act now · ${actionCounts.validateFirst || 0} validate · ${actionCounts.optionalAdvanced || 0} optional`
+      : '0 proposed';
+    return `<article class="log-journey-element log-journey-element-status-${esc(element.status)}" data-journey-element="${esc(element.id)}">
+      <button type="button" class="log-journey-element-head" data-journey-type="element" data-journey-id="${esc(element.id)}">
+        <span class="log-journey-element-icon">${logJourneyIcon(element.icon)}</span>
+        <span><strong>${esc(element.label)}</strong><small>${esc(element.statusReason)}</small></span>
+        ${renderLogJourneyStatus(element.status, true)}
+        ${renderLogJourneySeverityCounts(element.severity, { compact: true })}
+        <span class="log-journey-policy-counts">${esc(element.observedPolicies.length)} observed · ${esc(recommendationSummary)}</span>
+      </button>
+      ${element.findings.length ? `<div class="log-journey-findings">${element.findings.map(finding => `<button type="button" class="log-journey-finding" data-journey-type="finding" data-journey-id="${esc(finding.id)}">
+        <span class="log-journey-finding-mark is-${esc(finding.severity)}" aria-hidden="true"></span>
+        <span class="log-journey-finding-title">${esc(finding.title)}</span>
+        <span class="log-journey-finding-meta">${esc(finding.metric.affected)} affected · ${esc(finding.severity)}</span>
+      </button>`).join('')}</div>` : ''}
+    </article>`;
+  }
+
+  function renderLogJourneyStage(stage, index) {
+    const findingCount = stage.elements.reduce((sum, element) => sum + element.findings.length, 0);
+    const severity = ['high', 'medium', 'low', 'info'].reduce((counts, level) => {
+      counts[level] = stage.elements.reduce((sum, element) => sum + (element.severity[level] || 0), 0);
+      return counts;
+    }, {});
+    return `<section class="log-journey-stage" data-journey-stage="${esc(stage.id)}">
+      <div class="log-journey-stage-head">
+        <span class="log-journey-stage-number">${esc(String(index + 1).padStart(2, '0'))}</span>
+        <span class="log-journey-stage-icon">${logJourneyIcon(stage.icon)}</span>
+        <span><strong>${esc(stage.label)}</strong><small>${esc(stage.summary)}</small></span>
+        <span class="log-journey-stage-summary"><em>${esc(findingCount)} finding${findingCount === 1 ? '' : 's'}</em>${renderLogJourneySeverityCounts(severity, { compact: true })}</span>
+      </div>
+      <div class="log-journey-stage-elements">${stage.elements.map(renderLogJourneyElement).join('')}</div>
+    </section>`;
+  }
+
+  function renderLogJourneySummary(model) {
+    const metrics = [
+      ['Sign-ins', model.summary.signIns],
+      ['Users', model.summary.users],
+      ['Apps / resources', model.summary.apps],
+      ['Guests', model.summary.guests],
+      ['Findings', model.summary.findings]
+    ];
+    return `<section class="log-journey-summary" aria-labelledby="logJourneySummaryTitle">
+      <div class="log-journey-summary-head"><div><span class="eyebrow">Assessment at a glance</span><h3 id="logJourneySummaryTitle">Measured scope and priority</h3></div><p>Counts match the detailed assessment. Severity highlights evidence without hiding the rest of the map.</p></div>
+      <div class="log-journey-summary-grid">
+        <div class="log-journey-metrics">${metrics.map(([label, value]) => `<article><span>${esc(label)}</span><strong>${esc(value.toLocaleString())}</strong></article>`).join('')}</div>
+        <article class="log-journey-severity-card"><span>Severity</span>${renderLogJourneySeverityCounts(model.severity, { interactive: true })}</article>
+      </div>
+      <div class="log-journey-source-summary" aria-label="Sign-in source coverage">${model.sources.map(source => `<button type="button" class="log-journey-source-card${source.loaded ? '' : ' is-blind'}" data-journey-type="source" data-journey-id="${esc(source.id)}" aria-pressed="false">
+        <span class="log-journey-source-icon">${logJourneyIcon(source.icon)}</span><span><strong>${esc(source.label)}</strong><small>${esc(logJourneyNodeValue(source, 'source'))}</small></span><em>${source.loaded ? (source.empty ? 'No activity' : 'Loaded') : 'Blind spot'}</em>
+      </button>`).join('')}</div>
+    </section>`;
+  }
+
+  function logJourneyPriorityData(model) {
+    const priorityLevel = ['high', 'medium', 'low', 'info'].find(level => model.severity[level]) || 'info';
+    const priorityFindings = state.logAnalysis.findings
+      .filter(finding => finding.severity === priorityLevel)
+      .sort((a, b) => (b.metric.affected || 0) - (a.metric.affected || 0) || a.title.localeCompare(b.title));
+    const blockedCount = model.journey.outcomes.get('blocked') || 0;
+    const protectedSuccessCount = model.journey.outcomes.get('protectedSuccess') || 0;
+    const protectedCount = blockedCount + protectedSuccessCount;
+    const protectionPct = model.journey.total ? Math.round(protectedCount / model.journey.total * 1000) / 10 : 0;
+    const protectedSources = new Map();
+    [...model.journey.routes.values()].forEach(route => {
+      if (!['blocked', 'protectedSuccess'].includes(route.outcome)) return;
+      incrementJourneyMap(protectedSources, route.source, route.count);
+    });
+    const enforcingPolicies = model.observedPolicies
+      .filter(policy => policy.state === 'enforcing' && policy.applied > 0)
+      .sort((a, b) => b.applied - a.applied || b.evaluations - a.evaluations || a.name.localeCompare(b.name));
+    const sortPolicies = policies => [...policies]
+      .sort((a, b) => logRecommendationPriority(b) - logRecommendationPriority(a) || a.displayName.localeCompare(b.displayName));
+    const actNowPolicies = sortPolicies(model.recommendedPolicies.filter(policy => policy.actionTier === 'actNow'));
+    const validateFirstPolicies = sortPolicies(model.recommendedPolicies.filter(policy => policy.actionTier === 'validateFirst'));
+    const optionalPolicies = sortPolicies(model.recommendedPolicies.filter(policy => policy.actionTier === 'optionalAdvanced'));
+    const elements = [...model.stages.flatMap(stage => stage.elements), ...model.adjacent];
+    return {
+      priorityLevel,
+      priorityCount: priorityFindings.length,
+      priorityFindings,
+      blockedCount,
+      protectedSuccessCount,
+      protectedCount,
+      protectionPct,
+      protectedSources,
+      enforcingPolicies,
+      actNowPolicies,
+      validateFirstPolicies,
+      optionalPolicies,
+      elements,
+      evidenceLimits: elements.filter(element => ['blind', 'review'].includes(element.status))
+    };
+  }
+
+  function logJourneyPriorityDetail(id, model) {
+    const priority = logJourneyPriorityData(model);
+    const findingIds = new Set(priority.priorityFindings.map(finding => finding.id));
+    const connectedGapElements = priority.elements.filter(element => element.findings.some(finding => findingIds.has(finding.id)));
+    const protectedNames = new Set(priority.enforcingPolicies.map(policy => policy.name));
+    const protectedElements = priority.elements.filter(element => element.observedPolicies.some(policy => protectedNames.has(policy.name)));
+    const elementLink = element => `<button type="button" class="log-journey-inline-link" data-journey-type="element" data-journey-id="${esc(element.id)}">${esc(element.label)}</button>`;
+    const findingLink = finding => `<button type="button" class="log-journey-inline-link" data-journey-type="finding" data-journey-id="${esc(finding.id)}">${esc(finding.title)}</button>`;
+    const policyLink = policy => `<button type="button" class="log-journey-inline-link" data-journey-type="${policy.actionTier ? 'recommendedPolicy' : 'observedPolicy'}" data-journey-id="${esc(policy.actionTier ? policy.id : policy.name)}">${esc(policy.actionTier ? tenantPolicyName(policy.displayName) : policy.name)}</button>`;
+    if (id === 'gaps') {
+      const firstFinding = priority.priorityFindings[0];
+      const firstGuide = firstFinding ? LOG_REMEDIATION[firstFinding.id] || {} : {};
+      const firstAction = firstFinding ? (firstGuide.fix?.[0] || firstFinding.recommendation) : '';
+      const limitList = priority.evidenceLimits.slice(0, 6);
+      return {
+        title: priority.priorityCount ? `${priority.priorityLevel.charAt(0).toUpperCase()}${priority.priorityLevel.slice(1)} findings to investigate first` : 'No priority gap was observed',
+        kicker: `${priority.priorityCount} highest-priority finding${priority.priorityCount === 1 ? '' : 's'}`,
+        status: priority.priorityCount && ['high', 'medium'].includes(priority.priorityLevel) ? 'gap' : 'review',
+        body: [
+          renderLogJourneyEvidenceSection('Why this is first', `<p>${priority.priorityCount ? `These are the highest-severity findings produced from the loaded evidence. Affected counts are shown per finding and are deliberately not added together because the same sign-in can drive more than one finding.` : 'No gap finding was produced. That does not prove universal protection; the controls below still show where evidence was missing or intent needs review.'}</p>`),
+          renderLogJourneyEvidenceSection('Highest-priority evidence', priority.priorityCount ? `<ul>${priority.priorityFindings.map(finding => `<li>${findingLink(finding)} — ${esc(finding.metric.affected)} affected · ${esc((finding.metric.sources || []).map(source => LOG_SOURCES[source]?.short || source).join(', ') || 'loaded evidence')}</li>`).join('')}</ul>` : limitList.length ? `<ul>${limitList.map(element => `<li>${elementLink(element)} — ${esc(LOG_JOURNEY_STATUS_META[element.status].label)}</li>`).join('')}</ul>` : '<p>No blind-spot or review control was identified in the loaded activity.</p>'),
+          renderLogJourneyEvidenceSection('Connected controls', connectedGapElements.length ? `<p>${connectedGapElements.map(elementLink).join(' · ')}</p>` : '<p>No control relationship was inferred beyond the evidence limits shown above.</p>'),
+          renderLogJourneyEvidenceSection('Most useful next step', firstAction ? `<p>${esc(firstAction)}</p><p>${findingLink(firstFinding)} opens the evidence, remediation and validation path.</p>` : '<p>Review blind spots and load a representative JSON sign-in export before treating this as a clean result.</p>')
+        ].join('')
+      };
+    }
+    if (id === 'protection') {
+      const sourceLabels = Object.fromEntries(LOG_SOURCE_ORDER.map(key => [key, LOG_SOURCES[key].short]));
+      const policyEvidence = priority.enforcingPolicies.length
+        ? `<ul>${priority.enforcingPolicies.slice(0, 8).map(policy => `<li>${policyLink(policy)} — ${esc(policy.applied.toLocaleString())} recorded policy application${policy.applied === 1 ? '' : 's'}</li>`).join('')}</ul><p class="log-journey-evidence-muted">Policy application totals are not unique event counts because more than one policy can act on the same sign-in.</p>`
+        : '<p>No enforcing policy application was recorded in the available per-policy evidence.</p>';
+      return {
+        title: 'Protection demonstrated in this evidence window',
+        kicker: `${priority.protectedCount.toLocaleString()} unique events · ${priority.protectionPct}%`,
+        status: priority.protectedCount ? 'protected' : 'review',
+        body: [
+          renderLogJourneyEvidenceSection('Measured protection', `<dl class="log-journey-evidence-facts"><div><dt>Unique protected events</dt><dd>${esc(priority.protectedCount.toLocaleString())}</dd></div><div><dt>Share of all events</dt><dd>${esc(priority.protectionPct)}%</dd></div><div><dt>Blocked by CA</dt><dd>${esc(priority.blockedCount.toLocaleString())}</dd></div><div><dt>Protected access succeeded</dt><dd>${esc(priority.protectedSuccessCount.toLocaleString())}</dd></div></dl><p>${priority.protectedCount ? 'These outcomes are mutually exclusive classifications from the measured journey.' : 'Zero classified protected events means protection was not demonstrated in this evidence window; it does not prove that the tenant has no protective configuration.'}</p>`),
+          renderLogJourneyEvidenceSection('Where it was seen', `<h5>By sign-in source</h5>${renderLogJourneyFactList(logJourneyTopEntries(priority.protectedSources, 8), sourceLabels)}`),
+          renderLogJourneyEvidenceSection('Policies observed acting', policyEvidence),
+          renderLogJourneyEvidenceSection('Controls demonstrated', protectedElements.length ? `<p>${protectedElements.map(elementLink).join(' · ')}</p><p>Open a control to see the recorded policy evidence and any gaps on the same path.</p>` : '<p>No primary control relationship could be established from the per-policy fields returned.</p>')
+        ].join('')
+      };
+    }
+    if (id === 'actions') {
+      const reasonCounts = new Map();
+      priority.optionalPolicies.forEach(policy => (policy.reasonLabels || []).forEach(reason => incrementJourneyMap(reasonCounts, reason, 1)));
+      const policyList = policies => policies.length
+        ? `<ol>${policies.map(policy => `<li>${policyLink(policy)} — ${esc(policy.basis.label)} · ${esc(policy.drivers.length)} finding driver${policy.drivers.length === 1 ? '' : 's'} · ${esc(coverageHeadline(policy.coverage))}${policy.reasonLabels?.length ? `<span class="log-journey-reason-labels">${policy.reasonLabels.map(label => `<em>${esc(label)}</em>`).join('')}</span>` : ''}${policy.unresolvedPrerequisites?.length ? `<small>${esc(policy.unresolvedPrerequisites.length)} unresolved prerequisite${policy.unresolvedPrerequisites.length === 1 ? '' : 's'}</small>` : ''}</li>`).join('')}</ol>`
+        : '<p>No policy currently sits in this action tier.</p>';
+      const first = priority.actNowPolicies[0] || priority.validateFirstPolicies[0];
+      return {
+        title: 'Recommended policy actions in priority order',
+        kicker: `${priority.actNowPolicies.length} act now · ${priority.validateFirstPolicies.length} validate first · ${priority.optionalPolicies.length} optional`,
+        status: 'review',
+        body: [
+          renderLogJourneyEvidenceSection('Act now', `${policyList(priority.actNowPolicies)}<p class="log-journey-evidence-muted">Act now means begin investigation, design and a staged rollout. It never means enable a policy immediately.</p>`),
+          renderLogJourneyEvidenceSection('Validate first', policyList(priority.validateFirstPolicies)),
+          renderLogJourneyEvidenceSection('Optional / advanced', priority.optionalPolicies.length ? `<p>${esc(priority.optionalPolicies.length)} proposal${priority.optionalPolicies.length === 1 ? '' : 's'} depend only on unanswered assumptions, preview features, adjacent controls or unobserved specialist scenarios.</p>${reasonCounts.size ? renderLogJourneyFactList(logJourneyTopEntries(reasonCounts, 8)) : ''}` : '<p>No optional proposal is waiting behind unanswered assumptions.</p>'),
+          renderLogJourneyEvidenceSection('Start here', first ? `<p>${first.actionTier === 'actNow' ? 'The first Act now policy has the strongest direct evidence and affected-event basis.' : 'No Act now policy is available, so begin by resolving the prerequisites on the highest-ranked Validate first policy.'}</p>${first.unresolvedPrerequisites?.length ? `<p><strong>Resolve:</strong> ${esc(first.unresolvedPrerequisites.map(item => item.label).join(' · '))}</p>` : '<p>Use emergency-access exclusions, a pilot group and report-only impact review before staged enablement.</p>'}` : '<p>Resolve the evidence limits and tenant assumptions before building a policy set.</p>'),
+          renderLogJourneyEvidenceSection('Continue in the workbench', '<p>The policy action board keeps observed runtime evidence separate from proposed controls.</p><button type="button" class="btn secondary" data-log-scroll-policy-board>Open policy action board</button>')
+        ].join('')
+      };
+    }
+    return null;
+  }
+
+  function renderLogJourneyPriorityOverview(model) {
+    const priority = logJourneyPriorityData(model);
+    const selected = state.logAnalysis.journeySelected?.type === 'priority' ? state.logAnalysis.journeySelected.id : '';
+    const card = (id, icon, tone, label, headline, description) => `<button type="button" class="log-journey-overview-card is-${esc(tone)}" data-journey-type="priority" data-journey-id="${esc(id)}" aria-expanded="${selected === id}" aria-controls="logJourneyPriorityTray" aria-pressed="${selected === id}">
+      <span class="log-journey-overview-icon is-${esc(tone)}">${logJourneyIcon(icon)}</span>
+      <span class="log-journey-overview-copy"><span>${esc(label)}</span><strong>${esc(headline)}</strong><p>${esc(description)}</p></span>
+      <span class="log-journey-overview-cue" aria-hidden="true">${selected === id ? 'Close guidance' : 'View guidance'}</span>
+    </button>`;
+    const trayDetail = selected ? logJourneyPriorityDetail(selected, model) : null;
+    return `<div class="log-journey-overview">
+      ${card('gaps', 'warning', 'gap', 'Priority gaps', priority.priorityCount ? `${priority.priorityCount} ${priority.priorityLevel} finding${priority.priorityCount === 1 ? '' : 's'}` : 'No gaps observed', priority.priorityCount ? 'Start with the highest-severity evidence in the control rail below.' : 'Missing sources and quiet activity still remain evidence limits.')}
+      ${card('protection', 'shield-check', 'protected', 'Demonstrated protection', `${priority.protectedCount.toLocaleString()} events · ${priority.protectionPct}%`, `${priority.enforcingPolicies.length} enforcing ${priority.enforcingPolicies.length === 1 ? 'policy was' : 'policies were'} observed acting in this window.`)}
+      ${card('actions', 'target', 'next', 'Next policy actions', `${priority.actNowPolicies.length} act now · ${priority.validateFirstPolicies.length} validate first`, `${priority.optionalPolicies.length} optional or advanced proposal${priority.optionalPolicies.length === 1 ? '' : 's'} remain available below.`)}
+    </div>${trayDetail ? `<section class="log-journey-priority-tray" id="logJourneyPriorityTray" role="region" aria-labelledby="logJourneyPriorityTrayTitle">
+      <header><div><span class="eyebrow">${esc(trayDetail.kicker)}</span><h4 id="logJourneyPriorityTrayTitle">${esc(trayDetail.title)}</h4></div><div>${renderLogJourneyStatus(trayDetail.status, false)}<button type="button" class="btn secondary" data-log-journey-clear>Close details</button></div></header>
+      <div class="log-journey-priority-tray-reveal"><div class="log-journey-priority-tray-body">${trayDetail.body}</div></div>
+    </section>` : ''}`;
+  }
+
+  function renderLogJourneyEvidence(model) {
+    const selection = state.logAnalysis.journeySelected;
+    const prioritySelection = selection?.type === 'priority';
+    const detail = selection && !prioritySelection ? logJourneyEntityDetail(selection.type, selection.id) : null;
+    return `<section class="log-journey-evidence" id="logJourneyEvidence" aria-live="polite" aria-labelledby="logJourneyEvidenceTitle">
+      <header class="log-journey-evidence-head">
+        <div><span class="eyebrow">${detail ? esc(detail.kicker) : 'Priority overview'}</span><h3 id="logJourneyEvidenceTitle" tabindex="-1">${detail ? esc(detail.title) : 'What needs attention first'}</h3></div>
+        <div class="log-journey-evidence-actions">${detail ? `${renderLogJourneyStatus(detail.status, false)}<button type="button" class="btn secondary" data-log-journey-clear>Back to overview</button>` : '<span>Select any item for measured evidence and next steps.</span>'}</div>
+      </header>
+      <div class="log-journey-evidence-body">${detail ? detail.body : renderLogJourneyPriorityOverview(model)}</div>
+    </section>`;
+  }
+
+  function renderLogJourneyDeclarationDisclosure(model) {
+    const answers = state.logAnalysis.declarations || defaultDeclarations();
+    const unanswered = LOG_DECLARATIONS.filter(item => answers[item.key] === 'unknown').length;
+    const rows = LOG_DECLARATIONS.map(item => {
+      const current = answers[item.key] || 'unknown';
+      const affected = model.recommendedPolicies.filter(policy => (policy.declarationKeys || []).includes(item.key));
+      const impact = current === 'unknown'
+        ? `${affected.length} proposed ${affected.length === 1 ? 'policy' : 'policies'} affected · Yes can promote or retain · No can remove incompatible proposals`
+        : current === 'yes'
+          ? `${affected.length} proposed ${affected.length === 1 ? 'policy' : 'policies'} currently confirmed or retained`
+          : 'Incompatible proposals removed; any contradictory measured finding remains visible as a warning';
+      const buttons = LOG_DECLARATION_ANSWERS.map(value => `<button type="button" class="log-declaration-btn${current === value ? ' active' : ''}" data-declaration="${esc(item.key)}" data-answer="${esc(value)}" aria-pressed="${current === value}">${esc({ yes: 'Yes', unknown: 'Not sure', no: 'No' }[value])}</button>`).join('');
+      return `<div class="log-declaration"><div><strong>${esc(item.question)}</strong><p>${esc(item.why)}</p><small class="log-declaration-impact">${esc(impact)}</small></div><div class="log-declaration-answers" role="group" aria-label="${esc(item.question)}">${buttons}</div></div>`;
+    }).join('');
+    return `<details class="log-journey-declarations"${state.logAnalysis.tenantAssumptionsExpanded ? ' open' : ''}><summary><span>${logJourneyIcon('document-search')}</span><span><strong>Tenant assumptions</strong><small>${unanswered ? `${unanswered} unanswered — proposed policies include caveats` : 'All questions answered'}</small></span></summary><div><p>These answers change recommendations only. They do not change measured sign-in evidence.</p><div class="log-declaration-list">${rows}</div></div></details>`;
+  }
+
+  function renderLogJourneyDeclinedWarnings() {
+    const declined = state.logAnalysis.recommendedPolicySet?.declined || [];
+    const contradicted = declined.filter(item => item.contradictsEvidence);
+    if (!declined.length) return '';
+    return `<div class="log-journey-declined-warning"><strong>${esc(declined.length)} policy ${declined.length === 1 ? 'family is' : 'families are'} excluded by tenant answers</strong><p>${contradicted.length ? `${contradicted.length} ${contradicted.length === 1 ? 'answer conflicts' : 'answers conflict'} with measured finding evidence. The finding remains visible, but incompatible proposals have been removed.` : 'The excluded families remain recorded here so absence is not mistaken for a clean assessment.'}</p></div>`;
+  }
+
+  function renderLogJourneyObservedPolicy(policy) {
+    const controls = [...policy.grants.map(item => item.label), ...policy.sessions.map(item => item.label), ...policy.authStrength.map(item => `Strength: ${item.name}`)];
+    return `<button type="button" class="log-journey-policy" data-journey-type="observedPolicy" data-journey-id="${esc(policy.name)}" aria-pressed="false">
+      <span class="status-chip ${policy.state === 'enforcing' ? 'import-exact' : policy.state === 'reportOnly' ? 'import-different' : 'import-extra'}">${esc(policy.state === 'enforcing' ? 'Enforcing' : policy.state === 'reportOnly' ? 'Report-only' : 'Never matched')}</span>
+      <span><strong>${esc(policy.name)}</strong><small>${esc(policy.applied)} applied · ${esc(policy.evaluations)} evaluated${controls.length ? ` · ${esc([...new Set(controls)].slice(0, 2).join(', '))}` : ''}</small></span>
+      <em>${esc(policy.hitRate || 0)}% hit rate</em>
+    </button>`;
+  }
+
+  function renderLogJourneyRecommendedPolicy(policy) {
+    const element = [...LOG_JOURNEY_STAGES.flatMap(stage => stage.elements), ...LOG_JOURNEY_ADJACENT].find(item => item.id === policy.primaryElementId);
+    const affected = policy.drivers.reduce((maximum, driver) => Math.max(maximum, Number(driver.affected) || 0), 0);
+    const unresolved = policy.unresolvedPrerequisites?.length || 0;
+    return `<button type="button" class="log-journey-policy is-proposed is-${esc(policy.actionTier)}" data-journey-type="recommendedPolicy" data-journey-id="${esc(policy.id)}" aria-pressed="false">
+      <span class="status-chip log-action-tier is-${esc(policy.actionTier)}">${esc(policy.actionTierLabel)}</span>
+      <span><strong>${esc(tenantPolicyName(policy.displayName))}</strong><small>${esc(policy.basis.label)} · ${esc(policy.drivers.length)} finding driver${policy.drivers.length === 1 ? '' : 's'}${affected ? ` · up to ${esc(affected.toLocaleString())} affected` : ''} · ${esc(element?.label || policy.primaryElementId)}${unresolved ? ` · ${esc(unresolved)} unresolved prerequisite${unresolved === 1 ? '' : 's'}` : ''}<span class="log-journey-reason-labels">${(policy.reasonLabels || []).map(label => `<em>${esc(label)}</em>`).join('')}</span></small></span>
+      <em>${esc(coverageHeadline(policy.coverage))}</em>
+    </button>`;
+  }
+
+  function renderLogJourneyPolicyBoard(model) {
+    const observed = [...model.observedPolicies].sort((a, b) => {
+      const rank = policy => policy.state === 'enforcing' ? 0 : policy.state === 'reportOnly' ? 1 : 2;
+      return rank(a) - rank(b) || b.applied - a.applied || b.evaluations - a.evaluations;
+    });
+    const relevant = observed.filter(policy => policy.state !== 'neverMatched');
+    const remainder = observed.filter(policy => policy.state === 'neverMatched');
+    const visible = state.logAnalysis.observedPoliciesExpanded ? observed : relevant;
+    const observedContent = visible.length
+      ? visible.map(renderLogJourneyObservedPolicy).join('')
+      : '<div class="log-journey-policy-blind"><strong>Policy-evidence blind spot</strong><p>No per-policy evaluation data was recorded. CSV exports do not include this detail; use a JSON sign-in export to see observed policy names and controls.</p></div>';
+    const actNowRecommendations = model.recommendedPolicies.filter(policy => policy.actionTier === 'actNow');
+    const validateRecommendations = model.recommendedPolicies.filter(policy => policy.actionTier === 'validateFirst');
+    const optionalRecommendations = model.recommendedPolicies.filter(policy => policy.actionTier === 'optionalAdvanced');
+    const reasonCounts = new Map();
+    optionalRecommendations.forEach(policy => (policy.reasonLabels || []).forEach(reason => incrementJourneyMap(reasonCounts, reason, 1)));
+    const optionalReasons = logJourneyTopEntries(reasonCounts, 4).map(item => `${item.name} ${item.count}`).join(' · ');
+    const actionLane = (className, title, description, policies) => `<section class="log-journey-action-lane ${esc(className)}"><header><div><span>${esc(title)}</span><small>${esc(description)}</small></div><strong>${esc(policies.length)}</strong></header><div>${policies.length ? policies.map(renderLogJourneyRecommendedPolicy).join('') : '<div class="log-journey-policy-blind"><strong>No policy in this tier</strong><p>The current evidence and assumption answers did not place a proposal here.</p></div>'}</div></section>`;
+    const recommendations = model.recommendedPolicies.length
+      ? `${actionLane('is-act-now', 'Act now', 'Begin investigation, design and staged rollout.', actNowRecommendations)}${actionLane('is-validate-first', 'Validate first', 'Resolve prerequisites before pilot deployment.', validateRecommendations)}${optionalRecommendations.length ? `<details class="log-journey-contextual"><summary><span>Optional / advanced (${optionalRecommendations.length})</span><small>${esc(optionalReasons || 'Unanswered assumptions and specialist scenarios')}</small></summary><div>${optionalRecommendations.map(renderLogJourneyRecommendedPolicy).join('')}</div></details>` : ''}`
+      : '<div class="log-journey-policy-blind"><strong>No proposed set was generated</strong><p>The loaded evidence did not produce a recommendation set. Review blind spots and tenant assumptions before treating this as a clean result.</p></div>';
+    return `<section class="log-journey-policy-board" id="logJourneyPolicyBoard" tabindex="-1" aria-labelledby="logJourneyPolicyBoardTitle">
+      <div class="log-journey-section-head"><div><span class="eyebrow">Policy action board</span><h3 id="logJourneyPolicyBoardTitle">What acted—and what to change next</h3><p>Observed policy results are runtime evidence. Proposed controls are guidance and never alter the measured ribbons above.</p></div><div class="log-journey-board-actions"><button type="button" class="btn secondary" data-log-build-guide>Download build guide</button><button type="button" class="btn primary" data-log-build-strategy>Build this strategy</button></div></div>
+      ${renderLogJourneyDeclarationDisclosure(model)}
+      ${renderLogJourneyDeclinedWarnings()}
+      <div class="log-journey-policy-lanes">
+        <section><header><div><span class="eyebrow">Observed in this window</span><h4>${esc(relevant.length)} active or report-only ${relevant.length === 1 ? 'policy' : 'policies'}</h4></div>${remainder.length ? `<button type="button" class="btn secondary" data-log-toggle-observed>${state.logAnalysis.observedPoliciesExpanded ? 'Show relevant only' : `View all observed policies (${observed.length})`}</button>` : ''}</header><div class="log-journey-policy-list">${observedContent}</div></section>
+        <section><header><div><span class="eyebrow">Recommended next controls</span><h4>${esc(model.recommendedPolicies.length)} proposed · ${esc(actNowRecommendations.length)} act now · ${esc(validateRecommendations.length)} validate first · ${esc(optionalRecommendations.length)} optional</h4></div></header><div class="log-journey-policy-list">${recommendations}</div></section>
+      </div>
+    </section>`;
+  }
+
+  function renderLogVisualWorkspace() {
+    const model = buildLogJourneyModel();
+    const findingCount = state.logAnalysis.findings.length;
+    const allSources = model.sources.every(source => source.loaded);
+    const selected = state.logAnalysis.journeySelected;
+    return `<div class="log-journey${selected ? ' has-selection' : ''}">
+      <header class="log-journey-head">
+        <div><span class="eyebrow">Conditional Access visual assessment</span><h2 id="logVisualTitle">See where access is protected—and where it slips through</h2><p>${esc(model.journey.total.toLocaleString())} sign-in events classified once from identity source to CA decision and outcome. ${allSources ? 'All four log sources are represented.' : 'Missing sources remain visible as blind spots.'}</p></div>
+        <button type="button" class="btn primary log-journey-details" data-log-show-details>Detailed findings (${esc(findingCount)})</button>
+      </header>
+      ${renderLogJourneySummary(model)}
+      <section class="log-journey-flow" aria-labelledby="logJourneyFlowTitle">
+        <div class="log-journey-section-head"><div><span class="eyebrow">Measured authentication flow</span><h3 id="logJourneyFlowTitle">How sign-ins moved through Conditional Access</h3><p>Ribbon width represents mutually exclusive events, never policy-evaluation totals.</p></div><div class="log-journey-flow-key"><span><i class="is-protected"></i>Protected</span><span><i class="is-review"></i>Review</span><span><i class="is-gap"></i>Gap</span></div></div>
+        <div class="log-journey-flow-shell" id="logJourneyFlowShell" data-journey-clear-space>
+          <svg class="log-journey-ribbons" id="logJourneyRibbons" aria-hidden="true"></svg>
+          <div class="log-journey-flow-columns">
+            <section class="log-journey-column"><header><span>01</span><strong>Identity / log type</strong></header><div>${model.sources.map(node => renderLogJourneyNode(node, 'source')).join('')}</div></section>
+            <section class="log-journey-column"><header><span>02</span><strong>CA decision</strong></header><div>${model.decisions.map(node => renderLogJourneyNode(node, 'decision')).join('')}</div></section>
+            <section class="log-journey-column"><header><span>03</span><strong>Sign-in outcome</strong></header><div>${model.outcomes.map(node => renderLogJourneyNode(node, 'outcome')).join('')}</div></section>
+          </div>
+        </div>
+      </section>
+      ${renderLogJourneyEvidence(model)}
+      <section class="log-journey-assessment" aria-labelledby="logJourneyAssessmentTitle">
+        <div class="log-journey-control-bridge"><span>${logJourneyIcon('branch')}</span><p><strong>Why the flow looks this way</strong>Policy configuration explains the measured paths above, but is not itself event volume.</p></div>
+        <div class="log-journey-section-head"><div><span class="eyebrow">Connected control assessment</span><h3 id="logJourneyAssessmentTitle">Why the flow looks this way</h3><p>Each finding appears once beneath the control that best explains it. Policy counts show where observed and proposed controls connect.</p></div><div class="log-journey-status-key">${Object.keys(LOG_JOURNEY_STATUS_META).map(status => renderLogJourneyStatus(status, true)).join('')}</div></div>
+        ${findingCount ? '' : '<p class="log-journey-no-findings"><strong>No gaps were identified in the loaded evidence.</strong> That does not prove universal protection; quiet activity and missing sources remain visible below.</p>'}
+        <div class="log-journey-stage-grid">${model.stages.map(renderLogJourneyStage).join('')}</div>
+      </section>
+      <section class="log-journey-adjacent" aria-labelledby="logJourneyAdjacentTitle">
+        <div class="log-journey-section-head"><div><span class="eyebrow">Outside the tenant CA boundary</span><h3 id="logJourneyAdjacentTitle">Adjacent identity controls</h3><p>These remain part of the one-page assessment, while clearly separated from controls Conditional Access can enforce.</p></div></div>
+        <div class="log-journey-adjacent-grid">${model.adjacent.map(renderLogJourneyElement).join('')}</div>
+      </section>
+      ${renderLogJourneyPolicyBoard(model)}
+    </div>`;
+  }
+
+  function queueLogJourneyDraw() {
+    cancelAnimationFrame(logJourneyDrawFrame);
+    logJourneyDrawFrame = requestAnimationFrame(() => {
+      logJourneyDrawFrame = requestAnimationFrame(() => {
+        drawLogJourneyRibbons();
+        const shell = $('logJourneyFlowShell');
+        if (!shell || typeof ResizeObserver === 'undefined') return;
+        if (logJourneyResizeObserver) logJourneyResizeObserver.disconnect();
+        logJourneyResizeObserver = new ResizeObserver(() => drawLogJourneyRibbons());
+        logJourneyResizeObserver.observe(shell);
+      });
+    });
+  }
+
+  function drawLogJourneyRibbons() {
+    const shell = $('logJourneyFlowShell');
+    const svg = $('logJourneyRibbons');
+    if (!shell || !svg || shell.offsetWidth < 560) {
+      if (svg) svg.innerHTML = '';
+      return;
+    }
+    const model = buildLogJourneyModel();
+    const bounds = shell.getBoundingClientRect();
+    const width = Math.max(1, bounds.width);
+    const height = Math.max(1, bounds.height);
+    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    const total = Math.max(1, model.journey.total);
+    svg.innerHTML = model.links.map((link, index) => {
+      const from = shell.querySelector(`[data-journey-node="${link.fromType}:${link.fromId}"]`);
+      const to = shell.querySelector(`[data-journey-node="${link.toType}:${link.toId}"]`);
+      if (!from || !to) return '';
+      const a = from.getBoundingClientRect();
+      const b = to.getBoundingClientRect();
+      const sx = a.right - bounds.left;
+      const tx = b.left - bounds.left;
+      const sy = a.top - bounds.top + a.height / 2;
+      const ty = b.top - bounds.top + b.height / 2;
+      const band = Math.max(2.5, Math.min(34, (link.value / total) * 92));
+      const bend = Math.max(34, (tx - sx) * .46);
+      const top = `M ${sx} ${sy - band / 2} C ${sx + bend} ${sy - band / 2}, ${tx - bend} ${ty - band / 2}, ${tx} ${ty - band / 2}`;
+      const bottom = `L ${tx} ${ty + band / 2} C ${tx - bend} ${ty + band / 2}, ${sx + bend} ${sy + band / 2}, ${sx} ${sy + band / 2} Z`;
+      const center = `M ${sx} ${sy} C ${sx + bend} ${sy}, ${tx - bend} ${ty}, ${tx} ${ty}`;
+      const attrs = `data-from="${link.fromType}:${link.fromId}" data-to="${link.toType}:${link.toId}" data-link-value="${link.value}"`;
+      return `<path class="log-journey-ribbon log-journey-tone-${esc(link.tone)}" d="${top} ${bottom}" ${attrs}/><path class="log-journey-pulse log-journey-tone-${esc(link.tone)}" d="${center}" ${attrs} style="--journey-delay:-${(index % 7) * .55}s"/>`;
+    }).join('');
+    applyLogJourneySelection();
+  }
+
+  function logJourneySelectionEntities(selection) {
+    const model = buildLogJourneyModel();
+    const entities = new Set();
+    if (!selection) return entities;
+    entities.add(`${selection.type}:${selection.id}`);
+    const addRoute = route => {
+      entities.add(`source:${route.source}`);
+      entities.add(`decision:${route.decision}`);
+      entities.add(`outcome:${route.outcome}`);
+    };
+    if (['source', 'decision', 'outcome'].includes(selection.type)) {
+      model.journey.routes.forEach(route => {
+        if (route[selection.type] === selection.id) addRoute(route);
+      });
+    } else {
+      const elements = [...model.stages.flatMap(stage => stage.elements), ...model.adjacent];
+      let findings = selection.type === 'finding'
+        ? state.logAnalysis.findings.filter(item => item.id === selection.id)
+        : selection.type === 'severity'
+          ? state.logAnalysis.findings.filter(item => item.severity === selection.id)
+          : [];
+      let connectedElements = selection.type === 'element'
+        ? elements.filter(item => item.id === selection.id)
+        : elements.filter(item => item.findings.some(finding => findings.some(selectedFinding => selectedFinding.id === finding.id)));
+      if (selection.type === 'priority') {
+        const priority = logJourneyPriorityData(model);
+        if (selection.id === 'gaps') {
+          findings = priority.priorityFindings;
+          connectedElements = elements.filter(element => element.findings.some(finding => findings.some(item => item.id === finding.id)));
+        }
+        if (selection.id === 'protection') {
+          const enforcingPolicyNames = new Set(priority.enforcingPolicies.map(policy => policy.name));
+          connectedElements = elements.filter(element => element.observedPolicies.some(policy => enforcingPolicyNames.has(policy.name)));
+          priority.enforcingPolicies.forEach(policy => entities.add(`observedPolicy:${policy.name}`));
+          model.journey.routes.forEach(route => {
+            if (route.outcome === 'blocked' || route.outcome === 'protectedSuccess') addRoute(route);
+          });
+        }
+        if (selection.id === 'actions') {
+          const priorityPolicies = [...priority.actNowPolicies, ...priority.validateFirstPolicies];
+          const priorityPolicyIds = new Set(priorityPolicies.map(policy => policy.id));
+          connectedElements = elements.filter(element => element.recommendedPolicies.some(policy => priorityPolicyIds.has(policy.id)));
+          priorityPolicies.forEach(policy => entities.add(`recommendedPolicy:${policy.id}`));
+          const driverTitles = new Set(priorityPolicies.flatMap(policy => policy.drivers.map(driver => driver.title)));
+          findings = state.logAnalysis.findings.filter(finding => driverTitles.has(finding.title));
+        }
+      }
+      if (selection.type === 'observedPolicy') {
+        connectedElements = elements.filter(element => element.observedPolicies.some(policy => policy.name === selection.id));
+        model.journey.routes.forEach(route => {
+          if (route.evaluatedPolicies?.has(selection.id) || route.policies?.has(selection.id)) addRoute(route);
+        });
+      }
+      if (selection.type === 'recommendedPolicy') {
+        const policy = model.recommendedPolicies.find(item => item.id === selection.id);
+        connectedElements = elements.filter(element => element.recommendedPolicies.some(item => item.id === selection.id));
+        findings = state.logAnalysis.findings.filter(finding => policy?.drivers.some(driver => driver.title === finding.title));
+      }
+      if (selection.type === 'element') findings = connectedElements.flatMap(element => element.findings);
+      if (selection.type !== 'priority' || selection.id === 'gaps') {
+        const sourceIds = new Set([...findings.flatMap(finding => finding.metric.sources || []), ...connectedElements.flatMap(element => element.findings.flatMap(finding => finding.metric.sources || []))]);
+        sourceIds.forEach(sourceId => model.journey.routes.forEach(route => { if (route.source === sourceId) addRoute(route); }));
+      }
+      connectedElements.forEach(element => entities.add(`element:${element.id}`));
+      findings.forEach(finding => entities.add(`finding:${finding.id}`));
+    }
+    return entities;
+  }
+
+  function applyLogJourneySelection() {
+    const root = $('logVisualContent');
+    if (!root) return;
+    const selection = state.logAnalysis.journeySelected;
+    const entities = logJourneySelectionEntities(selection);
+    root.querySelector('.log-journey')?.classList.toggle('has-selection', Boolean(selection));
+    root.querySelectorAll('[data-journey-type][data-journey-id]').forEach(item => {
+      const selected = Boolean(selection && item.dataset.journeyType === selection.type && item.dataset.journeyId === selection.id);
+      item.classList.toggle('is-selected', selected || entities.has(`${item.dataset.journeyType}:${item.dataset.journeyId}`));
+      if (item.hasAttribute('aria-pressed')) item.setAttribute('aria-pressed', String(selected));
+    });
+    root.querySelectorAll('[data-journey-node]').forEach(node => {
+      const connected = entities.has(node.dataset.journeyNode);
+      node.classList.toggle('is-connected', Boolean(selection && connected));
+      node.classList.toggle('is-dimmed', Boolean(selection && !connected));
+      node.classList.toggle('is-selected', Boolean(selection && node.dataset.journeyNode === `${selection.type}:${selection.id}`));
+    });
+    root.querySelectorAll('[data-journey-element], .log-journey-finding').forEach(node => {
+      const id = node.dataset.journeyElement ? `element:${node.dataset.journeyElement}` : `finding:${node.dataset.journeyId}`;
+      node.classList.toggle('is-selected', Boolean(selection && entities.has(id)));
+    });
+    root.querySelectorAll('.log-journey-policy').forEach(policy => {
+      const key = `${policy.dataset.journeyType}:${policy.dataset.journeyId}`;
+      policy.classList.toggle('is-connected', Boolean(selection && (entities.has(key) || policy.classList.contains('is-selected'))));
+    });
+    root.querySelectorAll('.log-journey-ribbon, .log-journey-pulse').forEach(path => {
+      const connected = entities.has(path.dataset.from) && entities.has(path.dataset.to);
+      path.classList.toggle('is-connected', Boolean(selection && connected));
+      path.classList.toggle('is-dimmed', Boolean(selection && !connected));
+      path.classList.remove('is-replaying');
+      if (selection && connected && path.classList.contains('log-journey-pulse')) {
+        void path.getBoundingClientRect();
+        path.classList.add('is-replaying');
+      }
+    });
+  }
+
+  function logJourneyMatchingRoutes(type, id) {
+    const routes = [...(state.logAnalysis.agg?.journey.routes.values() || [])];
+    return routes.filter(route => route[type] === id).sort((a, b) => b.count - a.count);
+  }
+
+  function logObservedPolicyRelationships(policy) {
+    const candidates = [];
+    const grantText = policy.grants.map(grant => `${grant.name} ${grant.label}`).join(' ');
+    const sessionText = policy.sessions.map(session => `${session.name} ${session.label}`).join(' ');
+    const configText = policy.observedConfig.map(row => `${row.label} ${row.value}`).join(' ');
+    const conditionText = policy.notSatisfied.map(item => `${item.name} ${item.label}`).join(' ');
+    if (policy.authStrength.length) candidates.push('auth-strength');
+    if (/compliantdevice|domainjoineddevice|hybridjoined/i.test(grantText)) candidates.push('device-compliance');
+    if (/approvedapplication|compliantapplication|appprotection/i.test(grantText)
+      || /applicationenforcedrestrictions|cloudappsecurity/i.test(sessionText)) candidates.push('byod-protection');
+    if (/risk/i.test(conditionText)) candidates.push('risk-protection');
+    if (/location|ip address/i.test(`${conditionText} ${configText}`)) candidates.push('location-context');
+    if (/block/i.test(grantText) && /client apps/i.test(configText)) candidates.push('legacy-controls');
+    if (/authentication flow|device code|transfer/i.test(`${conditionText} ${configText}`)) candidates.push('authentication-flows');
+    if (policy.sessions.length) candidates.push('session-protection');
+    if (/mfa|multifactor|authenticationstrength/i.test(grantText)) candidates.push('mfa-coverage');
+    if (/^Excludes/im.test(configText)) candidates.push('exclusions-filters');
+    if (/guest|external/i.test(configText)) candidates.push('guest-scope');
+    if (/application|target resources/i.test(configText)) candidates.push('application-scope');
+    if (/assigned to|users|roles/i.test(configText)) candidates.push('identity-scope');
+    if (policy.state === 'reportOnly') candidates.push('report-only-state');
+    if (policy.state === 'enforcing' && policy.applied) candidates.push('applied-path');
+    const unique = [...new Set(candidates)];
+    return { primary: unique[0] || null, secondary: unique.slice(1) };
+  }
+
+  function logJourneyPolicyEvidence(element) {
+    const policies = state.logAnalysis.policyInventory?.policies || [];
+    if (element.id === 'runtime-coverage') return [];
+    return policies.filter(policy => logObservedPolicyRelationships(policy).primary === element.id);
+  }
+
+  function logJourneyRecommendedPolicyEvidence(element) {
+    const policies = state.logAnalysis.recommendedPolicySet?.policies || [];
+    if (element.id === 'applied-path' || element.id === 'runtime-coverage' || element.id === 'report-only-state') return [];
+    return policies.filter(policy => policy.primaryElementId === element.id);
+  }
+
+  function renderLogJourneySamples(samples) {
+    const rows = (samples || []).filter(sample => sample && typeof sample === 'object' && !sample.kind).slice(0, 6);
+    if (!rows.length) return '<p class="log-journey-evidence-muted">No event-level sample was retained for this observation.</p>';
+    return `<div class="log-journey-samples">${rows.map(sample => `<article><span>${esc(sample.time || 'unknown')}</span><strong>${esc(sample.principal || 'unknown')}</strong><p>${esc(sample.app || 'unknown')} · ${esc(sample.location || 'unknown')}</p></article>`).join('')}</div>`;
+  }
+
+  function renderLogJourneyPolicies(policies) {
+    if (!policies.length) return '';
+    return `<div class="log-journey-evidence-policies"><strong>Policies and conditions observed</strong>${policies.map(policy => {
+      const controls = [...policy.grants.map(item => item.label), ...policy.sessions.map(item => item.label), ...policy.authStrength.map(item => `Authentication strength: ${item.name}`)];
+      const conditions = [...policy.observedConfig.map(item => `${item.label}: ${item.value}`), ...policy.notSatisfied.map(item => `${item.label} (${item.count})`)];
+      return `<article><h5>${esc(policy.name)}</h5><p>${esc(policy.applied)} applied · ${esc(policy.reportOnly)} report-only · ${esc(policy.notApplied)} did not match</p>${controls.length ? `<p><strong>Controls:</strong> ${esc([...new Set(controls)].join(' · '))}</p>` : ''}${conditions.length ? `<p><strong>Observed scope / filters:</strong> ${esc(conditions.slice(0, 6).join(' · '))}</p>` : ''}</article>`;
+    }).join('')}</div>`;
+  }
+
+  function renderLogJourneyEvidenceSection(title, content) {
+    return `<section class="log-journey-evidence-section"><h4>${esc(title)}</h4>${content}</section>`;
+  }
+
+  function logJourneyAggregateRoutes(routes, field) {
+    const result = new Map();
+    routes.forEach(route => {
+      if (route[field] instanceof Map) route[field].forEach((count, name) => incrementJourneyMap(result, name, count));
+      else if (route[field]) incrementJourneyMap(result, route[field], route.count);
+    });
+    return result;
+  }
+
+  function renderLogJourneyFactList(items, labels) {
+    if (!items.length) return '<p class="log-journey-evidence-muted">No measured values were available.</p>';
+    return `<ul class="log-journey-fact-list">${items.map(item => `<li><span>${esc(labels?.[item.name] || item.name)}</span><strong>${esc(item.count.toLocaleString())}</strong></li>`).join('')}</ul>`;
+  }
+
+  function renderLogJourneyGuidance(guidance) {
+    if (!guidance) return '';
+    const links = (guidance.links || []).map(key => LOG_LEARN_GUIDANCE[key]).filter(Boolean);
+    return `<div class="log-journey-guidance"><ul>${(guidance.notes || []).map(note => `<li>${esc(note)}</li>`).join('')}</ul>${links.length ? `<div class="log-journey-guidance-links">${links.map(link => `<a href="${esc(link.url)}" target="_blank" rel="noopener noreferrer">${logJourneyIcon('external')}${esc(link.label)}</a>`).join('')}</div>` : ''}</div>`;
+  }
+
+  function logJourneyDeviceFilterExamples(context) {
+    const examples = [];
+    const topValue = name => logJourneyTopEntries(context.attributeValues.get(name), 1)[0]?.name;
+    if (context.attributes.has('isCompliant')) examples.push({ label: 'Compliant device', expression: 'device.isCompliant -eq true' });
+    const trustType = topValue('trustType');
+    if (trustType) examples.push({ label: 'Returned join type', expression: `device.trustType -eq "${trustType}"` });
+    if (trustType && (context.byState.get('unregistered') || 0)) examples.push({ label: 'Include null/unregistered when deliberately excluding a join type', expression: `device.trustType -ne "${trustType}"` });
+    const ownership = topValue('deviceOwnership');
+    if (ownership) examples.push({ label: 'Returned ownership', expression: `device.deviceOwnership -eq "${ownership}"` });
+    const operatingSystemVersion = topValue('operatingSystemVersion');
+    if (operatingSystemVersion) examples.push({ label: 'Returned OS version', expression: `device.operatingSystemVersion -eq "${operatingSystemVersion}"` });
+    const mdmAppId = topValue('mdmAppId');
+    if (mdmAppId) examples.push({ label: 'Returned management authority', expression: `device.mdmAppId -eq "${mdmAppId}"` });
+    const profile = topValue('enrollmentProfileName');
+    if (profile) examples.push({ label: 'Returned enrolment profile', expression: `device.enrollmentProfileName -eq "${profile}"` });
+    if (!examples.length) return '<p class="log-journey-evidence-muted">No supported device-filter attribute was returned, so no filter example is shown.</p>';
+    return `<div class="log-journey-filter-examples"><p><strong>Guidance to validate — not generated runtime proof</strong></p>${examples.map(example => `<div><span>${esc(example.label)}</span><code>${esc(example.expression)}</code></div>`).join('')}</div>`;
+  }
+
+  function renderLogJourneyDeviceContext(elementId, context) {
+    const stateLabels = Object.fromEntries(LOG_DEVICE_CONTEXT_STATES.map(item => [item.id, item.label]));
+    const rootCauses = LOG_DEVICE_CONTEXT_STATES.slice(0, 3).map(item => ({ name: item.id, count: context.findingStates.get(item.id) || 0 }));
+    if (elementId === 'device-identity') {
+      return `<div class="log-journey-device-context"><div class="log-journey-breakdowns"><div><h5>Identity and join state</h5>${renderLogJourneyFactList(logJourneyTopEntries(context.joinStates, 8))}</div><div><h5>Platforms</h5>${renderLogJourneyFactList(logJourneyTopEntries(context.platforms, 8))}</div><div><h5>Special context</h5><ul class="log-journey-fact-list"><li><span>Device-code flows</span><strong>${esc(context.deviceCodeFlows.toLocaleString())}</strong></li><li><span>Inbound guests</span><strong>${esc(context.inboundGuests.toLocaleString())}</strong></li></ul></div></div>${logJourneyDeviceFilterExamples(context)}</div>`;
+    }
+    if (elementId === 'device-compliance') {
+      return `<div class="log-journey-device-context"><p><strong>Root-cause slices for the device finding</strong></p><div class="log-journey-breakdowns"><div><h5>Needs action</h5>${renderLogJourneyFactList(rootCauses, stateLabels)}</div><div><h5>Positive and unknown context</h5>${renderLogJourneyFactList(['compliant', 'unknown'].map(name => ({ name, count: context.byState.get(name) || 0 })), stateLabels)}</div><div><h5>Ownership</h5>${renderLogJourneyFactList(logJourneyTopEntries(context.ownership, 8))}</div></div><p class="log-journey-evidence-muted">Compliant and joined traffic is useful positive context. Join state alone is not treated as proof of compliance.</p>${logJourneyDeviceFilterExamples(context)}</div>`;
+    }
+    if (elementId === 'byod-protection') {
+      return `<div class="log-journey-device-context"><div class="log-journey-breakdowns"><div><h5>Ownership</h5>${renderLogJourneyFactList(logJourneyTopEntries(context.ownership, 8))}</div><div><h5>Browser</h5>${renderLogJourneyFactList(logJourneyTopEntries(context.browsers, 8))}</div><div><h5>Client application</h5>${renderLogJourneyFactList(logJourneyTopEntries(context.clientApps, 8))}</div></div><p>${esc(context.inboundGuests.toLocaleString())} inbound guest event${context.inboundGuests === 1 ? '' : 's'} were present. Their external device claims are useful only when inbound cross-tenant trust is configured.</p></div>`;
+    }
+    if (elementId === 'session-protection') {
+      return `<div class="log-journey-device-context"><div class="log-journey-breakdowns"><div><h5>Client application</h5>${renderLogJourneyFactList(logJourneyTopEntries(context.clientApps, 8))}</div><div><h5>Browser</h5>${renderLogJourneyFactList(logJourneyTopEntries(context.browsers, 8))}</div><div><h5>Platforms</h5>${renderLogJourneyFactList(logJourneyTopEntries(context.platforms, 8))}</div></div></div>`;
+    }
+    return '';
+  }
+
+  function logJourneyElementActions(element) {
+    const actions = {
+      'device-identity': [
+        'Separate no-device-identity events from registered devices before changing policy. Investigate device-code flows with an authentication control rather than a device grant.',
+        'Use device-filter examples only after confirming the attribute is returned on the intended platform. Use a negative operator when unregistered devices must be included deliberately.',
+        'For inbound guests, confirm cross-tenant device-claim trust before relying on their home-tenant compliance or hybrid-join claim.'
+      ],
+      'device-compliance': [
+        'Remediate managed but noncompliant devices in the management service; enrol registered but unmanaged corporate devices; define a separate supported path for personal devices.',
+        'Prefer Require device to be marked as compliant for a cloud-native estate. Use the hybrid-join grant only for the intended Windows domain-joined population.',
+        'Pilot with emergency-access exclusions and review report-only results before staged enablement; account for possible device-certificate prompts on supported mobile and macOS clients.'
+      ],
+      'byod-protection': [
+        'Choose an explicit BYOD model per application: supported app protection, restricted browser access, or blocked access. Validate platform and application support before proposing it.',
+        'Do not treat platform conditions as device posture. Pair user-agent platform signals with compliance or app protection where supported.'
+      ],
+      'session-protection': [
+        'Choose the session capability for a specific risk and supported application. Sign-in frequency, browser persistence, app restrictions, Defender for Cloud Apps and token protection are not interchangeable defaults.',
+        'Validate client, application, licensing and capability status before adding a session control, then test it in report-only or a pilot group where supported.'
+      ],
+      'mfa-coverage': [
+        'Close measured single-factor paths with an applicable MFA grant, keeping emergency-access accounts excluded and monitored.',
+        'Pilot broad workforce coverage against All resources, then review application-specific exceptions rather than creating a separate MFA policy for every app.'
+      ],
+      'auth-strength': [
+        'Use authentication strength only where the required method assurance is clear. Treat phishing-resistant strength as a deliberate higher-assurance control, not a synonym for any MFA.'
+      ],
+      'legacy-controls': [
+        'Use a dedicated legacy-authentication block only when legacy client evidence or migration intent supports it. Unknown device platforms are not legacy-client evidence.'
+      ],
+      'authentication-flows': [
+        'Review device code and authentication transfer separately. Apply a supported authentication-flow condition or authentication control only when that flow is present and intended.'
+      ],
+      'risk-protection': [
+        'Keep workforce user and sign-in risk controls conditional on Microsoft Entra ID P2 licensing and observed risk evidence or an explicit tenant choice.',
+        'Assess workload-identity risk separately; it is not evidence for a workforce risk policy.'
+      ],
+      'location-context': [
+        'Treat geographic spread as a review signal until expected countries, travel and named-location intent are declared. Do not convert spread alone into a deterministic block.',
+        'Keep workload-identity location controls separate from workforce named-location recommendations.'
+      ],
+      'applied-path': [
+        'Investigate only policies recorded on the affected runtime routes. A policy seen elsewhere in the export is not evidence that it protected this path.'
+      ],
+      'report-only-state': [
+        'Review Success, Failure, User action required and Not applied separately. Confirm whether another enabled policy protected the same sign-in before changing state.'
+      ],
+      'runtime-coverage': [
+        'Load the missing sign-in source or richer JSON fields before making a policy claim. Runtime coverage is an evidence task and does not generate a proposed-policy total.'
+      ]
+    };
+    return actions[element.id] || [];
+  }
+
+  function renderLogJourneyReportOnlyResults(policies) {
+    const labels = {
+      reportonlysuccess: 'Success — conditions and configured controls were satisfied',
+      reportonlyfailure: 'Failure — the policy would have blocked access',
+      reportonlyinterrupted: 'User action required — the user would need to satisfy a control',
+      reportonlynotapplied: 'Not applied — assignments or conditions did not match'
+    };
+    const results = new Map();
+    (policies || []).forEach(policy => (policy.reportOnlyResults || []).forEach(item => incrementJourneyMap(results, item.name, item.count)));
+    if (!results.size) return '';
+    return `<div class="log-journey-report-results"><p><strong>Report-only result meanings</strong></p>${renderLogJourneyFactList(logJourneyTopEntries(results, 8), labels)}<p class="log-journey-evidence-muted">These results describe the report-only policy. Another enabled policy may still have protected the same sign-in.</p></div>`;
+  }
+
+  function logJourneyRelatedFindings(type, id, routes) {
+    const explicit = {
+      'decision:reportOnly': ['report-only'],
+      'decision:filtered': ['ca-not-applied', 'possible-exclusions', 'uncovered-apps'],
+      'decision:noEvaluation': ['ca-not-applied', 'sp-no-ca'],
+      'outcome:allowedReportOnly': ['report-only'],
+      'outcome:allowedWithoutCa': ['ca-not-applied', 'sp-no-ca', 'single-factor-success'],
+      'outcome:otherFailure': ['password-spray']
+    }[`${type}:${id}`] || [];
+    const sources = new Set(routes.map(route => route.source));
+    return state.logAnalysis.findings.filter(finding => explicit.includes(finding.id)
+      || (type === 'source' && (finding.metric.sources || []).includes(id))
+      || (explicit.length && (finding.metric.sources || []).some(source => sources.has(source)) && explicit.includes(finding.id)));
+  }
+
+  function logJourneyEntityDetail(type, id) {
+    const model = buildLogJourneyModel();
+    if (type === 'priority') return logJourneyPriorityDetail(id, model);
+    if (type === 'severity') {
+      const findings = state.logAnalysis.findings.filter(finding => finding.severity === id);
+      return {
+        title: `${id.charAt(0).toUpperCase()}${id.slice(1)} severity evidence`,
+        kicker: `${findings.length} finding${findings.length === 1 ? '' : 's'} · highlight only`,
+        status: id === 'high' || id === 'medium' ? 'gap' : 'review',
+        body: [
+          renderLogJourneyEvidenceSection('What happened', `<p>${findings.length ? `The assessment produced ${findings.length} ${esc(id)}-severity finding${findings.length === 1 ? '' : 's'}. The rest of the control map remains visible so priority does not erase context.` : `No ${esc(id)}-severity findings were produced from the loaded evidence.`}</p>`),
+          renderLogJourneyEvidenceSection('Evidence', findings.length ? `<ul>${findings.map(finding => `<li><button type="button" class="log-journey-inline-link" data-journey-type="finding" data-journey-id="${esc(finding.id)}">${esc(finding.title)}</button> — ${esc(finding.metric.affected)} affected</li>`).join('')}</ul>` : '<p>There is nothing at this severity to investigate.</p>'),
+          renderLogJourneyEvidenceSection('Recommended action', '<p>Use severity to order the work, then open the related control or finding for the evidence, remediation and validation path.</p>')
+        ].join('')
+      };
+    }
+    if (type === 'observedPolicy') {
+      const policy = model.observedPolicies.find(item => item.name === id);
+      if (!policy) return null;
+      const controls = [...policy.grants.map(item => item.label), ...policy.sessions.map(item => item.label), ...policy.authStrength.map(item => `Authentication strength: ${item.name}`)];
+      const relationships = logObservedPolicyRelationships(policy);
+      const elementLabels = new Map([...LOG_JOURNEY_STAGES.flatMap(stage => stage.elements), ...LOG_JOURNEY_ADJACENT].map(item => [item.id, item.label]));
+      const top = [
+        ...policy.topUsers.map(item => `Identity: ${item.name} (${item.count})`),
+        ...policy.topApps.map(item => `App: ${item.name} (${item.count})`),
+        ...policy.topLocations.map(item => `Location: ${item.name} (${item.count})`)
+      ].slice(0, 9);
+      return {
+        title: policy.name,
+        kicker: `Observed policy · ${policy.state === 'reportOnly' ? 'report-only' : policy.state === 'enforcing' ? 'enforcing' : 'never matched'}`,
+        status: policy.state === 'enforcing' && policy.applied ? 'protected' : policy.state === 'reportOnly' ? 'review' : 'noIssue',
+        body: [
+          renderLogJourneyEvidenceSection('What happened', `<dl class="log-journey-evidence-facts"><div><dt>Applied</dt><dd>${esc(policy.applied.toLocaleString())}</dd></div><div><dt>Evaluated</dt><dd>${esc(policy.evaluations.toLocaleString())}</dd></div><div><dt>Report-only</dt><dd>${esc(policy.reportOnly.toLocaleString())}</dd></div><div><dt>Did not match</dt><dd>${esc(policy.notApplied.toLocaleString())}</dd></div></dl>`),
+          renderLogJourneyEvidenceSection('Evidence', `${relationships.primary ? `<p><strong>Primary control relationship:</strong> ${esc(elementLabels.get(relationships.primary) || relationships.primary)}</p>` : ''}${relationships.secondary.length ? `<p><strong>Secondary relationships:</strong> ${esc(relationships.secondary.map(item => elementLabels.get(item) || item).join(' · '))}</p>` : ''}${controls.length ? `<p><strong>Controls recorded:</strong> ${esc([...new Set(controls)].join(' · '))}</p>` : '<p>No enforced grant or session control was recorded.</p>'}${renderLogJourneyReportOnlyResults([policy])}${top.length ? `<ul>${top.map(item => `<li>${esc(item)}</li>`).join('')}</ul>` : ''}${renderLogJourneySamples(policy.samples)}`),
+          renderLogJourneyEvidenceSection('Recommended action', `<p>${policy.state === 'reportOnly' ? 'Review impact, exclusions and failures before moving this policy to On.' : policy.state === 'neverMatched' ? 'Confirm the policy is still required and that its assignments and conditions can match intended traffic.' : 'Keep the policy mapped to its control objective and investigate any gap findings on the same path.'}</p>`),
+          renderLogJourneyEvidenceSection('How to validate', '<p>Inspect the policy in Entra and compare its stored configuration with the exercised scope shown here. Re-export the same sign-in types after any change.</p>')
+        ].join('')
+      };
+    }
+    if (type === 'recommendedPolicy') {
+      const policy = model.recommendedPolicies.find(item => item.id === id);
+      if (!policy) return null;
+      const controls = (policy.controls || []).map(control => (CONTROLS[control] || {}).label).filter(Boolean);
+      const settings = [...(policy.tailoring || []).map(item => `${item.label}: ${item.value}`), ...(policy.settings || []).map(item => `${item.label}: ${item.value}`)].slice(0, 10);
+      const elementLabels = new Map([...LOG_JOURNEY_STAGES.flatMap(stage => stage.elements), ...LOG_JOURNEY_ADJACENT].map(item => [item.id, item.label]));
+      return {
+        title: tenantPolicyName(policy.displayName),
+        kicker: `${policy.actionTierLabel} proposed policy · ${policy.basis.label}`,
+        status: 'review',
+        body: [
+          renderLogJourneyEvidenceSection('Why it is proposed', `<p>${esc(policy.basis.detail)}</p>${policy.drivers.length ? `<ul>${policy.drivers.map(driver => `<li><strong>${esc(driver.severity)}</strong> — ${esc(driver.title)}: ${esc(driver.affected)} of ${esc(driver.scope)}</li>`).join('')}</ul>` : '<p>This is a standard, declared or assumption-led proposal rather than a measured gap response.</p>'}<p class="log-journey-evidence-muted">${policy.actionTier === 'actNow' ? 'Act now means begin investigation, design and staged rollout. It does not mean enable immediately.' : policy.actionTier === 'validateFirst' ? 'Resolve the prerequisites below before building a pilot.' : 'Keep this available for later validation; it is not presented as immediate work.'}</p>`),
+          renderLogJourneyEvidenceSection('Control and coverage', `<dl class="log-journey-evidence-facts"><div><dt>Action tier</dt><dd>${esc(policy.actionTierLabel)}</dd></div><div><dt>Evidence basis</dt><dd>${esc(policy.basis.label)}</dd></div><div><dt>Capability</dt><dd>${esc(policy.capabilityStatus)}</dd></div><div><dt>Coverage headline</dt><dd>${esc(coverageHeadline(policy.coverage))}</dd></div></dl><p class="log-journey-reason-labels">${(policy.reasonLabels || []).map(label => `<em>${esc(label)}</em>`).join('')}</p><p><strong>Applicability:</strong> ${esc(policy.applicability)}</p><p><strong>Primary relationship:</strong> ${esc(elementLabels.get(policy.primaryElementId) || policy.primaryElementId)}</p>${policy.secondaryElementIds.length ? `<p><strong>Secondary relationships:</strong> ${esc(policy.secondaryElementIds.map(item => elementLabels.get(item) || item).join(' · '))}</p>` : ''}${controls.length ? `<p><strong>Controls:</strong> ${esc(controls.join(' · '))}</p>` : ''}`),
+          renderLogJourneyEvidenceSection('Recommended configuration', `${policy.prerequisites.length ? `<p><strong>Prerequisites</strong></p><ul>${policy.prerequisites.map(item => `<li><strong>${esc(item.status)}</strong> — ${esc(item.label)}${item.detail ? `<br><span>${esc(item.detail)}</span>` : ''}</li>`).join('')}</ul>` : '<p>No tenant-specific capability prerequisite is currently unresolved.</p>'}${settings.length ? `<ul>${settings.map(item => `<li>${esc(item)}</li>`).join('')}</ul>` : '<p>Open the build guide for the full Entra configuration steps.</p>'}`),
+          renderLogJourneyEvidenceSection('How to validate', `<p>Create the policy with emergency-access exclusions, pilot it in report-only, review impact and sampled sign-ins, then enable it in stages.</p><div class="log-journey-guidance-links">${(policy.guidanceUrls || []).map(link => `<a href="${esc(link.url)}" target="_blank" rel="noopener noreferrer">${logJourneyIcon('external')}${esc(link.label)}</a>`).join('')}</div>`)
+        ].join('')
+      };
+    }
+    if (type === 'finding') {
+      const finding = state.logAnalysis.findings.find(item => item.id === id);
+      if (!finding) return null;
+      const guide = LOG_REMEDIATION[finding.id] || {};
+      const top = [
+        ...finding.topUsers.map(item => `Identity: ${item.name} (${item.count})`),
+        ...finding.topApps.map(item => `App: ${item.name} (${item.count})`),
+        ...finding.topLocations.map(item => `Location: ${item.name} (${item.count})`)
+      ].slice(0, 10);
+      const policyEvidence = (state.logAnalysis.policyInventory?.policies || []).filter(policy => finding.policyIds.includes(policy.baselineId)).slice(0, 6);
+      const deviceEvidence = finding.id === 'noncompliant-device' ? renderLogJourneyDeviceContext('device-compliance', model.deviceContext) : '';
+      const findingGuidance = finding.id === 'noncompliant-device' ? LOG_JOURNEY_GUIDANCE['device-compliance'] : null;
+      return {
+        title: finding.title,
+        kicker: `${finding.severity} finding · ${finding.metric.affected} affected`,
+        status: finding.severity === 'high' || finding.severity === 'medium' ? 'gap' : 'review',
+        body: [
+          renderLogJourneyEvidenceSection('What happened', `<p>${esc(finding.detail)}</p>`),
+          renderLogJourneyEvidenceSection('Why it matters', `<p>${esc(guide.attack || guide.cause || finding.recommendation)}</p>`),
+          renderLogJourneyEvidenceSection('Evidence', `<dl class="log-journey-evidence-facts"><div><dt>Affected</dt><dd>${esc(finding.metric.affected)} of ${esc(finding.metric.total)} ${esc(finding.metric.scope || 'sign-ins')} (${esc(finding.metric.pct)}%)</dd></div><div><dt>Sources</dt><dd>${esc((finding.metric.sources || []).map(key => LOG_SOURCES[key].label).join(', ') || 'Loaded sign-in logs')}</dd></div></dl>${deviceEvidence}${top.length ? `<ul>${top.map(item => `<li>${esc(item)}</li>`).join('')}</ul>` : ''}${finding.diagnosis?.conditions?.length ? `<p><strong>Conditions that filtered policies:</strong> ${esc(finding.diagnosis.conditions.map(item => `${item.label} (${item.count})`).join(' · '))}</p>` : ''}${renderLogJourneyPolicies(policyEvidence)}${renderLogJourneySamples(finding.samples)}`),
+          findingGuidance ? renderLogJourneyEvidenceSection('Microsoft guidance', renderLogJourneyGuidance(findingGuidance)) : '',
+          renderLogJourneyEvidenceSection('Recommended action', `<ol>${(guide.fix?.length ? guide.fix : [finding.recommendation]).filter(Boolean).map(item => `<li>${esc(item)}</li>`).join('')}</ol>${finding.policies.length ? `<p><strong>Relevant baseline controls:</strong> ${esc(finding.policies.map(policy => `${policy.id} ${tenantPolicyName(policy.displayName)}`).join(' · '))}</p>` : ''}`),
+          renderLogJourneyEvidenceSection('How to validate', `<p>${esc(guide.verify || 'Re-export a representative sign-in window and confirm the Conditional Access result and enforced controls changed as expected.')}</p><button type="button" class="btn secondary" data-log-open-finding="${esc(finding.id)}">Open full finding evidence</button>`)
+        ].join('')
+      };
+    }
+    if (type === 'element') {
+      const element = [...model.stages.flatMap(stage => stage.elements), ...model.adjacent].find(item => item.id === id);
+      if (!element) return null;
+      const guides = element.findings.map(finding => LOG_REMEDIATION[finding.id] || {});
+      const contextualActions = logJourneyElementActions(element);
+      const actions = contextualActions.length ? contextualActions : [...new Set(element.findings.flatMap((finding, index) => guides[index].fix?.length ? guides[index].fix : [finding.recommendation]).filter(Boolean))].slice(0, 6);
+      const verifies = [...new Set(guides.map(guide => guide.verify).filter(Boolean))].slice(0, 4);
+      const policies = element.observedPolicies;
+      const proposed = element.recommendedPolicies;
+      const deviceEvidence = renderLogJourneyDeviceContext(element.id, model.deviceContext);
+      const reportOnlyEvidence = element.id === 'report-only-state' ? renderLogJourneyReportOnlyResults(model.observedPolicies) : '';
+      return {
+        title: element.label,
+        kicker: `${element.parentLabel} · ${LOG_JOURNEY_STATUS_META[element.status].label}`,
+        status: element.status,
+        body: [
+          renderLogJourneyEvidenceSection('What happened', `<p>${esc(element.statusReason)}</p>${element.findings.length ? `<ul>${element.findings.map(finding => `<li><strong>${esc(finding.title)}</strong> — ${esc(finding.metric.affected)} affected</li>`).join('')}</ul>` : '<p>No related gap finding was produced from the loaded activity.</p>'}`),
+          renderLogJourneyEvidenceSection('Why it matters', `<p>${esc(element.why)}</p>`),
+          renderLogJourneyEvidenceSection('Evidence', `${deviceEvidence}${renderLogJourneyPolicies(policies)}${reportOnlyEvidence}${!policies.length ? (reportOnlyEvidence ? '<p class="log-journey-evidence-muted">Report-only state is shown as secondary evidence here; each policy card remains owned by its primary control relationship.</p>' : '<p class="log-journey-evidence-muted">No policy configuration is inferred here unless the sign-in export recorded it acting or being evaluated.</p>') : ''}${proposed.length ? `<p><strong>Primary proposed controls connected here:</strong> ${esc(proposed.map(policy => tenantPolicyName(policy.displayName)).join(' · '))}</p>` : ''}`),
+          element.guidance ? renderLogJourneyEvidenceSection('Microsoft guidance', renderLogJourneyGuidance(element.guidance)) : '',
+          renderLogJourneyEvidenceSection('Recommended action', actions.length ? `<ol>${actions.map(item => `<li>${esc(item)}</li>`).join('')}</ol>` : '<p>Keep this element in the review cycle and validate intent against the tenant policy configuration.</p>'),
+          renderLogJourneyEvidenceSection('How to validate', verifies.length ? `<ul>${verifies.map(item => `<li>${esc(item)}</li>`).join('')}</ul>` : '<p>Re-run the assessment with a representative JSON sign-in export and confirm the relevant policy result and control fields are present.</p>')
+        ].join('')
+      };
+    }
+    const collection = type === 'source' ? model.sources : type === 'decision' ? model.decisions : type === 'outcome' ? model.outcomes : [];
+    const entity = collection.find(item => item.id === id);
+    if (!entity) return null;
+    const routes = logJourneyMatchingRoutes(type, id);
+    const samples = [];
+    routes.forEach(route => samples.push(...route.samples));
+    const evaluatedPolicies = logJourneyTopEntries(logJourneyAggregateRoutes(routes, 'evaluatedPolicies'), 8);
+    const matchedPolicies = logJourneyTopEntries(logJourneyAggregateRoutes(routes, 'policies'), 8);
+    const identities = logJourneyTopEntries(logJourneyAggregateRoutes(routes, 'identities'), 5);
+    const apps = logJourneyTopEntries(logJourneyAggregateRoutes(routes, 'apps'), 5);
+    const locations = logJourneyTopEntries(logJourneyAggregateRoutes(routes, 'locations'), 5);
+    const sources = logJourneyTopEntries(logJourneyAggregateRoutes(routes, 'source'), 5);
+    const decisions = logJourneyTopEntries(logJourneyAggregateRoutes(routes, 'decision'), 6);
+    const outcomes = logJourneyTopEntries(logJourneyAggregateRoutes(routes, 'outcome'), 7);
+    const success = routes.reduce((sum, route) => sum + (route.success || 0), 0);
+    const failure = routes.reduce((sum, route) => sum + (route.failure || 0), 0);
+    const relatedFindings = logJourneyRelatedFindings(type, id, routes);
+    const recommended = (state.logAnalysis.recommendedPolicySet?.policies || []).filter(policy => policy.drivers.some(driver => relatedFindings.some(finding => finding.title === driver.title)));
+    const percentage = model.journey.total ? Math.round(entity.count / model.journey.total * 1000) / 10 : 0;
+    const sourceContext = type === 'source' && !entity.loaded
+      ? 'This export was not loaded, so the assessment cannot make claims about the activity it carries.'
+      : entity.description;
+    return {
+      title: entity.label,
+      kicker: type === 'source' && !entity.loaded ? 'Blind spot · not loaded' : `${entity.count.toLocaleString()} measured event${entity.count === 1 ? '' : 's'}`,
+      status: type === 'source' && !entity.loaded ? 'blind' : entity.tone === 'gap' ? 'gap' : entity.tone === 'review' ? 'review' : entity.tone === 'protected' ? 'protected' : 'noIssue',
+      body: [
+        renderLogJourneyEvidenceSection('What happened', `<p>${esc(sourceContext)}</p><dl class="log-journey-evidence-facts"><div><dt>Measured events</dt><dd>${esc(entity.count.toLocaleString())}</dd></div><div><dt>Share of all events</dt><dd>${esc(percentage)}%</dd></div><div><dt>Successful</dt><dd>${esc(success.toLocaleString())}</dd></div><div><dt>Failed</dt><dd>${esc(failure.toLocaleString())}</dd></div></dl>`),
+        renderLogJourneyEvidenceSection('Path breakdown', `<div class="log-journey-breakdowns"><div><h5>By source</h5>${renderLogJourneyFactList(sources, Object.fromEntries(LOG_SOURCE_ORDER.map(key => [key, LOG_SOURCES[key].short])))}</div><div><h5>By CA decision</h5>${renderLogJourneyFactList(decisions, Object.fromEntries(LOG_JOURNEY_DECISIONS.map(item => [item.id, item.label])))}</div><div><h5>By outcome</h5>${renderLogJourneyFactList(outcomes, Object.fromEntries(LOG_JOURNEY_OUTCOMES.map(item => [item.id, item.label])))}</div></div>`),
+        renderLogJourneyEvidenceSection('Entities and evidence', `<div class="log-journey-breakdowns"><div><h5>Top identities</h5>${renderLogJourneyFactList(identities)}</div><div><h5>Top apps</h5>${renderLogJourneyFactList(apps)}</div><div><h5>Top locations</h5>${renderLogJourneyFactList(locations)}</div></div>${relatedFindings.length ? `<p><strong>Related findings:</strong> ${relatedFindings.map(finding => `<button type="button" class="log-journey-inline-link" data-journey-type="finding" data-journey-id="${esc(finding.id)}">${esc(finding.title)} (${esc(finding.severity)})</button>`).join(' · ')}</p>` : '<p>No related gap finding was produced for this path.</p>'}`),
+        renderLogJourneyEvidenceSection('Policies evaluated', evaluatedPolicies.length ? `<p>${esc(evaluatedPolicies.map(item => `${item.name} (${item.count})`).join(' · '))}</p>${matchedPolicies.length ? `<p><strong>Matched or acted:</strong> ${esc(matchedPolicies.map(item => `${item.name} (${item.count})`).join(' · '))}</p>` : ''}` : '<p><strong>No policy evaluation was returned for these events.</strong> This can mean Conditional Access was not engaged, the flow was outside its boundary, or the export format omitted per-policy detail. The map does not invent a policy explanation.</p>'),
+        renderLogJourneyEvidenceSection('Recommended action', `<p>${esc(type === 'source' && !entity.loaded ? `Export ${LOG_SOURCES[id].label} for the same date range and add it to this assessment.` : relatedFindings.length ? 'Work through the related findings and connected control elements, then test the proposed controls in report-only.' : 'Confirm this path matches tenant intent and keep it in the validation cycle.')}</p>${recommended.length ? `<p><strong>${esc(recommended.length)} proposed ${recommended.length === 1 ? 'policy is' : 'policies are'} connected to these findings.</strong></p>` : ''}`),
+        renderLogJourneyEvidenceSection('Representative events', `${renderLogJourneySamples(samples)}<p>Validate with a fresh JSON sign-in export and inspect the Conditional Access tab for the sampled events.</p>`)
+      ].join('')
+    };
+  }
+
+  function updateLogJourneyEvidence() {
+    const panel = $('logJourneyEvidence');
+    if (!panel) return;
+    panel.outerHTML = renderLogJourneyEvidence(buildLogJourneyModel());
+    applyLogJourneySelection();
+  }
+
+  function cancelLogJourneyEvidenceReveal() {
+    if (!logJourneyRevealFrame) return;
+    cancelAnimationFrame(logJourneyRevealFrame);
+    logJourneyRevealFrame = 0;
+  }
+
+  function revealLogJourneyEvidence() {
+    cancelLogJourneyEvidenceReveal();
+    logJourneyRevealFrame = requestAnimationFrame(() => {
+      logJourneyRevealFrame = requestAnimationFrame(() => {
+        logJourneyRevealFrame = 0;
+        const panel = $('logJourneyEvidence');
+        const heading = $('logJourneyEvidenceTitle');
+        if (!panel || !heading) return;
+        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        heading.focus({ preventScroll: true });
+        panel.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' });
+      });
+    });
+  }
+
+  function selectLogJourneyEntity(type, id, opener) {
+    const current = state.logAnalysis.journeySelected;
+    if (current?.type === type && current.id === id) {
+      updateLogJourneyEvidence();
+      revealLogJourneyEvidence();
+      return;
+    }
+    if (!logJourneyEntityDetail(type, id)) return;
+    state.logAnalysis.journeySelected = { type, id };
+    logJourneySelectionOpener = { element: opener || document.activeElement, type, id };
+    updateLogJourneyEvidence();
+    applyLogJourneySelection();
+    revealLogJourneyEvidence();
+  }
+
+  function clearLogJourneySelection(restoreFocus) {
+    cancelLogJourneyEvidenceReveal();
+    if (!state.logAnalysis.journeySelected) return;
+    const opener = logJourneySelectionOpener;
+    state.logAnalysis.journeySelected = null;
+    updateLogJourneyEvidence();
+    applyLogJourneySelection();
+    if (restoreFocus !== false && opener) {
+      const candidates = [...($('logVisualContent')?.querySelectorAll('[data-journey-type][data-journey-id]') || [])];
+      const target = opener.element?.isConnected
+        ? opener.element
+        : candidates.find(item => item.dataset.journeyType === opener.type && item.dataset.journeyId === opener.id);
+      requestAnimationFrame(() => target?.focus());
+    }
+    logJourneySelectionOpener = null;
+  }
+
+  function onLogJourneyKeydown(event) {
+    if (event.key !== 'Escape' || state.logAnalysis.view !== 'visual' || !state.logAnalysis.journeySelected) return;
+    event.preventDefault();
+    clearLogJourneySelection();
+  }
+
+  function openLogFindingInList(findingId) {
+    state.logAnalysis.view = 'list';
+    state.logAnalysis.filter = 'all';
+    state.logAnalysis.sourceFilter = 'all';
+    renderLogAnalysis();
+    const detail = document.getElementById(`log-finding-${logJourneyDomId(findingId)}`) || document.getElementById(`log-finding-${findingId}`);
+    if (detail) {
+      detail.open = true;
+      detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      detail.querySelector('summary')?.focus({ preventScroll: true });
+    }
+  }
+
+  function onLogVisualInteraction(event) {
+    const openFinding = event.target.closest('[data-log-open-finding]');
+    if (openFinding) {
+      openLogFindingInList(openFinding.dataset.logOpenFinding);
+      return;
+    }
+    const details = event.target.closest('[data-log-show-details]');
+    if (details) {
+      state.logAnalysis.view = 'list';
+      state.logAnalysis.journeySelected = null;
+      renderLogAnalysis();
+      $('logViewControl')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+    if (event.target.closest('[data-log-journey-clear]')) {
+      clearLogJourneySelection();
+      return;
+    }
+    if (event.target.closest('[data-log-scroll-policy-board]')) {
+      const board = $('logJourneyPolicyBoard');
+      board?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      requestAnimationFrame(() => board?.focus({ preventScroll: true }));
+      return;
+    }
+    const declaration = event.target.closest('[data-declaration][data-answer]');
+    if (declaration) {
+      setDeclaration(declaration.dataset.declaration, declaration.dataset.answer);
+      return;
+    }
+    if (event.target.closest('[data-log-build-strategy]')) {
+      buildStrategyFromFindings();
+      return;
+    }
+    if (event.target.closest('[data-log-build-guide]')) {
+      exportBuildGuideDocx();
+      return;
+    }
+    if (event.target.closest('[data-log-toggle-observed]')) {
+      const selected = state.logAnalysis.journeySelected;
+      if (state.logAnalysis.observedPoliciesExpanded && selected?.type === 'observedPolicy') {
+        const policy = state.logAnalysis.policyInventory?.policies.find(item => item.name === selected.id);
+        if (policy?.state === 'neverMatched') state.logAnalysis.journeySelected = null;
+      }
+      state.logAnalysis.observedPoliciesExpanded = !state.logAnalysis.observedPoliciesExpanded;
+      $('logVisualContent').innerHTML = renderLogVisualWorkspace();
+      queueLogJourneyDraw();
+      return;
+    }
+    const entity = event.target.closest('[data-journey-type][data-journey-id]');
+    if (entity) {
+      selectLogJourneyEntity(entity.dataset.journeyType, entity.dataset.journeyId, entity);
+      return;
+    }
+    if (event.target.closest('[data-journey-clear-space]')) clearLogJourneySelection();
   }
 
   function renderLogFindingCard(finding) {
@@ -10598,7 +12406,7 @@
     const verify = guide.verify ? `<section class="log-block"><h5>How to confirm it worked</h5><p>${esc(guide.verify)}</p></section>` : '';
     const fallback = !guide.cause && finding.recommendation
       ? `<section class="log-block"><h5>Recommendation</h5><p>${esc(finding.recommendation)}</p></section>` : '';
-    return `<details class="comparison-card ${cardClass}">
+    return `<details id="log-finding-${esc(finding.id)}" class="comparison-card ${cardClass}">
       <summary>
         <span class="status-chip ${chipClass} log-severity">${esc(finding.severity)}</span>
         <strong>${esc(finding.title)}</strong>
@@ -10735,7 +12543,7 @@
             </tr>`).join('')}</tbody>
           </table></div>`
         : '<p class="log-evidence-note">This policy never engaged in this date range, so there are no sign-ins to show.</p>';
-      return `<details class="log-policy-usage">
+      return `<details id="log-policy-${logJourneyDomId(p.name)}" class="log-policy-usage">
         <summary>
           <span class="status-chip ${esc(meta.chip)} log-policy-state">${esc(meta.label)}</span>
           <strong>${esc(p.name)}</strong>
@@ -10747,7 +12555,7 @@
             ${uniqueEnforces.length ? `<div><dt>Enforces</dt><dd>${esc(uniqueEnforces.join(' · '))}</dd></div>` : ''}
             ${p.sources.length ? `<div><dt>Seen in</dt><dd>${esc(p.sources.map(k => LOG_SOURCES[k].label).join(', '))}</dd></div>` : ''}
             ${p.from && p.to ? `<div><dt>Active</dt><dd>${esc(p.from.slice(0, 10))} to ${esc(p.to.slice(0, 10))}</dd></div>` : ''}
-            ${p.baselineId ? `<div><dt>Baseline match</dt><dd>Named like baseline policy ${esc(p.baselineId)} — use the Audit tab to compare the actual settings.</dd></div>` : ''}
+            ${p.baselineId ? `<div><dt>Baseline match</dt><dd>Named like baseline policy ${esc(p.baselineId)} — verify the actual settings in Microsoft Entra.</dd></div>` : ''}
             ${p.notSatisfied.length ? `<div><dt>Does not match when</dt><dd>${esc(p.notSatisfied.map(c => `${c.label} (${c.count})`).join(' · '))}</dd></div>` : ''}
           </dl>
           ${p.observedConfig.length ? `<div class="log-policy-config">
@@ -10755,7 +12563,7 @@
             <dl class="log-policy-settings">
               ${p.observedConfig.map(r => `<div><dt>${esc(r.label)}</dt><dd>${esc(r.value)}${r.note ? `<em>${esc(r.note)}</em>` : ''}</dd></div>`).join('')}
             </dl>
-            <p class="log-evidence-note">Reconstructed from the rules Entra reported as satisfied — this is the scope as exercised by real sign-ins, not the stored policy definition. Export your policies and use the Audit tab for the authoritative configuration.</p>
+            <p class="log-evidence-note">Reconstructed from the rules Entra reported as satisfied — this is the scope as exercised by real sign-ins, not the stored policy definition. Review the policy in Microsoft Entra for the authoritative configuration.</p>
           </div>` : ''}
           ${(p.topUsers.length || p.topApps.length) ? `<div class="log-top-lists">
             ${topList('Top users', p.topUsers, 'hits')}${topList('Top apps', p.topApps, 'hits')}
@@ -11122,6 +12930,10 @@
       const rows = item.settings;
       const already = deployedNames.has(normToken(item.displayName));
       const relevance = coverageRelevance(item, cov);
+      const controlLabels = (item.controls || []).map(id => (CONTROLS[id] || {}).label).filter(Boolean);
+      const outcome = item.summary || (controlLabels.length
+        ? `Applies ${controlLabels.join(', ')} to ${policyCategory(item.id).label.toLowerCase()}.`
+        : 'Applies the selected Conditional Access controls to this identity scope.');
       const covLine = cov && cov.evaluated
         ? (cov.wouldApply || cov.conditional
           ? `${cov.wouldApply} of ${cov.evaluated} ${cov.scope} would have matched it outright (${cov.pct}%)${cov.conditional ? `; a further ${cov.conditional} could not be counted` : ''}${cov.notApplicable ? `. ${cov.notApplicable} further sign-ins are out of scope for this policy's identity type` : ''}`
@@ -11141,7 +12953,10 @@
         <summary>
           <span class="status-chip ${already ? 'import-exact' : 'import-different'} log-policy-state">${already ? 'Already deployed' : 'Recommended'}</span>
           <span class="status-chip ${esc(basisChip(item.basis.kind))} log-basis-chip" title="${esc(item.basis.detail)}">${esc(item.basis.label)}</span>
-          <strong>${esc(tenantPolicyName(item.displayName))}</strong>
+          <span class="log-policy-summary-copy">
+            <strong>${esc(tenantPolicyName(item.displayName))}</strong>
+            <small><span>What it does</span>${esc(outcome)}</small>
+          </span>
           <em>${esc(coverageHeadline(cov))}</em>
         </summary>
         <div class="log-policy-usage-body">
@@ -11167,7 +12982,7 @@
             ${rows.map(r => `<div><dt>${esc(r.label)}</dt><dd>${esc(r.value)}${r.note ? `<em>${esc(r.note)}</em>` : ''}</dd></div>`).join('')}
             <div><dt>Would apply to</dt><dd>${esc(covLine)}</dd></div>
             ${item.represents.length ? `<div><dt>Replaces baseline</dt><dd>${esc(item.represents.join(', '))}<em>${esc(item.mergeReason ? item.mergeReason + ' ' : '')}Deploying this policy means the listed baseline policies are not created separately — their controls are merged into this one.</em></dd></div>` : ''}
-            ${already ? '<div><dt>Note</dt><dd>A policy with this name already exists in your tenant — compare the settings in the Audit tab rather than creating a duplicate.</dd></div>' : ''}
+            ${already ? '<div><dt>Note</dt><dd>A policy with this name already exists in your tenant — verify its settings in Microsoft Entra rather than creating a duplicate.</dd></div>' : ''}
           </dl>
           ${evidence ? `<strong class="log-policy-evidence-head">Example sign-ins it would have applied to</strong>${evidence}` : ''}
         </div>

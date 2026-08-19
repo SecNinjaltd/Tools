@@ -100,7 +100,7 @@ html[data-theme] .workspace {
 }
 
 html[data-theme] .workspace-tabs {
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0;
   padding: 4px;
   margin-bottom: 14px;
@@ -182,7 +182,7 @@ html[data-theme] .guided-stage {
 }
 
 html[data-theme] .start-actions {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 html[data-theme] .start-head h3,
@@ -494,6 +494,70 @@ html[data-theme] .log-recommended-panel > .panel-head .btn.secondary {
   color: #201c18 !important;
 }
 
+html[data-theme] .log-policy-list {
+  gap: 16px;
+}
+
+html[data-theme] .log-policy-group {
+  gap: 9px;
+  padding: 12px;
+  border: 1px solid var(--ca-border-soft);
+  border-radius: var(--ca-radius);
+  background: linear-gradient(180deg, var(--ca-card-hover) 0%, var(--ca-card-muted) 100%);
+}
+
+html[data-theme] .log-policy-group + .log-policy-group {
+  margin-top: 0;
+}
+
+html[data-theme] .log-policy-group-head {
+  padding: 0 2px 8px;
+  border-color: var(--ca-border);
+}
+
+html[data-theme] .log-policy-usage {
+  border-color: var(--ca-border);
+  border-radius: var(--ca-radius-sm);
+  background: var(--ca-card) !important;
+  box-shadow: 0 1px 2px rgba(50, 37, 24, 0.04);
+  overflow: hidden;
+}
+
+html[data-theme] .log-policy-usage > summary {
+  min-height: 64px;
+  padding: 11px 12px;
+}
+
+html[data-theme] .log-policy-usage > summary:hover {
+  background: var(--ca-orange-soft);
+}
+
+html[data-theme] .log-policy-usage[open] {
+  border-color: #d7c6b5;
+  box-shadow: 0 4px 12px rgba(50, 37, 24, 0.07);
+}
+
+html[data-theme] .log-policy-usage[open] > summary {
+  border-color: var(--ca-border-soft);
+  background: linear-gradient(90deg, var(--ca-card) 0%, var(--ca-card-hover) 100%);
+}
+
+html[data-theme] .log-policy-usage-body {
+  background: linear-gradient(180deg, var(--ca-card) 0%, var(--ca-card-hover) 100%);
+}
+
+html[data-theme] .log-policy-summary-copy strong {
+  color: var(--ca-text) !important;
+}
+
+html[data-theme] .log-policy-summary-copy small {
+  color: var(--ca-text-soft);
+}
+
+html[data-theme] .log-policy-summary-copy small span {
+  color: var(--ca-orange);
+}
+
 html[data-theme] .log-basis-chip.status-chip {
   border-width: 1px !important;
   font-weight: 850;
@@ -729,5 +793,795 @@ html[data-theme] a:focus-visible {
 
   html[data-theme] .segmented.stacked button {
     min-height: 44px;
+  }
+}
+
+/* v2.2 readable scale -----------------------------------------------------
+   These rules intentionally live in the final theme layer so every workflow
+   inherits the same legible type, target sizing and responsive behaviour. */
+:root {
+  --ca-type-body: 1rem;
+  --ca-type-copy: 0.875rem;
+  --ca-type-meta: 0.75rem;
+  --ca-type-control: 0.9375rem;
+  --ca-type-title: 1rem;
+  --ca-reading-line: 1.55;
+  --ca-workspace-max: 100rem;
+}
+
+html {
+  font-size: 100%;
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+html[data-text-size="large"] {
+  font-size: 112.5%;
+}
+
+html[data-theme] body {
+  min-width: 0;
+  font-size: var(--ca-type-body);
+  line-height: var(--ca-reading-line);
+  overflow-x: hidden;
+}
+
+html[data-theme] p {
+  font-size: var(--ca-type-body);
+  line-height: var(--ca-reading-line);
+}
+
+html[data-theme] li,
+html[data-theme] dd,
+html[data-theme] label {
+  font-size: var(--ca-type-copy);
+  line-height: var(--ca-reading-line);
+}
+
+html[data-theme] small,
+html[data-theme] .eyebrow,
+html[data-theme] .app-version,
+html[data-theme] .status-badge,
+html[data-theme] .pill,
+html[data-theme] .tag,
+html[data-theme] .policy-id,
+html[data-theme] .meta {
+  font-size: var(--ca-type-meta);
+  line-height: 1.4;
+}
+
+html[data-theme] h2 {
+  font-size: clamp(1.6rem, 2.7vw, 2.35rem);
+  line-height: 1.15;
+}
+
+html[data-theme] h3 {
+  font-size: clamp(1.3rem, 2vw, 1.8rem);
+  line-height: 1.2;
+}
+
+html[data-theme] h4 {
+  font-size: clamp(1.05rem, 1.4vw, 1.3rem);
+  line-height: 1.3;
+}
+
+html[data-theme] .btn,
+html[data-theme] button,
+html[data-theme] [role="button"],
+html[data-theme] summary,
+html[data-theme] input,
+html[data-theme] select,
+html[data-theme] textarea {
+  min-height: 2.75rem;
+  font-size: var(--ca-type-copy);
+}
+
+html[data-theme] .btn,
+html[data-theme] button,
+html[data-theme] [role="button"],
+html[data-theme] summary {
+  line-height: 1.35;
+}
+
+html[data-theme] input,
+html[data-theme] select,
+html[data-theme] textarea {
+  padding: 0.65rem 0.75rem;
+  line-height: 1.4;
+}
+
+html[data-theme] .workspace {
+  width: min(var(--ca-workspace-max), calc(100% - clamp(1.5rem, 4vw, 3rem)));
+  margin: 1.25rem auto 3rem;
+}
+
+html[data-theme] .intro-band p,
+html[data-theme] .start-reference,
+html[data-theme] .workflow-overview > p,
+html[data-theme] .guided-stage > p,
+html[data-theme] .log-journey-head p,
+html[data-theme] .log-journey-section-head p,
+html[data-theme] .log-journey-summary-head p,
+html[data-theme] .log-journey-evidence-section p {
+  max-width: 75ch;
+}
+
+html[data-theme] .panel p,
+html[data-theme] .card p,
+html[data-theme] .start-card p,
+html[data-theme] .choice-desc,
+html[data-theme] .workflow-overview-copy,
+html[data-theme] .strategy-policy-card p,
+html[data-theme] .scenario-setting-card p {
+  font-size: var(--ca-type-copy);
+}
+
+html[data-theme] pre,
+html[data-theme] code,
+html[data-theme] .json-output,
+html[data-theme] .json-preview,
+html[data-theme] .table-wrap,
+html[data-theme] .comparison-table-wrap,
+html[data-theme] .log-evidence-scroll {
+  max-width: 100%;
+  overflow: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-gutter: stable;
+}
+
+html[data-theme] table {
+  min-width: max-content;
+}
+
+/* Readable, wrapping application header. */
+html[data-theme] .app-topbar {
+  min-height: 5rem;
+  padding: 0.75rem clamp(1rem, 2.4vw, 2.25rem);
+  flex-wrap: wrap;
+  row-gap: 0.65rem;
+}
+
+html[data-theme] .brand-lockup {
+  min-width: 0;
+}
+
+html[data-theme] .brand-mark {
+  width: 3.25rem;
+  height: 3.25rem;
+  font-size: 1.2rem;
+}
+
+html[data-theme] .app-topbar h1 {
+  font-size: clamp(1.45rem, 2vw, 2rem);
+  line-height: 1.12;
+}
+
+html[data-theme] .app-topbar .eyebrow {
+  font-size: var(--ca-type-meta);
+}
+
+html[data-theme] .app-version {
+  padding: 0.25rem 0.45rem;
+}
+
+html[data-theme] .topbar-meta {
+  gap: 0.5rem;
+  font-size: var(--ca-type-meta);
+}
+
+html[data-theme] .topbar-meta > span:not(.sr-only),
+html[data-theme] .topbar-meta > a,
+html[data-theme] .topbar-meta > button {
+  min-height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.65rem 0.75rem;
+  line-height: 1.25;
+  text-align: center;
+}
+
+html[data-theme] .topbar-meta > span:not(.sr-only) {
+  font-size: var(--ca-type-meta);
+}
+
+html[data-theme] .topbar-meta > a,
+html[data-theme] .topbar-meta > button {
+  font-size: var(--ca-type-copy);
+}
+
+/* Shared cards, navigation and workflow text. */
+html[data-theme] .tab-button {
+  min-height: 4rem;
+  padding: 0.75rem 0.9rem;
+}
+
+html[data-theme] .tab-button span {
+  font-size: var(--ca-type-control);
+}
+
+html[data-theme] .tab-button small {
+  font-size: var(--ca-type-copy);
+}
+
+html[data-theme] .start-head h3 {
+  font-size: clamp(1.8rem, 3.2vw, 2.75rem);
+}
+
+html[data-theme] .start-reference,
+html[data-theme] .start-card p {
+  font-size: var(--ca-type-copy);
+}
+
+html[data-theme] .start-card {
+  min-height: 15rem;
+  padding: 1.25rem;
+  gap: 0.75rem;
+}
+
+html[data-theme] .start-card > span {
+  font-size: var(--ca-type-meta);
+}
+
+html[data-theme] .start-card strong {
+  font-size: clamp(1.1rem, 1.5vw, 1.35rem);
+  line-height: 1.3;
+}
+
+html[data-theme] .start-card .btn {
+  min-height: 2.75rem;
+  font-size: var(--ca-type-control);
+}
+
+html[data-theme] .metric-card strong,
+html[data-theme] .strategy-score-grid strong {
+  font-size: clamp(1.25rem, 2vw, 1.75rem);
+}
+
+html[data-theme] .choice-card strong,
+html[data-theme] .control-row strong,
+html[data-theme] .policy-row strong,
+html[data-theme] .strategy-policy-card strong,
+html[data-theme] .scenario-setting-card strong,
+html[data-theme] .manual-path-step strong,
+html[data-theme] .visual-policy-node strong {
+  font-size: var(--ca-type-control);
+  line-height: 1.4;
+}
+
+html[data-theme] .choice-card small,
+html[data-theme] .control-row small,
+html[data-theme] .policy-row small,
+html[data-theme] .strategy-policy-card small,
+html[data-theme] .scenario-setting-card small,
+html[data-theme] .manual-path-step small,
+html[data-theme] .visual-policy-node small {
+  font-size: var(--ca-type-copy);
+  line-height: 1.45;
+}
+
+/* The visual assessment keeps its operational density without miniature type. */
+html[data-theme] .log-journey-head h2 {
+  max-width: 32ch;
+  font-size: clamp(1.75rem, 3vw, 2.5rem);
+}
+
+html[data-theme] .log-journey-head p,
+html[data-theme] .log-journey-section-head p,
+html[data-theme] .log-journey-summary-head p,
+html[data-theme] .log-journey-overview p,
+html[data-theme] .log-journey-policy-blind p {
+  font-size: var(--ca-type-copy);
+  line-height: var(--ca-reading-line);
+}
+
+html[data-theme] .log-journey-details,
+html[data-theme] .log-view-controls .btn {
+  min-height: 2.75rem;
+  padding: 0.65rem 0.85rem;
+  font-size: var(--ca-type-copy);
+}
+
+html[data-theme] .log-journey-summary-head h3,
+html[data-theme] .log-journey-section-head h3,
+html[data-theme] .log-journey-evidence-head h3 {
+  font-size: clamp(1.2rem, 1.7vw, 1.55rem);
+}
+
+html[data-theme] .log-journey-summary {
+  padding: 1rem;
+  gap: 0.75rem;
+}
+
+html[data-theme] .log-journey-metrics {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
+}
+
+html[data-theme] .log-journey-metrics article,
+html[data-theme] .log-journey-severity-card {
+  padding: 0.8rem;
+}
+
+html[data-theme] .log-journey-metrics span,
+html[data-theme] .log-journey-severity-card > span,
+html[data-theme] .log-journey-source-card small,
+html[data-theme] .log-journey-source-card em,
+html[data-theme] .log-journey-column > header,
+html[data-theme] .log-journey-node-copy small,
+html[data-theme] .log-journey-flow-key span,
+html[data-theme] .log-journey-policy-counts,
+html[data-theme] .log-journey-finding-meta,
+html[data-theme] .log-journey-overview-copy > span,
+html[data-theme] .log-journey-overview-cue,
+html[data-theme] .log-journey-evidence-facts dt,
+html[data-theme] .log-journey-reason-labels em,
+html[data-theme] .log-journey-contextual > summary,
+html[data-theme] .log-journey-contextual > summary small {
+  font-size: var(--ca-type-meta);
+  line-height: 1.35;
+}
+
+html[data-theme] .log-journey-metrics strong {
+  font-size: 1.35rem;
+}
+
+html[data-theme] .log-journey-severity {
+  min-height: 2.75rem;
+  padding: 0.5rem 0.6rem;
+}
+
+html[data-theme] .log-journey-severity strong,
+html[data-theme] .log-journey-severity span,
+html[data-theme] .log-journey-severity-counts.is-compact .log-journey-severity strong,
+html[data-theme] .log-journey-severity-counts.is-compact .log-journey-severity span {
+  font-size: var(--ca-type-meta);
+}
+
+html[data-theme] .log-journey-source-card {
+  min-height: 4.25rem;
+  grid-template-columns: 2.25rem minmax(0, 1fr) auto;
+  padding: 0.7rem 0.75rem;
+}
+
+html[data-theme] .log-journey-source-icon,
+html[data-theme] .log-journey-node-icon,
+html[data-theme] .log-journey-overview-icon {
+  width: 2.25rem;
+  height: 2.25rem;
+}
+
+html[data-theme] .log-journey-source-icon .log-journey-icon,
+html[data-theme] .log-journey-element-icon .log-journey-icon {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+html[data-theme] .log-journey-source-card strong,
+html[data-theme] .log-journey-node-copy strong,
+html[data-theme] .log-journey-stage-head strong,
+html[data-theme] .log-journey-element-head strong,
+html[data-theme] .log-journey-policy strong,
+html[data-theme] .log-journey-overview strong,
+html[data-theme] .log-journey-evidence-policies > strong,
+html[data-theme] .log-journey-policy-blind strong {
+  font-size: var(--ca-type-control);
+  line-height: 1.4;
+}
+
+html[data-theme] .log-journey-node {
+  min-height: 4.5rem;
+  grid-template-columns: 2.25rem minmax(0, 1fr);
+  padding: 0.75rem;
+}
+
+html[data-theme] .log-journey-control-bridge p,
+html[data-theme] .log-journey-control-bridge strong {
+  font-size: var(--ca-type-copy);
+}
+
+html[data-theme] .log-journey-stage-head {
+  padding: 0.8rem;
+}
+
+html[data-theme] .log-journey-stage-head small,
+html[data-theme] .log-journey-element-head small,
+html[data-theme] .log-journey-policy small,
+html[data-theme] .log-journey-action-lane > header small,
+html[data-theme] .log-journey-declarations summary small {
+  font-size: var(--ca-type-copy);
+  line-height: 1.45;
+}
+
+html[data-theme] .log-journey-element-head {
+  min-height: 2.75rem;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  padding: 0.75rem;
+}
+
+html[data-theme] .log-journey-element-icon {
+  width: 2rem;
+  height: 2rem;
+}
+
+html[data-theme] .log-journey-findings {
+  padding: 0 0.75rem 0.75rem 3rem;
+}
+
+html[data-theme] .log-journey-finding {
+  min-height: 2.75rem;
+  padding: 0.65rem 0;
+}
+
+html[data-theme] .log-journey-finding-title,
+html[data-theme] .log-journey-evidence-section p,
+html[data-theme] .log-journey-evidence-section ul,
+html[data-theme] .log-journey-evidence-section ol,
+html[data-theme] .log-journey-evidence-facts dd,
+html[data-theme] .log-journey-evidence-policies article p,
+html[data-theme] .log-journey-declarations > div > p {
+  font-size: var(--ca-type-copy);
+  line-height: var(--ca-reading-line);
+}
+
+html[data-theme] .log-journey-overview-card {
+  min-height: 8rem;
+  grid-template-columns: 2.25rem minmax(0, 1fr);
+  padding: 1rem;
+}
+
+html[data-theme] .log-journey-evidence-head {
+  padding: 1rem;
+}
+
+html[data-theme] .log-journey-evidence-actions {
+  font-size: var(--ca-type-copy);
+}
+
+html[data-theme] .log-journey-evidence-section h4 {
+  font-size: var(--ca-type-meta);
+}
+
+html[data-theme] .log-journey-evidence-section h5 {
+  font-size: var(--ca-type-control);
+}
+
+html[data-theme] .log-journey-declarations > summary {
+  min-height: 3.25rem;
+  padding: 0.75rem 0.9rem;
+}
+
+html[data-theme] .log-journey-declarations summary strong,
+html[data-theme] .log-journey-policy-lanes h4,
+html[data-theme] .log-journey-action-lane > header span {
+  font-size: var(--ca-type-title);
+}
+
+html[data-theme] .log-declaration-list article,
+html[data-theme] .log-journey-policy {
+  padding: 0.85rem 1rem;
+}
+
+html[data-theme] .log-journey-policy {
+  min-height: 4.25rem;
+  gap: 0.75rem;
+}
+
+html[data-theme] .log-journey-policy > em,
+html[data-theme] .log-journey-action-lane > header strong {
+  font-size: var(--ca-type-meta);
+  line-height: 1.4;
+}
+
+html[data-theme] .log-journey-action-lane > header {
+  min-height: 3.5rem;
+  padding: 0.75rem 1rem;
+}
+
+/* Improve the low-contrast operational text without changing status colours. */
+html[data-theme="light"] {
+  --ca-text-muted: #70675f;
+  --ink-muted: #70675f;
+}
+
+html[data-theme="dark"] {
+  --ca-text-muted: #b5aa9e;
+  --ink-muted: #b5aa9e;
+}
+
+/* Laptop: a second header row and earlier reflow for dense assessment content. */
+@media (max-width: 1599px) {
+  html[data-theme] .topbar-meta {
+    flex: 1 0 100%;
+    justify-content: flex-start;
+  }
+
+  html[data-theme] .log-journey-summary-grid,
+  html[data-theme] .log-journey-policy-lanes {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  html[data-theme] .log-journey-source-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  html[data-theme] .log-journey-stage-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  html[data-theme] .log-journey-stage-grid::before,
+  html[data-theme] .log-journey-stage::before {
+    display: none;
+  }
+
+  html[data-theme] .log-journey-adjacent-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  html[data-theme] .log-journey-adjacent-grid > :last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Smaller laptop and tablet: remove fixed sidebars and let content read top to bottom. */
+@media (max-width: 1279px) {
+  html[data-theme] .start-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  html[data-theme] .start-actions > :last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+
+  html[data-theme] .builder-grid,
+  html[data-theme] .advanced-threat-model .builder-grid,
+  html[data-theme] .main-grid,
+  html[data-theme] .strategy-builder-grid,
+  html[data-theme] .scenario-grid,
+  html[data-theme] .guided-review-grid,
+  html[data-theme] .review-export-panel,
+  html[data-theme] .manual-path-layout,
+  html[data-theme] .import-grid,
+  html[data-theme] .attack-vector-band,
+  html[data-theme] .mitre-coverage-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  html[data-theme] .scope-panel,
+  html[data-theme] .strategy-panel,
+  html[data-theme] .policy-nav,
+  html[data-theme] .detail-panel,
+  html[data-theme] .strategy-input-panel,
+  html[data-theme] .scenario-input-panel,
+  html[data-theme] .side-stack,
+  html[data-theme] .manual-path-nav {
+    position: static;
+  }
+
+  html[data-theme] .side-stack {
+    grid-column: auto;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  }
+
+  html[data-theme] .strategy-requirement-grid,
+  html[data-theme] .scenario-template-grid,
+  html[data-theme] .scenario-custom-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  }
+}
+
+@media (max-width: 1023px) {
+  html[data-theme] .log-journey-stage-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  html[data-theme] .log-journey-adjacent-grid,
+  html[data-theme] .log-journey-priority-tray-body,
+  html[data-theme] .log-journey-evidence-body:has(> .log-journey-evidence-section) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  html[data-theme] .log-journey-adjacent-grid > :last-child:nth-child(odd) {
+    grid-column: auto;
+  }
+
+  html[data-theme] .log-journey-evidence-section,
+  html[data-theme] .log-journey-evidence-section:nth-child(even) {
+    padding: 1rem 0;
+    border-left: 0;
+  }
+
+  html[data-theme] .log-journey-policy {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+  }
+
+  html[data-theme] .log-journey-policy > em {
+    grid-column: 2;
+    max-width: none;
+    text-align: left;
+  }
+
+  html[data-theme] .manual-policy-snapshot {
+    position: static;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* The measured flow becomes a vertical journey before labels become cramped. */
+@media (max-width: 899px) {
+  html[data-theme] .log-journey-flow-shell {
+    min-height: 0;
+    overflow: visible;
+  }
+
+  html[data-theme] .log-journey-ribbons {
+    display: none;
+  }
+
+  html[data-theme] .log-journey-flow-columns {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.75rem;
+    min-height: 0;
+  }
+
+  html[data-theme] .log-journey-column {
+    position: relative;
+  }
+
+  html[data-theme] .log-journey-column:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: 1.1rem;
+    bottom: -1.75rem;
+    width: 2px;
+    height: 1.75rem;
+    background: color-mix(in srgb, var(--orange) 45%, var(--line));
+  }
+
+  html[data-theme] .log-journey-column:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    z-index: 2;
+    left: 0.9rem;
+    bottom: -1.1rem;
+    width: 0.55rem;
+    height: 0.55rem;
+    background: var(--orange);
+    border-radius: 50%;
+  }
+
+  html[data-theme] .log-journey-column > div {
+    justify-content: start;
+  }
+}
+
+@media (max-width: 679px) {
+  html[data-theme] .workspace {
+    width: min(100% - 1rem, var(--ca-workspace-max));
+    margin-top: 0.75rem;
+  }
+
+  html[data-theme] .app-topbar {
+    align-items: stretch;
+    padding: 0.75rem;
+  }
+
+  html[data-theme] .brand-lockup {
+    width: 100%;
+  }
+
+  html[data-theme] .brand-title-row {
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+
+  html[data-theme] .app-topbar h1 {
+    font-size: clamp(1.35rem, 7vw, 1.7rem);
+  }
+
+  html[data-theme] .topbar-meta {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+
+  html[data-theme] .topbar-meta > span:not(.sr-only) {
+    display: flex;
+  }
+
+  html[data-theme] .topbar-meta .expert-toggle {
+    order: initial;
+  }
+
+  html[data-theme] .topbar-meta > a:last-child {
+    grid-column: 1 / -1;
+  }
+
+  html[data-theme] .workspace-tabs {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  html[data-theme] .tab-button,
+  html[data-theme] .tab-button:nth-child(3) {
+    border-right: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+  }
+
+  html[data-theme] .start-actions,
+  html[data-theme] .log-journey-stage-grid,
+  html[data-theme] .log-journey-source-summary,
+  html[data-theme] .log-journey-overview,
+  html[data-theme] .strategy-plan-grid,
+  html[data-theme] .strategy-plan-grid.lower,
+  html[data-theme] .scenario-settings-grid,
+  html[data-theme] .scenario-support-grid,
+  html[data-theme] .detail-grid,
+  html[data-theme] .manual-section-grid,
+  html[data-theme] .override-grid,
+  html[data-theme] .selected-guidance,
+  html[data-theme] .review-guide {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  html[data-theme] .start-actions > :last-child:nth-child(odd) {
+    grid-column: auto;
+  }
+
+  html[data-theme] .metrics,
+  html[data-theme] .log-journey-metrics,
+  html[data-theme] .log-journey-severity-counts,
+  html[data-theme] .log-journey-evidence-facts,
+  html[data-theme] .manual-policy-snapshot {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  html[data-theme] .log-journey-overview-card {
+    border-right: 0;
+    border-bottom: 1px solid var(--line-soft);
+  }
+
+  html[data-theme] .log-journey-overview-card:last-child {
+    border-bottom: 0;
+  }
+
+  html[data-theme] .log-journey-head,
+  html[data-theme] .log-journey-section-head,
+  html[data-theme] .log-journey-summary-head,
+  html[data-theme] .log-journey-evidence-head {
+    display: grid;
+    align-items: start;
+  }
+
+  html[data-theme] .log-journey-summary-head p,
+  html[data-theme] .log-journey-evidence-actions {
+    text-align: left;
+  }
+
+  html[data-theme] .manual-row,
+  html[data-theme] .strategy-policy-card dl,
+  html[data-theme] .strategy-build-order .strategy-policy-card dl,
+  html[data-theme] .scenario-setting-card dl,
+  html[data-theme] .comparison-card summary,
+  html[data-theme] .comparison-body dl {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 420px) {
+  html[data-theme] .metrics,
+  html[data-theme] .log-journey-metrics,
+  html[data-theme] .log-journey-severity-counts,
+  html[data-theme] .log-journey-evidence-facts,
+  html[data-theme] .manual-policy-snapshot {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme] {
+    scroll-behavior: auto;
   }
 }

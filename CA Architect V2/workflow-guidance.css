@@ -79,7 +79,7 @@ a:focus-visible {
 
 .start-actions {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
 }
 
@@ -109,11 +109,6 @@ a:focus-visible {
 }
 
 .start-card:nth-child(3) {
-  --path-accent: #d99535;
-  --path-label: #f2b84b;
-}
-
-.start-card:nth-child(4) {
   --path-accent: #e1063a;
   --path-label: #ff5c7a;
 }
@@ -275,7 +270,7 @@ a:focus-visible {
 }
 
 .workspace-tabs {
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 7px;
   margin: 0 0 12px;
   padding: 0;
@@ -457,10 +452,6 @@ html[data-theme="light"] .start-card:nth-child(2) > span {
 }
 
 html[data-theme="light"] .start-card:nth-child(3) > span {
-  color: #875315;
-}
-
-html[data-theme="light"] .start-card:nth-child(4) > span {
   color: #9d1730;
 }
 
@@ -530,7 +521,7 @@ html[data-theme="light"] .tab-button[data-tab="import-compare"] span {
   }
 
   .workspace-tabs {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 
   .start-actions {

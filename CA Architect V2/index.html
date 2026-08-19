@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-text-size="standard">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,10 +8,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="icon" href="data:,">
+  <script src="appearance-init.js?v=2.2.0"></script>
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="workflow-guidance.css">
-  <link rel="stylesheet" href="compliance-theme.css">
+  <link rel="stylesheet" href="style.css?v=2.2.0">
+  <link rel="stylesheet" href="workflow-guidance.css?v=2.2.0">
+  <link rel="stylesheet" href="compliance-theme.css?v=2.2.0">
 </head>
 <body>
   <div class="aurora" aria-hidden="true"></div>
@@ -21,12 +22,18 @@
       <div class="brand-mark">CA</div>
       <div>
         <p class="eyebrow">Security Ninja Tools</p>
-        <h1>CA Architect V2</h1>
+        <div class="brand-title-row">
+          <h1>CA Architect V2</h1>
+          <span class="app-version" aria-label="Application version 2.2.0">v2.2.0</span>
+        </div>
       </div>
     </div>
     <div class="topbar-meta">
       <span>Local only</span>
-      <button class="theme-toggle expert-toggle" id="expertModeToggle" type="button" aria-label="Show expert detail" aria-pressed="false">Expert detail: off</button>
+      <button class="theme-toggle expert-toggle" id="expertModeToggle" type="button" aria-label="Show advanced detail" aria-describedby="advancedDetailHelp" title="Shows rollout tuning, traceability, threat mapping, targeting edits, raw object IDs and Graph JSON." aria-pressed="false">Advanced detail: off</button>
+      <span class="sr-only" id="advancedDetailHelp">Advanced detail reveals rollout tuning, traceability, threat mapping, targeting edits, raw object IDs and Graph JSON.</span>
+      <button class="theme-toggle text-size-toggle" id="textSizeToggle" type="button" aria-label="Use large text size" aria-describedby="textSizeHelp" title="Large text increases the interface scale for easier reading." aria-pressed="false">Text size: standard</button>
+      <span class="sr-only" id="textSizeHelp">Large text increases the interface scale to approximately eighteen pixel body text and is remembered on this device.</span>
       <button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch to light mode" aria-pressed="false">Light mode</button>
       <a href="../index.html">Tools Hub</a>
     </div>
@@ -49,10 +56,6 @@
       <button class="tab-button" id="tabButtonPolicyRecommendations" type="button" role="tab" aria-selected="false" aria-controls="policyRecommendationsPanel" data-tab="policy-recommendations">
         <span>Review/export</span>
         <small>Tune rollout and JSON</small>
-      </button>
-      <button class="tab-button" id="tabButtonImportCompare" type="button" role="tab" aria-selected="false" aria-controls="importComparePanel" data-tab="import-compare">
-        <span>Audit</span>
-        <small>Check an existing tenant</small>
       </button>
       <button class="tab-button" id="tabButtonLogAnalysis" type="button" role="tab" aria-selected="false" aria-controls="logAnalysisPanel" data-tab="log-analysis">
         <span>Log analysis</span>
@@ -83,12 +86,6 @@
             <strong>Build from an access scenario</strong>
             <p>Create a focused policy pack for one group, resource, partner, or exception.</p>
             <button class="btn primary" type="button" data-tab="scenario-planner">Start scenario</button>
-          </article>
-          <article class="start-card">
-            <span>Audit</span>
-            <strong>Audit an existing tenant</strong>
-            <p>Paste or drop an export to compare current Conditional Access policies with the rebuild set.</p>
-            <button class="btn primary" type="button" data-tab="import-compare">Start audit</button>
           </article>
           <article class="start-card">
             <span>Analyse</span>
@@ -812,7 +809,7 @@
       </footer>
     </section>
 
-    <section class="workflow-panel" id="importComparePanel" role="tabpanel" aria-labelledby="tabButtonImportCompare" data-tab-panel="import-compare" hidden>
+    <section class="workflow-panel" id="importComparePanel" role="region" aria-label="Tenant comparison support" aria-hidden="true" hidden>
       <section class="panel import-panel">
       <div class="panel-head">
         <div>
@@ -860,17 +857,27 @@
         <div>
           <p class="eyebrow">Log analysis</p>
           <h3>Entra sign-in log gap analysis</h3>
-          <p class="guided-intro">Everything stays in your browser. Entra's JSON download gives you four files — select all of them at once and they merge into one report.</p>
+          <p class="guided-intro">Add one or more Entra sign-in log exports. JSON provides the richest policy detail, CSV is also supported, and every file is analysed locally in your browser.</p>
         </div>
         <div class="import-actions">
           <button class="btn primary" id="logExportBtn" type="button">Export gap report (.docx)</button>
           <button class="btn secondary" id="logClearBtn" type="button">Clear</button>
         </div>
       </div>
-      <div class="import-grid">
+      <div class="log-upload-stage" id="logUploadStage">
+        <div class="dropzone log-dropzone" id="logDropzone">
+          <strong>Drop Entra sign-in logs here</strong>
+          <span>Choose one or more JSON or CSV exports, or drag them onto this area.</span>
+          <small>Multiple files are merged into one assessment. Nothing leaves your browser.</small>
+          <input id="logFileInput" type="file" multiple accept=".json,.csv,application/json,text/csv">
+        </div>
+        <div id="logStatus" class="status-box" hidden></div>
+      </div>
+      <div class="log-view-controls" id="logViewControl" hidden>
+        <button class="btn secondary" type="button" data-log-show-visual>Back to visual assessment</button>
+      </div>
+      <div class="import-grid log-results-workspace" id="logResultsWorkspace" hidden>
         <div>
-          <div class="dropzone" id="logDropzone">Drop your sign-in log exports (.json or .csv) here or click to browse — select all four at once<input id="logFileInput" type="file" multiple accept=".json,.csv,application/json,text/csv"></div>
-          <div id="logStatus" class="status-box">Load a sign-in log export to analyse Conditional Access coverage gaps.</div>
           <div id="logStrategyCta"></div>
           <div id="logPolicyInventory"></div>
         </div>
@@ -894,12 +901,15 @@
           <div id="logFindings" class="finding-list"></div>
         </div>
       </div>
+      <section class="panel log-visual-workspace" id="logVisualWorkspace" hidden aria-labelledby="logVisualTitle">
+        <div id="logVisualContent"></div>
+      </section>
       </section>
     </section>
   </main>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="baseline-data.js"></script>
-  <script src="app.js"></script>
+  <script src="baseline-data.js?v=2.2.0"></script>
+  <script src="app.js?v=2.2.0"></script>
 </body>
 </html>
