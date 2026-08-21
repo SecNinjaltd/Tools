@@ -1642,6 +1642,20 @@ button.log-journey-severity:hover, button.log-journey-severity:focus-visible { t
 .log-journey-samples p { margin: 0; font-size: 9.5px; line-height: 1.4; overflow-wrap: anywhere; }
 .log-journey-inline-link { display: inline; padding: 0; color: var(--ink); font: inherit; font-weight: 800; text-align: left; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--orange) 48%, transparent); text-underline-offset: 2px; background: transparent; border: 0; cursor: pointer; }
 .log-journey-inline-link:hover, .log-journey-inline-link:focus-visible { color: var(--orange); }
+.log-journey-workbench { min-width: 0; display: grid; gap: 18px; }
+.log-journey-tabs { display: grid; gap: 7px; padding: 7px; background: color-mix(in srgb, var(--surface-2) 88%, transparent); border: 1px solid var(--line-soft); border-radius: 8px; }
+.log-journey-workspace-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.log-journey-policy-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-bottom: 12px; }
+.log-journey-tab { position: relative; min-width: 0; min-height: 52px; display: grid; align-content: center; gap: 4px; padding: 8px 12px; color: var(--ink-soft); text-align: left; background: transparent; border: 1px solid transparent; border-radius: 6px; cursor: pointer; transition: color .18s ease, background .18s ease, border-color .18s ease, box-shadow .18s ease, transform .18s ease; }
+.log-journey-tab:hover { color: var(--ink); background: color-mix(in srgb, var(--surface-1) 76%, transparent); border-color: var(--line-soft); transform: translateY(-1px); }
+.log-journey-tab:focus-visible { color: var(--ink); background: var(--surface-1); border-color: color-mix(in srgb, var(--orange) 62%, var(--line)); }
+.log-journey-tab.is-active, .log-journey-tab[aria-selected="true"] { color: var(--ink); background: var(--surface-1); border-color: color-mix(in srgb, var(--orange) 30%, var(--line-soft)); box-shadow: inset 0 -3px var(--orange), 0 3px 10px rgba(25, 21, 18, .045); }
+.log-journey-tab > span { min-width: 0; font-size: var(--ca-type-control, .9375rem); font-weight: 800; line-height: 1.3; overflow-wrap: anywhere; }
+.log-journey-tab > small { color: var(--ink-muted); font: 700 var(--ca-type-meta, .75rem)/1.3 'JetBrains Mono', monospace; letter-spacing: .02em; text-transform: uppercase; }
+.log-journey-workspace-panels, .log-journey-policy-panels { min-width: 0; }
+.log-journey-workspace-panels > [role="tabpanel"]:not([hidden]), .log-journey-policy-panels > [role="tabpanel"]:not([hidden]) { animation: logJourneyTabReveal .2s ease both; }
+@keyframes logJourneyTabReveal { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+.log-journey-workspace-panels .log-journey-policy-board { padding-top: 0; border-top: 0; }
 .log-journey-policy-board { padding-top: 18px; border-top: 1px solid var(--line-soft); }
 .log-journey-board-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
 .log-journey-declarations { margin-bottom: 12px; background: color-mix(in srgb, var(--surface-2) 78%, transparent); border: 1px solid var(--line-soft); border-radius: 7px; }
@@ -1661,6 +1675,9 @@ button.log-journey-severity:hover, button.log-journey-severity:focus-visible { t
 .log-journey-policy-lanes > section { min-width: 0; background: color-mix(in srgb, var(--surface-2) 78%, transparent); border: 1px solid var(--line-soft); border-radius: 7px; overflow: hidden; }
 .log-journey-policy-lanes > section > header { min-height: 62px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; background: color-mix(in srgb, var(--surface-3) 64%, var(--surface-1)); border-bottom: 1px solid var(--line-soft); }
 .log-journey-policy-lanes h4 { margin: 3px 0 0; font-size: 13px; }
+.log-journey-policy-panel { min-width: 0; background: color-mix(in srgb, var(--surface-2) 78%, transparent); border: 1px solid var(--line-soft); border-radius: 7px; overflow: hidden; }
+.log-journey-policy-panel > header { min-height: 62px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; background: color-mix(in srgb, var(--surface-3) 64%, var(--surface-1)); border-bottom: 1px solid var(--line-soft); }
+.log-journey-policy-panel h4 { margin: 3px 0 0; font-size: var(--ca-type-title, 1rem); }
 .log-journey-policy-list { display: grid; }
 .log-journey-policy { width: 100%; min-width: 0; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 10px 12px; color: var(--ink); text-align: left; background: transparent; border: 0; border-bottom: 1px solid var(--line-soft); cursor: pointer; transition: background .18s ease; }
 .log-journey-policy:last-child { border-bottom: 0; }
@@ -1726,6 +1743,8 @@ button.log-journey-severity:hover, button.log-journey-severity:focus-visible { t
   .log-journey-breakdowns, .log-journey-samples { grid-template-columns: minmax(0, 1fr); }
   .log-journey-filter-examples > div { grid-template-columns: minmax(0, 1fr); }
   .log-journey-board-actions { justify-content: flex-start; }
+  .log-journey-workspace-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .log-journey-workspace-tabs .log-journey-tab:last-child { grid-column: 1 / -1; }
 }
 @media (max-width: 560px) {
   .log-visual-workspace { margin-left: -2px; margin-right: -2px; }
@@ -1762,10 +1781,18 @@ button.log-journey-severity:hover, button.log-journey-severity:focus-visible { t
   .log-journey-policy > em { grid-column: 2; max-width: none; text-align: left; }
   .log-journey-board-actions { display: grid; width: 100%; }
   .log-journey-board-actions .btn { width: 100%; }
+  .log-journey-tabs { padding: 6px; }
+  .log-journey-workspace-tabs { grid-template-columns: minmax(0, 1fr); }
+  .log-journey-workspace-tabs .log-journey-tab:last-child { grid-column: auto; }
+  .log-journey-policy-tabs { grid-template-columns: minmax(0, 1fr); }
+  .log-journey-tab { min-height: 48px; }
+  .log-journey-policy-panel > header { align-items: flex-start; }
   @keyframes logJourneyVerticalPulse { 0%,100% { transform: translateY(-4px); opacity: .35; } 50% { transform: translateY(7px); opacity: .9; } }
 }
 @media (prefers-reduced-motion: reduce) {
   .log-journey-pulse, .log-journey-pulse.is-replaying, .log-journey-column::before { animation: none !important; }
   .log-journey-node, .log-journey-element, .log-journey-overview-card { transition: none; }
   .log-journey-priority-tray-reveal { animation: none; }
+  .log-journey-workspace-panels > [role="tabpanel"], .log-journey-policy-panels > [role="tabpanel"] { animation: none !important; }
+  .log-journey-tab { transition: none; }
 }

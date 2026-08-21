@@ -7363,6 +7363,8 @@
       declarations: defaultDeclarations(),
       view: 'visual',
       journeySelected: null,
+      journeyWorkspaceTab: 'controls',
+      journeyPolicyTab: 'recommended',
       observedPoliciesExpanded: false,
       tenantAssumptionsExpanded: false,
       // Kept so a declaration change can re-simulate without re-reading the files.
@@ -11079,7 +11081,11 @@
     $('logStrategyCta').innerHTML = renderLogStrategyCta();
     $('logPolicyInventory').innerHTML = renderLogPolicyInventory();
     $('logVisualContent').innerHTML = la.view === 'visual' ? renderLogVisualWorkspace() : '';
-    if (la.view === 'visual') queueLogJourneyDraw();
+    if (la.view === 'visual') {
+      applyLogJourneyTabs();
+      applyLogJourneySelection();
+      queueLogJourneyDraw();
+    }
     else if (logJourneyResizeObserver) logJourneyResizeObserver.disconnect();
     scheduleScrollableRegionEnhancement();
   }
@@ -11634,6 +11640,13 @@
     </button>`;
   }
 
+  function renderLogJourneyTab(config) {
+    const active = Boolean(config.active);
+    return `<button type="button" class="log-journey-tab${active ? ' is-active' : ''}" id="${esc(config.id)}" role="tab" aria-selected="${active}" aria-controls="${esc(config.panelId)}" tabindex="${active ? '0' : '-1'}" ${config.dataAttribute}="${esc(config.value)}">
+      <span>${esc(config.label)}</span><small>${esc(config.badge)}</small>
+    </button>`;
+  }
+
   function renderLogJourneyPolicyBoard(model) {
     const observed = [...model.observedPolicies].sort((a, b) => {
       const rank = policy => policy.state === 'enforcing' ? 0 : policy.state === 'reportOnly' ? 1 : 2;
@@ -11655,13 +11668,24 @@
     const recommendations = model.recommendedPolicies.length
       ? `${actionLane('is-act-now', 'Act now', 'Begin investigation, design and staged rollout.', actNowRecommendations)}${actionLane('is-validate-first', 'Validate first', 'Resolve prerequisites before pilot deployment.', validateRecommendations)}${optionalRecommendations.length ? `<details class="log-journey-contextual"><summary><span>Optional / advanced (${optionalRecommendations.length})</span><small>${esc(optionalReasons || 'Unanswered assumptions and specialist scenarios')}</small></summary><div>${optionalRecommendations.map(renderLogJourneyRecommendedPolicy).join('')}</div></details>` : ''}`
       : '<div class="log-journey-policy-blind"><strong>No proposed set was generated</strong><p>The loaded evidence did not produce a recommendation set. Review blind spots and tenant assumptions before treating this as a clean result.</p></div>';
+    const activePolicyTab = state.logAnalysis.journeyPolicyTab === 'observed' ? 'observed' : 'recommended';
     return `<section class="log-journey-policy-board" id="logJourneyPolicyBoard" tabindex="-1" aria-labelledby="logJourneyPolicyBoardTitle">
       <div class="log-journey-section-head"><div><span class="eyebrow">Policy action board</span><h3 id="logJourneyPolicyBoardTitle">What acted—and what to change next</h3><p>Observed policy results are runtime evidence. Proposed controls are guidance and never alter the measured ribbons above.</p></div><div class="log-journey-board-actions"><button type="button" class="btn secondary" data-log-build-guide>Download build guide</button><button type="button" class="btn primary" data-log-build-strategy>Build this strategy</button></div></div>
       ${renderLogJourneyDeclarationDisclosure(model)}
       ${renderLogJourneyDeclinedWarnings()}
-      <div class="log-journey-policy-lanes">
-        <section><header><div><span class="eyebrow">Observed in this window</span><h4>${esc(relevant.length)} active or report-only ${relevant.length === 1 ? 'policy' : 'policies'}</h4></div>${remainder.length ? `<button type="button" class="btn secondary" data-log-toggle-observed>${state.logAnalysis.observedPoliciesExpanded ? 'Show relevant only' : `View all observed policies (${observed.length})`}</button>` : ''}</header><div class="log-journey-policy-list">${observedContent}</div></section>
-        <section><header><div><span class="eyebrow">Recommended next controls</span><h4>${esc(model.recommendedPolicies.length)} proposed · ${esc(actNowRecommendations.length)} act now · ${esc(validateRecommendations.length)} validate first · ${esc(optionalRecommendations.length)} optional</h4></div></header><div class="log-journey-policy-list">${recommendations}</div></section>
+      <nav class="log-journey-tabs log-journey-policy-tabs" role="tablist" aria-label="Policy action views" data-log-journey-tablist="policy">
+        ${renderLogJourneyTab({ id: 'logJourneyPolicyTabRecommended', panelId: 'logJourneyPolicyPanelRecommended', value: 'recommended', label: 'Recommended policies', badge: `${model.recommendedPolicies.length} proposed`, active: activePolicyTab === 'recommended', dataAttribute: 'data-log-policy-tab' })}
+        ${renderLogJourneyTab({ id: 'logJourneyPolicyTabObserved', panelId: 'logJourneyPolicyPanelObserved', value: 'observed', label: 'Observed policies', badge: `${observed.length} recorded`, active: activePolicyTab === 'observed', dataAttribute: 'data-log-policy-tab' })}
+      </nav>
+      <div class="log-journey-policy-panels">
+        <section class="log-journey-policy-panel" id="logJourneyPolicyPanelRecommended" role="tabpanel" aria-labelledby="logJourneyPolicyTabRecommended" data-log-policy-panel="recommended"${activePolicyTab === 'recommended' ? '' : ' hidden'}>
+          <header><div><span class="eyebrow">Recommended next controls</span><h4>${esc(model.recommendedPolicies.length)} proposed · ${esc(actNowRecommendations.length)} act now · ${esc(validateRecommendations.length)} validate first · ${esc(optionalRecommendations.length)} optional</h4></div></header>
+          <div class="log-journey-policy-list">${recommendations}</div>
+        </section>
+        <section class="log-journey-policy-panel" id="logJourneyPolicyPanelObserved" role="tabpanel" aria-labelledby="logJourneyPolicyTabObserved" data-log-policy-panel="observed"${activePolicyTab === 'observed' ? '' : ' hidden'}>
+          <header><div><span class="eyebrow">Observed in this window</span><h4>${esc(relevant.length)} active or report-only ${relevant.length === 1 ? 'policy' : 'policies'}</h4></div>${remainder.length ? `<button type="button" class="btn secondary" data-log-toggle-observed>${state.logAnalysis.observedPoliciesExpanded ? 'Show relevant only' : `View all observed policies (${observed.length})`}</button>` : ''}</header>
+          <div class="log-journey-policy-list">${observedContent}</div>
+        </section>
       </div>
     </section>`;
   }
@@ -11671,6 +11695,9 @@
     const findingCount = state.logAnalysis.findings.length;
     const allSources = model.sources.every(source => source.loaded);
     const selected = state.logAnalysis.journeySelected;
+    const activeWorkspaceTab = ['controls', 'policies', 'adjacent'].includes(state.logAnalysis.journeyWorkspaceTab) ? state.logAnalysis.journeyWorkspaceTab : 'controls';
+    const controlFindingIds = new Set(model.stages.flatMap(stage => stage.elements.flatMap(element => element.findings.map(finding => finding.id))));
+    const adjacentFindingIds = new Set(model.adjacent.flatMap(element => element.findings.map(finding => finding.id)));
     return `<div class="log-journey${selected ? ' has-selection' : ''}">
       <header class="log-journey-head">
         <div><span class="eyebrow">Conditional Access visual assessment</span><h2 id="logVisualTitle">See where access is protected—and where it slips through</h2><p>${esc(model.journey.total.toLocaleString())} sign-in events classified once from identity source to CA decision and outcome. ${allSources ? 'All three supported log sources are represented.' : 'Missing supported sources remain visible as blind spots.'}</p></div>
@@ -11689,17 +11716,32 @@
         </div>
       </section>
       ${renderLogJourneyEvidence(model)}
-      <section class="log-journey-assessment" aria-labelledby="logJourneyAssessmentTitle">
-        <div class="log-journey-control-bridge"><span>${logJourneyIcon('branch')}</span><p><strong>Why the flow looks this way</strong>Policy configuration explains the measured paths above, but is not itself event volume.</p></div>
-        <div class="log-journey-section-head"><div><span class="eyebrow">Connected control assessment</span><h3 id="logJourneyAssessmentTitle">Why the flow looks this way</h3><p>Each finding appears once beneath the control that best explains it. Policy counts show where observed and proposed controls connect.</p></div><div class="log-journey-status-key">${Object.keys(LOG_JOURNEY_STATUS_META).map(status => renderLogJourneyStatus(status, true)).join('')}</div></div>
-        ${findingCount ? '' : '<p class="log-journey-no-findings"><strong>No gaps were identified in the loaded evidence.</strong> That does not prove universal protection; quiet activity and missing sources remain visible below.</p>'}
-        <div class="log-journey-stage-grid">${model.stages.map(renderLogJourneyStage).join('')}</div>
+      <section class="log-journey-workbench" aria-label="Assessment detail workspace">
+        <div class="log-journey-control-bridge"><span>${logJourneyIcon('branch')}</span><p><strong>Explore the evidence behind the flow</strong>The measured journey remains visible above while the tabs organise its supporting controls and policy evidence.</p></div>
+        <nav class="log-journey-tabs log-journey-workspace-tabs" role="tablist" aria-label="Visual assessment detail" data-log-journey-tablist="workspace">
+          ${renderLogJourneyTab({ id: 'logJourneyWorkspaceTabControls', panelId: 'logJourneyWorkspacePanelControls', value: 'controls', label: 'Control map', badge: `${controlFindingIds.size} finding${controlFindingIds.size === 1 ? '' : 's'}`, active: activeWorkspaceTab === 'controls', dataAttribute: 'data-log-workspace-tab' })}
+          ${renderLogJourneyTab({ id: 'logJourneyWorkspaceTabPolicies', panelId: 'logJourneyWorkspacePanelPolicies', value: 'policies', label: 'Policy actions', badge: `${model.recommendedPolicies.length} proposed`, active: activeWorkspaceTab === 'policies', dataAttribute: 'data-log-workspace-tab' })}
+          ${renderLogJourneyTab({ id: 'logJourneyWorkspaceTabAdjacent', panelId: 'logJourneyWorkspacePanelAdjacent', value: 'adjacent', label: 'Adjacent controls', badge: `${model.adjacent.length} controls · ${adjacentFindingIds.size} finding${adjacentFindingIds.size === 1 ? '' : 's'}`, active: activeWorkspaceTab === 'adjacent', dataAttribute: 'data-log-workspace-tab' })}
+        </nav>
+        <div class="log-journey-workspace-panels">
+          <div id="logJourneyWorkspacePanelControls" role="tabpanel" aria-labelledby="logJourneyWorkspaceTabControls" data-log-workspace-panel="controls"${activeWorkspaceTab === 'controls' ? '' : ' hidden'}>
+            <section class="log-journey-assessment" aria-labelledby="logJourneyAssessmentTitle">
+              <div class="log-journey-section-head"><div><span class="eyebrow">Connected control assessment</span><h3 id="logJourneyAssessmentTitle">Why the flow looks this way</h3><p>Each finding appears once beneath the control that best explains it. Policy counts show where observed and proposed controls connect.</p></div><div class="log-journey-status-key">${Object.keys(LOG_JOURNEY_STATUS_META).map(status => renderLogJourneyStatus(status, true)).join('')}</div></div>
+              ${findingCount ? '' : '<p class="log-journey-no-findings"><strong>No gaps were identified in the loaded evidence.</strong> That does not prove universal protection; quiet activity and missing sources remain visible below.</p>'}
+              <div class="log-journey-stage-grid">${model.stages.map(renderLogJourneyStage).join('')}</div>
+            </section>
+          </div>
+          <div id="logJourneyWorkspacePanelPolicies" role="tabpanel" aria-labelledby="logJourneyWorkspaceTabPolicies" data-log-workspace-panel="policies"${activeWorkspaceTab === 'policies' ? '' : ' hidden'}>
+            ${renderLogJourneyPolicyBoard(model)}
+          </div>
+          <div id="logJourneyWorkspacePanelAdjacent" role="tabpanel" aria-labelledby="logJourneyWorkspaceTabAdjacent" data-log-workspace-panel="adjacent"${activeWorkspaceTab === 'adjacent' ? '' : ' hidden'}>
+            <section class="log-journey-adjacent" aria-labelledby="logJourneyAdjacentTitle">
+              <div class="log-journey-section-head"><div><span class="eyebrow">Outside the tenant CA boundary</span><h3 id="logJourneyAdjacentTitle">Adjacent identity controls</h3><p>These remain part of the assessment, while clearly separated from controls Conditional Access can enforce.</p></div></div>
+              <div class="log-journey-adjacent-grid">${model.adjacent.map(renderLogJourneyElement).join('')}</div>
+            </section>
+          </div>
+        </div>
       </section>
-      <section class="log-journey-adjacent" aria-labelledby="logJourneyAdjacentTitle">
-        <div class="log-journey-section-head"><div><span class="eyebrow">Outside the tenant CA boundary</span><h3 id="logJourneyAdjacentTitle">Adjacent identity controls</h3><p>These remain part of the one-page assessment, while clearly separated from controls Conditional Access can enforce.</p></div></div>
-        <div class="log-journey-adjacent-grid">${model.adjacent.map(renderLogJourneyElement).join('')}</div>
-      </section>
-      ${renderLogJourneyPolicyBoard(model)}
     </div>`;
   }
 
@@ -12238,14 +12280,78 @@
     });
   }
 
+  function applyLogJourneyTabs() {
+    const root = $('logVisualContent');
+    if (!root) return;
+    const workspaceTab = ['controls', 'policies', 'adjacent'].includes(state.logAnalysis.journeyWorkspaceTab)
+      ? state.logAnalysis.journeyWorkspaceTab
+      : 'controls';
+    const policyTab = state.logAnalysis.journeyPolicyTab === 'observed' ? 'observed' : 'recommended';
+    root.querySelectorAll('[data-log-workspace-tab]').forEach(tab => {
+      const active = tab.dataset.logWorkspaceTab === workspaceTab;
+      tab.classList.toggle('is-active', active);
+      tab.setAttribute('aria-selected', String(active));
+      tab.setAttribute('tabindex', active ? '0' : '-1');
+    });
+    root.querySelectorAll('[data-log-workspace-panel]').forEach(panel => {
+      panel.hidden = panel.dataset.logWorkspacePanel !== workspaceTab;
+    });
+    root.querySelectorAll('[data-log-policy-tab]').forEach(tab => {
+      const active = tab.dataset.logPolicyTab === policyTab;
+      tab.classList.toggle('is-active', active);
+      tab.setAttribute('aria-selected', String(active));
+      tab.setAttribute('tabindex', active ? '0' : '-1');
+    });
+    root.querySelectorAll('[data-log-policy-panel]').forEach(panel => {
+      panel.hidden = panel.dataset.logPolicyPanel !== policyTab;
+    });
+  }
+
+  function activateLogJourneyTab(group, value, options) {
+    const settings = options || {};
+    const valid = group === 'workspace'
+      ? ['controls', 'policies', 'adjacent'].includes(value)
+      : group === 'policy' && ['recommended', 'observed'].includes(value);
+    if (!valid) return false;
+    const key = group === 'workspace' ? 'journeyWorkspaceTab' : 'journeyPolicyTab';
+    const changed = state.logAnalysis[key] !== value;
+    state.logAnalysis[key] = value;
+    if (changed && settings.clearSelection !== false) clearLogJourneySelection(false);
+    applyLogJourneyTabs();
+    if (settings.focus) {
+      const selector = group === 'workspace' ? `[data-log-workspace-tab="${CSS.escape(value)}"]` : `[data-log-policy-tab="${CSS.escape(value)}"]`;
+      $('logVisualContent')?.querySelector(selector)?.focus({ preventScroll: true });
+    }
+    return true;
+  }
+
+  function routeLogJourneyEntity(type, id) {
+    if (type === 'observedPolicy') {
+      activateLogJourneyTab('workspace', 'policies', { clearSelection: false });
+      activateLogJourneyTab('policy', 'observed', { clearSelection: false });
+      return;
+    }
+    if (type === 'recommendedPolicy') {
+      activateLogJourneyTab('workspace', 'policies', { clearSelection: false });
+      activateLogJourneyTab('policy', 'recommended', { clearSelection: false });
+      return;
+    }
+    if (type !== 'element' && type !== 'finding') return;
+    const adjacent = type === 'element'
+      ? LOG_JOURNEY_ADJACENT.some(element => element.id === id)
+      : LOG_JOURNEY_ADJACENT.some(element => element.findingIds.includes(id));
+    activateLogJourneyTab('workspace', adjacent ? 'adjacent' : 'controls', { clearSelection: false });
+  }
+
   function selectLogJourneyEntity(type, id, opener) {
     const current = state.logAnalysis.journeySelected;
+    if (!logJourneyEntityDetail(type, id)) return;
+    routeLogJourneyEntity(type, id);
     if (current?.type === type && current.id === id) {
       updateLogJourneyEvidence();
       revealLogJourneyEvidence();
       return;
     }
-    if (!logJourneyEntityDetail(type, id)) return;
     state.logAnalysis.journeySelected = { type, id };
     logJourneySelectionOpener = { element: opener || document.activeElement, type, id };
     updateLogJourneyEvidence();
@@ -12271,7 +12377,34 @@
   }
 
   function onLogJourneyKeydown(event) {
-    if (event.key !== 'Escape' || state.logAnalysis.view !== 'visual' || !state.logAnalysis.journeySelected) return;
+    if (state.logAnalysis.view !== 'visual') return;
+    const tab = event.target.closest?.('[role="tab"][data-log-workspace-tab], [role="tab"][data-log-policy-tab]');
+    if (tab && (event.key === 'Enter' || event.key === ' ' || event.key === 'Spacebar')) {
+      event.preventDefault();
+      const group = tab.hasAttribute('data-log-workspace-tab') ? 'workspace' : 'policy';
+      const value = group === 'workspace' ? tab.dataset.logWorkspaceTab : tab.dataset.logPolicyTab;
+      activateLogJourneyTab(group, value, { clearSelection: true, focus: true });
+      return;
+    }
+    if (tab && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.key)) {
+      const tablist = tab.closest('[role="tablist"]');
+      const tabs = [...(tablist?.querySelectorAll(':scope > [role="tab"]') || [])];
+      const currentIndex = tabs.indexOf(tab);
+      if (currentIndex < 0 || !tabs.length) return;
+      event.preventDefault();
+      const backwards = event.key === 'ArrowLeft' || event.key === 'ArrowUp';
+      const nextIndex = event.key === 'Home'
+        ? 0
+        : event.key === 'End'
+          ? tabs.length - 1
+          : (currentIndex + (backwards ? -1 : 1) + tabs.length) % tabs.length;
+      const next = tabs[nextIndex];
+      const group = next.hasAttribute('data-log-workspace-tab') ? 'workspace' : 'policy';
+      const value = group === 'workspace' ? next.dataset.logWorkspaceTab : next.dataset.logPolicyTab;
+      activateLogJourneyTab(group, value, { clearSelection: true, focus: true });
+      return;
+    }
+    if (event.key !== 'Escape' || !state.logAnalysis.journeySelected) return;
     event.preventDefault();
     clearLogJourneySelection();
   }
@@ -12290,6 +12423,16 @@
   }
 
   function onLogVisualInteraction(event) {
+    const workspaceTab = event.target.closest('[data-log-workspace-tab]');
+    if (workspaceTab) {
+      activateLogJourneyTab('workspace', workspaceTab.dataset.logWorkspaceTab, { clearSelection: true });
+      return;
+    }
+    const policyTab = event.target.closest('[data-log-policy-tab]');
+    if (policyTab) {
+      activateLogJourneyTab('policy', policyTab.dataset.logPolicyTab, { clearSelection: true });
+      return;
+    }
     const openFinding = event.target.closest('[data-log-open-finding]');
     if (openFinding) {
       openLogFindingInList(openFinding.dataset.logOpenFinding);
@@ -12308,6 +12451,8 @@
       return;
     }
     if (event.target.closest('[data-log-scroll-policy-board]')) {
+      activateLogJourneyTab('workspace', 'policies', { clearSelection: false });
+      activateLogJourneyTab('policy', 'recommended', { clearSelection: false });
       const board = $('logJourneyPolicyBoard');
       board?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       requestAnimationFrame(() => board?.focus({ preventScroll: true }));
@@ -12334,6 +12479,8 @@
       }
       state.logAnalysis.observedPoliciesExpanded = !state.logAnalysis.observedPoliciesExpanded;
       $('logVisualContent').innerHTML = renderLogVisualWorkspace();
+      applyLogJourneyTabs();
+      applyLogJourneySelection();
       queueLogJourneyDraw();
       return;
     }
