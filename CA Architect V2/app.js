@@ -6507,8 +6507,11 @@
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = filename;
+    a.hidden = true;
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(a.href);
+    a.remove();
+    window.setTimeout(() => URL.revokeObjectURL(a.href), 0);
   }
 
   // ---------------------------------------------------------------------------
@@ -6533,7 +6536,10 @@
     return (c ^ 0xffffffff) >>> 0;
   }
 
-  function zipStore(entries) {
+  const DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+  const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
+  function zipStore(entries, mimeType = DOCX_MIME) {
     const encoder = new TextEncoder();
     const now = new Date();
     // MS-DOS packed date/time, which is what the ZIP local header expects.
@@ -6587,9 +6593,7 @@
     end.setUint16(10, entries.length, true);
     end.setUint32(12, centralSize, true);
     end.setUint32(16, offset, true);
-    return new Blob([...parts, ...central, new Uint8Array(end.buffer)], {
-      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-    });
+    return new Blob([...parts, ...central, new Uint8Array(end.buffer)], { type: mimeType });
   }
 
   // ---------------------------------------------------------------------------
@@ -6666,9 +6670,51 @@
   <w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num>
 </w:numbering>`;
 
-  function buildDocx(blocks) {
+  const DOCX_REPORT_STYLES = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/><w:sz w:val="22"/></w:rPr></w:rPrDefault></w:docDefaults>
+  <w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:pPr><w:spacing w:after="120" w:line="300" w:lineRule="auto"/></w:pPr><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/><w:sz w:val="22"/><w:color w:val="201C18"/></w:rPr></w:style>
+  <w:style w:type="paragraph" w:styleId="Title"><w:name w:val="Title"/><w:basedOn w:val="Normal"/><w:pPr><w:spacing w:after="80"/></w:pPr><w:rPr><w:b/><w:sz w:val="52"/><w:color w:val="201C18"/></w:rPr></w:style>
+  <w:style w:type="paragraph" w:styleId="Subtitle"><w:name w:val="Subtitle"/><w:basedOn w:val="Normal"/><w:pPr><w:spacing w:after="260"/></w:pPr><w:rPr><w:color w:val="5F5751"/><w:sz w:val="21"/></w:rPr></w:style>
+  <w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:basedOn w:val="Normal"/><w:pPr><w:keepNext/><w:spacing w:before="360" w:after="200"/><w:outlineLvl w:val="0"/></w:pPr><w:rPr><w:b/><w:sz w:val="32"/><w:color w:val="E8610A"/></w:rPr></w:style>
+  <w:style w:type="paragraph" w:styleId="Heading2"><w:name w:val="heading 2"/><w:basedOn w:val="Normal"/><w:pPr><w:keepNext/><w:spacing w:before="280" w:after="140"/><w:outlineLvl w:val="1"/></w:pPr><w:rPr><w:b/><w:sz w:val="26"/><w:color w:val="201C18"/></w:rPr></w:style>
+  <w:style w:type="paragraph" w:styleId="Heading3"><w:name w:val="heading 3"/><w:basedOn w:val="Normal"/><w:pPr><w:keepNext/><w:spacing w:before="200" w:after="100"/><w:outlineLvl w:val="2"/></w:pPr><w:rPr><w:b/><w:sz w:val="24"/><w:color w:val="C44E00"/></w:rPr></w:style>
+  <w:style w:type="paragraph" w:styleId="ListParagraph"><w:name w:val="List Paragraph"/><w:basedOn w:val="Normal"/><w:pPr><w:ind w:left="540"/><w:spacing w:after="80" w:line="300" w:lineRule="auto"/></w:pPr></w:style>
+  <w:style w:type="paragraph" w:styleId="Callout"><w:name w:val="Callout"/><w:basedOn w:val="Normal"/><w:pPr><w:pBdr><w:left w:val="single" w:sz="18" w:space="8" w:color="E8610A"/></w:pBdr><w:ind w:left="120"/><w:spacing w:before="120" w:after="200"/></w:pPr></w:style>
+</w:styles>`;
+
+  const DOCX_REPORT_NUMBERING = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:abstractNum w:abstractNumId="0"><w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="&#8226;"/><w:lvlJc w:val="left"/><w:pPr><w:tabs><w:tab w:val="num" w:pos="540"/></w:tabs><w:ind w:left="540" w:hanging="270"/><w:spacing w:after="80" w:line="300" w:lineRule="auto"/></w:pPr></w:lvl></w:abstractNum>
+  <w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num>
+</w:numbering>`;
+
+  function docxReportTable(rows, widths) {
+    const tableWidth = 9360;
+    const resolvedWidths = widths && widths.reduce((sum, width) => sum + width, 0) === tableWidth
+      ? widths
+      : rows[0].map(() => Math.floor(tableWidth / rows[0].length));
+    resolvedWidths[resolvedWidths.length - 1] += tableWidth - resolvedWidths.reduce((sum, width) => sum + width, 0);
+    const grid = resolvedWidths.map(width => `<w:gridCol w:w="${width}"/>`).join('');
+    const body = rows.map((row, rowIndex) => {
+      const header = rowIndex === 0;
+      const cells = row.map((cell, colIndex) => {
+        const content = Array.isArray(cell) ? cell.join('') : docxPara(cell, { bold: header });
+        const fill = header ? '<w:shd w:val="clear" w:color="auto" w:fill="292929"/>' : '';
+        const textColor = header && !Array.isArray(cell) ? docxPara([docxRun(cell, { bold: true, color: 'FFFFFF' })]) : content;
+        return `<w:tc><w:tcPr><w:tcW w:w="${resolvedWidths[colIndex]}" w:type="dxa"/><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="120" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="120" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/>${fill}</w:tcPr>${header ? textColor : (content || docxPara(''))}</w:tc>`;
+      }).join('');
+      return `<w:tr>${header ? '<w:trPr><w:tblHeader/></w:trPr>' : '<w:trPr><w:cantSplit/></w:trPr>'}${cells}</w:tr>`;
+    }).join('');
+    return `<w:tbl><w:tblPr><w:tblW w:w="${tableWidth}" w:type="dxa"/><w:tblInd w:w="120" w:type="dxa"/><w:tblLayout w:type="fixed"/>${DOCX_BORDER}</w:tblPr><w:tblGrid>${grid}</w:tblGrid>${body}</w:tbl>${docxPara('', { spaceAfter: 120 })}`;
+  }
+
+  function buildDocx(blocks, options = {}) {
+    const styles = options.styles || DOCX_STYLES;
+    const numbering = options.numbering || DOCX_NUMBERING;
+    const section = options.section || '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="709" w:footer="709" w:gutter="0"/></w:sectPr>';
     const document = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${blocks.join('')}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="709" w:footer="709" w:gutter="0"/></w:sectPr></w:body></w:document>`;
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${blocks.join('')}${section}</w:body></w:document>`;
     return zipStore([
       {
         name: '[Content_Types].xml',
@@ -6686,9 +6732,531 @@
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/></Relationships>`
       },
       { name: 'word/document.xml', data: document },
-      { name: 'word/styles.xml', data: DOCX_STYLES },
-      { name: 'word/numbering.xml', data: DOCX_NUMBERING }
+      { name: 'word/styles.xml', data: styles },
+      { name: 'word/numbering.xml', data: numbering }
     ]);
+  }
+
+  function policyOfficeValue(value) {
+    if (value === null || value === undefined || value === '') return '';
+    if (Array.isArray(value)) return value.map(policyOfficeValue).filter(Boolean).join('; ');
+    if (typeof value !== 'object') return String(value);
+    const name = value.label || value.name || value.displayName || value.id || value.key || '';
+    const detail = [value.value, value.detail, value.description, value.status]
+      .find(candidate => candidate !== null && candidate !== undefined && candidate !== '');
+    const detailText = detail !== undefined && detail !== name ? String(detail) : '';
+    return [name, detailText].filter(candidate => candidate !== '').join(': ');
+  }
+
+  function policyOfficeList(items, formatter) {
+    return (items || []).map(formatter || policyOfficeValue).filter(Boolean).join('; ');
+  }
+
+  function policyOfficeStateLabel(state) {
+    return state === 'enforcing' ? 'Enforcing' : state === 'reportOnly' ? 'Report-only' : 'Never matched';
+  }
+
+  function policyOfficeReportOnlyLabel(result) {
+    const labels = {
+      reportonlysuccess: 'Success',
+      reportonlyfailure: 'Failure',
+      reportonlyuseractionrequired: 'User action required',
+      reportonlynotapplied: 'Not applied',
+      reportonlyinterrupted: 'Interrupted'
+    };
+    return labels[normToken(result)] || result || 'Unknown result';
+  }
+
+  function policyOfficeEvidenceRange(summary) {
+    if (!summary?.from || !summary?.to) return 'Date range unavailable';
+    return `${summary.from.slice(0, 10)} to ${summary.to.slice(0, 10)}`;
+  }
+
+  function buildPolicyOfficeReport(kind) {
+    const la = state.logAnalysis;
+    const journey = buildLogJourneyModel();
+    const summary = la.summary || {};
+    const elementLabels = new Map([...LOG_JOURNEY_STAGES.flatMap(stage => stage.elements), ...LOG_JOURNEY_ADJACENT]
+      .map(item => [item.id, item.label]));
+    const common = {
+      kind,
+      generatedAt: new Date().toISOString(),
+      evidenceRange: policyOfficeEvidenceRange(summary),
+      signIns: Number(summary.total) || 0,
+      sources: policyOfficeList(summary.sourcesLoaded, key => LOG_SOURCES[key]?.label || key),
+      files: policyOfficeList(la.files, file => `${file.name} (${file.representedEvents || 0} represented sign-ins)`)
+    };
+    if (kind === 'recommended') {
+      const policies = journey.recommendedPolicies.map(policy => {
+        const controls = policyOfficeList(policy.controls, id => CONTROLS[id]?.label || id);
+        const drivers = (policy.drivers || []).map(driver => ({
+          ...driver,
+          detail: `${driver.title} - ${driver.affected} of ${driver.scope}${Number.isFinite(Number(driver.pct)) ? ` (${driver.pct}%)` : ''}`
+        }));
+        const prerequisites = (policy.prerequisites || []).map(item => ({
+          status: item.status || '',
+          label: item.label || item.key || '',
+          detail: item.detail || ''
+        }));
+        const settings = [...(policy.tailoring || []), ...(policy.settings || [])].map(item => ({
+          label: item.label || item.key || 'Setting',
+          value: policyOfficeValue(item.value ?? item.detail ?? item)
+        }));
+        return {
+          id: policy.id,
+          name: tenantPolicyName(policy.displayName),
+          actionTier: policy.actionTier,
+          actionTierLabel: policy.actionTierLabel,
+          basis: policy.basis?.label || '',
+          basisDetail: policy.basis?.detail || '',
+          reasons: policyOfficeList(policy.reasonLabels),
+          purpose: policy.summary || policy.basis?.detail || '',
+          capability: policy.capabilityStatus || '',
+          coverage: coverageHeadline(policy.coverage),
+          applicability: policy.applicability || '',
+          primaryRelationship: elementLabels.get(policy.primaryElementId) || policy.primaryElementId || '',
+          secondaryRelationships: policyOfficeList(policy.secondaryElementIds, id => elementLabels.get(id) || id),
+          controls,
+          drivers,
+          affected: drivers.reduce((maximum, driver) => Math.max(maximum, Number(driver.affected) || 0), 0),
+          prerequisites,
+          settings,
+          requiredObjects: policyOfficeList(policy.requiredObjects),
+          replaces: policyOfficeList(policy.represents),
+          consolidated: Boolean(policy.consolidated),
+          mergeReason: policy.mergeReason || ''
+        };
+      });
+      return {
+        ...common,
+        title: 'Recommended Conditional Access policies',
+        caveat: 'These policies are guidance derived from the loaded evidence and tenant answers. Validate tenant objects, licensing, exclusions and application support before deployment; create policies in report-only mode first.',
+        policies
+      };
+    }
+    const policies = [...journey.observedPolicies]
+      .sort((a, b) => {
+        const rank = policy => policy.state === 'enforcing' ? 0 : policy.state === 'reportOnly' ? 1 : 2;
+        return rank(a) - rank(b) || b.applied - a.applied || b.evaluations - a.evaluations || a.name.localeCompare(b.name);
+      })
+      .map(policy => {
+        const controls = [...policy.grants.map(item => item.label), ...policy.sessions.map(item => item.label)];
+        const strengths = policy.authStrength.map(item => `${item.name} (${item.count})`);
+        const observedScope = policyOfficeList(policy.observedConfig, item => `${item.label}: ${item.value}${item.note ? ` - ${item.note}` : ''}`);
+        const excludedPrincipals = policyOfficeList(policy.excludedPrincipals, item => `${item.name} (${item.count})`);
+        return {
+          id: policy.id || '',
+          name: policy.name,
+          state: policy.state,
+          stateLabel: policyOfficeStateLabel(policy.state),
+          evaluations: Number(policy.evaluations) || 0,
+          applied: Number(policy.applied) || 0,
+          blocked: Number(policy.blocked) || 0,
+          reportOnly: Number(policy.reportOnly) || 0,
+          notApplied: Number(policy.notApplied) || 0,
+          hitRate: Number(policy.hitRate) || 0,
+          controls: [...new Set(controls)].join('; '),
+          authenticationStrength: strengths.join('; '),
+          observedScope: [observedScope, excludedPrincipals ? `Excluded principals observed: ${excludedPrincipals}` : ''].filter(Boolean).join('; '),
+          reportOnlyResults: policyOfficeList(policy.reportOnlyResults, item => `${policyOfficeReportOnlyLabel(item.name)} (${item.count})`),
+          notSatisfied: policyOfficeList(policy.notSatisfied, item => `${item.label} (${item.count})`),
+          topUsers: policyOfficeList(policy.topUsers, item => `${item.name} (${item.count})`),
+          topApps: policyOfficeList(policy.topApps, item => `${item.name} (${item.count})`),
+          topDevices: policyOfficeList(policy.topDevices, item => `${item.name} (${item.count})`),
+          topLocations: policyOfficeList(policy.topLocations, item => `${item.name} (${item.count})`),
+          excludedPrincipals,
+          sources: policyOfficeList(policy.sources, key => LOG_SOURCES[key]?.label || key),
+          from: policy.from || '',
+          to: policy.to || '',
+          samples: (policy.samples || []).slice(0, 25).map(sample => ({ ...sample }))
+        };
+      });
+    return {
+      ...common,
+      title: 'Observed Conditional Access policies',
+      caveat: 'This is runtime evidence from the loaded sign-in window, not an authoritative tenant policy export. A quiet or never-matched policy can still exist and be correctly configured; compare with a Graph configuration export before changing it.',
+      policies
+    };
+  }
+
+  function policyOfficeSummaryRows(report) {
+    if (report.kind === 'recommended') {
+      const tiers = report.policies.reduce((counts, policy) => {
+        counts[policy.actionTier] = (counts[policy.actionTier] || 0) + 1;
+        return counts;
+      }, {});
+      const bases = report.policies.reduce((counts, policy) => {
+        counts[policy.basis] = (counts[policy.basis] || 0) + 1;
+        return counts;
+      }, {});
+      return [
+        ['Policies', String(report.policies.length)],
+        ['Action tiers', `${tiers.actNow || 0} act now; ${tiers.validateFirst || 0} validate first; ${tiers.optionalAdvanced || 0} optional / advanced`],
+        ['Evidence basis', Object.entries(bases).map(([label, count]) => `${label}: ${count}`).join('; ') || 'None'],
+        ['Sign-ins assessed', report.signIns.toLocaleString()],
+        ['Evidence window', report.evidenceRange],
+        ['Loaded sources', report.sources || 'None recorded']
+      ];
+    }
+    const states = report.policies.reduce((counts, policy) => {
+      counts[policy.state] = (counts[policy.state] || 0) + 1;
+      return counts;
+    }, {});
+    return [
+      ['Policies recorded', String(report.policies.length)],
+      ['Policy states', `${states.enforcing || 0} enforcing; ${states.reportOnly || 0} report-only; ${states.neverMatched || 0} never matched`],
+      ['Evaluations', report.policies.reduce((sum, policy) => sum + policy.evaluations, 0).toLocaleString()],
+      ['Sign-ins assessed', report.signIns.toLocaleString()],
+      ['Evidence window', report.evidenceRange],
+      ['Loaded sources', report.sources || 'None recorded']
+    ];
+  }
+
+  function buildPolicyOfficeDocxBlocks(report) {
+    const blocks = [
+      docxPara(report.title, { style: 'Title' }),
+      docxPara(`Generated locally by CA Architect V2 on ${report.generatedAt.slice(0, 10)}. Evidence window: ${report.evidenceRange}.`, { style: 'Subtitle' }),
+      docxPara([docxRun('How to read this report. ', { bold: true }), docxRun(report.caveat)], { style: 'Callout' }),
+      docxPara('Summary', { style: 'Heading1' }),
+      docxReportTable([['Measure', 'Result'], ...policyOfficeSummaryRows(report)], [2700, 6660])
+    ];
+    if (report.files) blocks.push(docxPara([docxRun('Files analysed: ', { bold: true }), docxRun(report.files)]));
+    blocks.push(docxPara('Policy overview', { style: 'Heading1' }));
+    if (report.kind === 'recommended') {
+      blocks.push(docxReportTable([
+        ['Policy', 'Action tier', 'Basis'],
+        ...report.policies.map(policy => [policy.name, policy.actionTierLabel, policy.basis])
+      ], [4800, 2460, 2100]));
+    } else {
+      blocks.push(docxReportTable([
+        ['Policy', 'State', 'Evaluated', 'Hit rate'],
+        ...report.policies.map(policy => [policy.name, policy.stateLabel, policy.evaluations.toLocaleString(), `${policy.hitRate}%`])
+      ], [4500, 1900, 1460, 1500]));
+    }
+    blocks.push(docxPara('Policy details', { style: 'Heading1' }));
+    report.policies.forEach((policy, index) => {
+      blocks.push(docxPara(`${index + 1}. ${policy.name}`, { style: 'Heading2' }));
+      if (report.kind === 'recommended') {
+        blocks.push(docxReportTable([
+          ['Field', 'Assessment'],
+          ['Policy ID', policy.id],
+          ['Action tier', policy.actionTierLabel],
+          ['Evidence basis', `${policy.basis}${policy.basisDetail ? ` - ${policy.basisDetail}` : ''}`],
+          ['Purpose', policy.purpose || 'No additional summary recorded'],
+          ['Capability', policy.capability || 'Not recorded'],
+          ['Coverage', policy.coverage || 'Not measured'],
+          ['Applicability', policy.applicability || 'Not recorded'],
+          ['Control relationship', [policy.primaryRelationship, policy.secondaryRelationships].filter(Boolean).join('; ') || 'Not mapped'],
+          ['Controls', policy.controls || 'No controls recorded'],
+          ['Reason labels', policy.reasons || 'Baseline'],
+          ['Required objects', policy.requiredObjects || 'None recorded'],
+          ['Replaces baseline policies', policy.replaces || 'None recorded']
+        ], [2700, 6660]));
+        if (policy.drivers.length) {
+          blocks.push(docxPara('Finding drivers', { style: 'Heading3' }));
+          policy.drivers.forEach(driver => blocks.push(docxPara(`${String(driver.severity || 'information').toUpperCase()} - ${driver.detail}`, { bullet: true, style: 'ListParagraph' })));
+        }
+        if (policy.prerequisites.length) {
+          blocks.push(docxPara('Prerequisites', { style: 'Heading3' }));
+          policy.prerequisites.forEach(item => blocks.push(docxPara(`${item.status.toUpperCase()} - ${item.label}${item.detail ? `: ${item.detail}` : ''}`, { bullet: true, style: 'ListParagraph' })));
+        }
+        if (policy.settings.length) {
+          blocks.push(docxPara('Tenant-specific settings', { style: 'Heading3' }));
+          blocks.push(docxReportTable([['Setting', 'Recommended value'], ...policy.settings.map(item => [item.label, item.value])], [2700, 6660]));
+        }
+        if (policy.mergeReason) blocks.push(docxPara([docxRun('Consolidation note: ', { bold: true }), docxRun(policy.mergeReason)]));
+      } else {
+        blocks.push(docxReportTable([
+          ['Field', 'Observed evidence'],
+          ['Policy ID', policy.id || 'Not returned'],
+          ['State in this window', policy.stateLabel],
+          ['Activity', `${policy.applied.toLocaleString()} applied; ${policy.blocked.toLocaleString()} blocked; ${policy.reportOnly.toLocaleString()} report-only; ${policy.notApplied.toLocaleString()} not applied; ${policy.evaluations.toLocaleString()} evaluated`],
+          ['Hit rate', `${policy.hitRate}%`],
+          ['Controls recorded', policy.controls || 'None recorded'],
+          ['Authentication strength', policy.authenticationStrength || 'None recorded'],
+          ['Observed targeting and exclusions', policy.observedScope || 'No satisfied assignment rules were returned'],
+          ['Report-only results', policy.reportOnlyResults || 'None recorded'],
+          ['Conditions not satisfied', policy.notSatisfied || 'None recorded'],
+          ['Top identities', policy.topUsers || 'None recorded'],
+          ['Top apps / resources', policy.topApps || 'None recorded'],
+          ['Top devices', policy.topDevices || 'None recorded'],
+          ['Top locations', policy.topLocations || 'None recorded'],
+          ['Sources and window', `${policy.sources || 'Unknown source'}; ${policy.from ? policy.from.slice(0, 10) : 'unknown'} to ${policy.to ? policy.to.slice(0, 10) : 'unknown'}`]
+        ], [2700, 6660]));
+        if (policy.samples.length) {
+          blocks.push(docxPara('Representative events', { style: 'Heading3' }));
+          blocks.push(docxReportTable([
+            ['UTC time', 'Identity', 'App / resource', 'Result'],
+            ...policy.samples.slice(0, 5).map(sample => [sample.time, sample.principal, sample.app, `${sample.result}${sample.representedEvents > 1 ? ` (${sample.representedEvents} events)` : ''}`])
+          ], [1800, 2600, 3000, 1960]));
+        }
+      }
+    });
+    return blocks;
+  }
+
+  function buildPolicyOfficeDocx(report) {
+    return buildDocx(buildPolicyOfficeDocxBlocks(report), {
+      styles: DOCX_REPORT_STYLES,
+      numbering: DOCX_REPORT_NUMBERING,
+      section: '<w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr>'
+    });
+  }
+
+  const XLSX_STYLES = {
+    normal: 0,
+    title: 1,
+    subtitle: 2,
+    header: 3,
+    text: 4,
+    integer: 5,
+    percent: 6,
+    date: 7,
+    label: 8,
+    value: 9,
+    section: 10,
+    datetime: 11
+  };
+
+  function xlsxColumnName(index) {
+    let value = index + 1;
+    let name = '';
+    while (value) {
+      value -= 1;
+      name = String.fromCharCode(65 + (value % 26)) + name;
+      value = Math.floor(value / 26);
+    }
+    return name;
+  }
+
+  function xlsxCell(value, type = 'text', style) {
+    return { value, type, style };
+  }
+
+  function xlsxDateSerial(value) {
+    const date = value instanceof Date ? value : new Date(value);
+    if (!Number.isFinite(date.getTime())) return null;
+    return date.getTime() / 86400000 + 25569;
+  }
+
+  function policyOfficeUtcTimestamp(value) {
+    const timestamp = String(value || '').trim().replace(' ', 'T');
+    if (!timestamp) return '';
+    return /(?:Z|[+-]\d{2}:?\d{2})$/i.test(timestamp) ? timestamp : `${timestamp}Z`;
+  }
+
+  function xlsxCellXml(cell, rowIndex, colIndex, header) {
+    const ref = `${xlsxColumnName(colIndex)}${rowIndex + 1}`;
+    const descriptor = cell && typeof cell === 'object' && Object.prototype.hasOwnProperty.call(cell, 'value')
+      ? cell
+      : { value: cell, type: typeof cell === 'number' ? 'number' : 'text' };
+    const type = descriptor.type || 'text';
+    const defaultStyle = header ? XLSX_STYLES.header
+      : type === 'integer' || type === 'number' ? XLSX_STYLES.integer
+        : type === 'percentage' ? XLSX_STYLES.percent
+          : type === 'date' ? XLSX_STYLES.date
+            : type === 'datetime' ? XLSX_STYLES.datetime
+            : XLSX_STYLES.text;
+    const style = descriptor.style === undefined ? defaultStyle : descriptor.style;
+    if (descriptor.value === null || descriptor.value === undefined || descriptor.value === '') {
+      return `<c r="${ref}" s="${style}"/>`;
+    }
+    if (type === 'date' || type === 'datetime') {
+      const serial = xlsxDateSerial(descriptor.value);
+      if (serial !== null) return `<c r="${ref}" s="${style}"><v>${serial}</v></c>`;
+    }
+    if (['integer', 'number', 'percentage'].includes(type) && Number.isFinite(Number(descriptor.value))) {
+      return `<c r="${ref}" s="${style}"><v>${Number(descriptor.value)}</v></c>`;
+    }
+    return `<c r="${ref}" t="inlineStr" s="${style}"><is><t xml:space="preserve">${xmlEsc(descriptor.value)}</t></is></c>`;
+  }
+
+  function xlsxWorksheetXml(sheet) {
+    const rowCount = sheet.rows.length;
+    const colCount = sheet.rows.reduce((maximum, row) => Math.max(maximum, row.length), 1);
+    const lastCell = `${xlsxColumnName(colCount - 1)}${Math.max(rowCount, 1)}`;
+    const rows = sheet.rows.map((row, rowIndex) => {
+      const header = rowIndex + 1 === sheet.headerRow;
+      const height = rowIndex === 0 ? 26 : header ? 30 : undefined;
+      return `<row r="${rowIndex + 1}"${height ? ` ht="${height}" customHeight="1"` : ''}>${row.map((cell, colIndex) => xlsxCellXml(cell, rowIndex, colIndex, header)).join('')}</row>`;
+    }).join('');
+    const columns = (sheet.widths || []).map((width, index) => `<col min="${index + 1}" max="${index + 1}" width="${width}" customWidth="1"/>`).join('');
+    const pane = sheet.freezeRows
+      ? `<pane ySplit="${sheet.freezeRows}" topLeftCell="A${sheet.freezeRows + 1}" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft" activeCell="A${sheet.freezeRows + 1}" sqref="A${sheet.freezeRows + 1}"/>`
+      : '<selection activeCell="A1" sqref="A1"/>';
+    const merges = (sheet.merges || []).length
+      ? `<mergeCells count="${sheet.merges.length}">${sheet.merges.map(ref => `<mergeCell ref="${ref}"/>`).join('')}</mergeCells>`
+      : '';
+    const filter = sheet.headerRow && rowCount > sheet.headerRow
+      ? `<autoFilter ref="A${sheet.headerRow}:${xlsxColumnName(colCount - 1)}${rowCount}"/>`
+      : '';
+    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><dimension ref="A1:${lastCell}"/><sheetViews><sheetView workbookViewId="0">${pane}</sheetView></sheetViews><sheetFormatPr defaultRowHeight="18"/>${columns ? `<cols>${columns}</cols>` : ''}<sheetData>${rows}</sheetData>${filter}${merges}<pageMargins left="0.35" right="0.35" top="0.5" bottom="0.5" header="0.2" footer="0.2"/><pageSetup paperSize="1" orientation="landscape" fitToWidth="1" fitToHeight="0"/></worksheet>`;
+  }
+
+  const XLSX_STYLE_XML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <numFmts count="3"><numFmt numFmtId="164" formatCode="0.0%"/><numFmt numFmtId="165" formatCode="yyyy-mm-dd"/><numFmt numFmtId="166" formatCode="yyyy-mm-dd hh:mm"/></numFmts>
+  <fonts count="5">
+    <font><sz val="11"/><name val="Calibri"/><family val="2"/><scheme val="minor"/></font>
+    <font><b/><sz val="18"/><color rgb="FF201C18"/><name val="Calibri"/><family val="2"/></font>
+    <font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/><family val="2"/></font>
+    <font><i/><sz val="10"/><color rgb="FF5F5751"/><name val="Calibri"/><family val="2"/></font>
+    <font><b/><sz val="11"/><color rgb="FFC44E00"/><name val="Calibri"/><family val="2"/></font>
+  </fonts>
+  <fills count="5"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFE8610A"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FF292929"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFFF1E8"/><bgColor indexed="64"/></patternFill></fill></fills>
+  <borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color rgb="FFE1D7CC"/></left><right style="thin"><color rgb="FFE1D7CC"/></right><top style="thin"><color rgb="FFE1D7CC"/></top><bottom style="thin"><color rgb="FFE1D7CC"/></bottom><diagonal/></border></borders>
+  <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+  <cellXfs count="12">
+    <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
+    <xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/>
+    <xf numFmtId="0" fontId="3" fillId="0" borderId="0" xfId="0" applyFont="1"><alignment wrapText="1" vertical="top"/></xf>
+    <xf numFmtId="0" fontId="2" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>
+    <xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1"><alignment vertical="top" wrapText="1"/></xf>
+    <xf numFmtId="3" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1"><alignment horizontal="right" vertical="center"/></xf>
+    <xf numFmtId="164" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1"><alignment horizontal="right" vertical="center"/></xf>
+    <xf numFmtId="165" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1"><alignment horizontal="center" vertical="center"/></xf>
+    <xf numFmtId="0" fontId="4" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"><alignment vertical="top" wrapText="1"/></xf>
+    <xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1"><alignment vertical="top" wrapText="1"/></xf>
+    <xf numFmtId="0" fontId="2" fillId="3" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"><alignment vertical="center" wrapText="1"/></xf>
+    <xf numFmtId="166" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1"><alignment horizontal="center" vertical="center"/></xf>
+  </cellXfs>
+  <cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles><dxfs count="0"/><tableStyles count="0" defaultTableStyle="TableStyleMedium2" defaultPivotStyle="PivotStyleLight16"/>
+</styleSheet>`;
+
+  function buildXlsx(sheets) {
+    const created = new Date().toISOString();
+    const sheetOverrides = sheets.map((sheet, index) => `<Override PartName="/xl/worksheets/sheet${index + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('');
+    const workbookSheets = sheets.map((sheet, index) => `<sheet name="${xmlEsc(sheet.name)}" sheetId="${index + 1}" r:id="rId${index + 1}"/>`).join('');
+    const workbookRelationships = sheets.map((sheet, index) => `<Relationship Id="rId${index + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${index + 1}.xml"/>`).join('');
+    const entries = [
+      { name: '[Content_Types].xml', data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${sheetOverrides}<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>` },
+      { name: '_rels/.rels', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/></Relationships>' },
+      { name: 'docProps/core.xml', data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:creator>CA Architect V2</dc:creator><cp:lastModifiedBy>CA Architect V2</cp:lastModifiedBy><dcterms:created xsi:type="dcterms:W3CDTF">${created}</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">${created}</dcterms:modified></cp:coreProperties>` },
+      { name: 'docProps/app.xml', data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>CA Architect V2</Application><DocSecurity>0</DocSecurity><ScaleCrop>false</ScaleCrop><HeadingPairs><vt:vector size="2" baseType="variant"><vt:variant><vt:lpstr>Worksheets</vt:lpstr></vt:variant><vt:variant><vt:i4>${sheets.length}</vt:i4></vt:variant></vt:vector></HeadingPairs><TitlesOfParts><vt:vector size="${sheets.length}" baseType="lpstr">${sheets.map(sheet => `<vt:lpstr>${xmlEsc(sheet.name)}</vt:lpstr>`).join('')}</vt:vector></TitlesOfParts><Company>Security Ninja</Company><LinksUpToDate>false</LinksUpToDate><SharedDoc>false</SharedDoc><HyperlinksChanged>false</HyperlinksChanged><AppVersion>16.0300</AppVersion></Properties>` },
+      { name: 'xl/workbook.xml', data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><bookViews><workbookView xWindow="0" yWindow="0" windowWidth="24000" windowHeight="15000"/></bookViews><sheets>${workbookSheets}</sheets><calcPr calcId="191029" fullCalcOnLoad="1"/></workbook>` },
+      { name: 'xl/_rels/workbook.xml.rels', data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${workbookRelationships}<Relationship Id="rId${sheets.length + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>` },
+      { name: 'xl/styles.xml', data: XLSX_STYLE_XML }
+    ];
+    sheets.forEach((sheet, index) => entries.push({ name: `xl/worksheets/sheet${index + 1}.xml`, data: xlsxWorksheetXml(sheet) }));
+    return zipStore(entries, XLSX_MIME);
+  }
+
+  function policyOfficeSummarySheet(report) {
+    const numericMeasures = new Set(['Policies', 'Policies recorded', 'Evaluations', 'Sign-ins assessed']);
+    const rows = [
+      [xlsxCell(report.title, 'text', XLSX_STYLES.title), ''],
+      [xlsxCell(`Generated locally by CA Architect V2 on ${report.generatedAt.slice(0, 10)}. ${report.caveat}`, 'text', XLSX_STYLES.subtitle), ''],
+      ['', ''],
+      ['Measure', 'Result'],
+      ...policyOfficeSummaryRows(report).map(([label, value]) => {
+        const numericValue = Number(String(value).replace(/,/g, ''));
+        const result = numericMeasures.has(label) && Number.isFinite(numericValue)
+          ? xlsxCell(numericValue, 'integer')
+          : xlsxCell(value, 'text', XLSX_STYLES.value);
+        return [xlsxCell(label, 'text', XLSX_STYLES.label), result];
+      }),
+      [xlsxCell('Files analysed', 'text', XLSX_STYLES.label), xlsxCell(report.files || 'Not recorded', 'text', XLSX_STYLES.value)]
+    ];
+    return { name: 'Summary', rows, widths: [30, 90], headerRow: 4, freezeRows: 4, merges: ['A1:B1', 'A2:B2'] };
+  }
+
+  function recommendedPolicySheets(report) {
+    const headers = ['Action tier', 'Policy ID', 'Policy name', 'Evidence basis', 'Capability', 'Coverage', 'Purpose', 'Applicability', 'Primary relationship', 'Secondary relationships', 'Controls', 'Reason labels', 'Affected activity', 'Prerequisites', 'Settings', 'Required objects', 'Replaces baseline policies'];
+    const policyRows = report.policies.map(policy => [
+      policy.actionTierLabel, policy.id, policy.name, policy.basis, policy.capability, policy.coverage, policy.purpose,
+      policy.applicability, policy.primaryRelationship, policy.secondaryRelationships, policy.controls, policy.reasons,
+      xlsxCell(policy.affected, 'integer'),
+      policyOfficeList(policy.prerequisites, item => `${item.status}: ${item.label}${item.detail ? ` - ${item.detail}` : ''}`),
+      policyOfficeList(policy.settings, item => `${item.label}: ${item.value}`), policy.requiredObjects, policy.replaces
+    ]);
+    const details = [];
+    report.policies.forEach(policy => {
+      policy.drivers.forEach(driver => details.push([
+        policy.id, policy.name, 'Finding driver', driver.severity, driver.title, driver.detail,
+        xlsxCell(driver.affected, 'integer'), xlsxCell((Number(driver.pct) || 0) / 100, 'percentage'), driver.scope || ''
+      ]));
+      policy.prerequisites.forEach(item => details.push([
+        policy.id, policy.name, 'Prerequisite', item.status, item.label, item.detail, '', '', ''
+      ]));
+    });
+    return [
+      {
+        name: 'Policies',
+        rows: [[xlsxCell(report.title, 'text', XLSX_STYLES.title), ...headers.slice(1).map(() => '')], [xlsxCell(report.caveat, 'text', XLSX_STYLES.subtitle), ...headers.slice(1).map(() => '')], headers, ...policyRows],
+        widths: [18, 13, 42, 16, 30, 22, 48, 42, 24, 34, 42, 22, 15, 50, 50, 34, 30],
+        headerRow: 3,
+        freezeRows: 3,
+        merges: [`A1:${xlsxColumnName(headers.length - 1)}1`, `A2:${xlsxColumnName(headers.length - 1)}2`]
+      },
+      {
+        name: 'Drivers & Prerequisites',
+        rows: [[xlsxCell('Finding drivers and prerequisites', 'text', XLSX_STYLES.title), '', '', '', '', '', '', '', ''], [xlsxCell('One row per linked finding or prerequisite. Percentage values are stored as real Excel percentages.', 'text', XLSX_STYLES.subtitle), '', '', '', '', '', '', '', ''], ['Policy ID', 'Policy name', 'Record type', 'Status / severity', 'Item', 'Detail', 'Affected', 'Percentage', 'Scope'], ...details],
+        widths: [13, 42, 20, 18, 42, 65, 13, 13, 18],
+        headerRow: 3,
+        freezeRows: 3,
+        merges: ['A1:I1', 'A2:I2']
+      }
+    ];
+  }
+
+  function observedPolicySheets(report) {
+    const headers = ['State', 'Policy ID', 'Policy name', 'Evaluated', 'Applied', 'Blocked', 'Report-only', 'Not applied', 'Hit rate', 'Controls', 'Authentication strength', 'Observed targeting and exclusions', 'Report-only results', 'Conditions not satisfied', 'Top identities', 'Top apps / resources', 'Top devices', 'Top locations', 'Sources', 'From', 'To'];
+    const policyRows = report.policies.map(policy => [
+      policy.stateLabel, policy.id, policy.name,
+      xlsxCell(policy.evaluations, 'integer'), xlsxCell(policy.applied, 'integer'), xlsxCell(policy.blocked, 'integer'),
+      xlsxCell(policy.reportOnly, 'integer'), xlsxCell(policy.notApplied, 'integer'), xlsxCell(policy.hitRate / 100, 'percentage'),
+      policy.controls, policy.authenticationStrength, policy.observedScope, policy.reportOnlyResults, policy.notSatisfied,
+      policy.topUsers, policy.topApps, policy.topDevices, policy.topLocations, policy.sources,
+      policy.from ? xlsxCell(policy.from, 'date') : '', policy.to ? xlsxCell(policy.to, 'date') : ''
+    ]);
+    const samples = [];
+    report.policies.forEach(policy => policy.samples.forEach(sample => samples.push([
+      policy.name, policy.stateLabel,
+      sample.time ? xlsxCell(policyOfficeUtcTimestamp(sample.time), 'datetime') : '', sample.source || '', sample.principal || '',
+      sample.app || '', sample.device || '', sample.deviceDetail || '', sample.posture || '', sample.location || '', sample.ip || '',
+      sample.clientApp || '', sample.result || '', xlsxCell(Number(sample.representedEvents) || 0, 'integer'),
+      policyOfficeList(sample.grants), policyOfficeList(sample.sessions)
+    ])));
+    return [
+      {
+        name: 'Policies',
+        rows: [[xlsxCell(report.title, 'text', XLSX_STYLES.title), ...headers.slice(1).map(() => '')], [xlsxCell(report.caveat, 'text', XLSX_STYLES.subtitle), ...headers.slice(1).map(() => '')], headers, ...policyRows],
+        widths: [16, 24, 48, 13, 13, 13, 13, 13, 13, 42, 30, 58, 42, 38, 42, 42, 38, 38, 28, 14, 14],
+        headerRow: 3,
+        freezeRows: 3,
+        merges: [`A1:${xlsxColumnName(headers.length - 1)}1`, `A2:${xlsxColumnName(headers.length - 1)}2`]
+      },
+      {
+        name: 'Evidence Samples',
+        rows: [[xlsxCell('Representative observed-policy evidence', 'text', XLSX_STYLES.title), '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''], [xlsxCell('Samples are bounded during local analysis and may contain identities, IP addresses and device information from the uploaded sign-in logs.', 'text', XLSX_STYLES.subtitle), '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''], ['Policy name', 'State', 'UTC time', 'Source', 'Identity', 'App / resource', 'Device', 'Device detail', 'Posture', 'Location', 'IP address', 'Client app', 'Result', 'Represented events', 'Grants', 'Sessions'], ...samples],
+        widths: [48, 16, 20, 18, 38, 38, 32, 42, 26, 28, 18, 24, 22, 18, 36, 36],
+        headerRow: 3,
+        freezeRows: 3,
+        merges: ['A1:P1', 'A2:P2']
+      }
+    ];
+  }
+
+  function buildPolicyOfficeXlsx(report) {
+    const detailSheets = report.kind === 'recommended' ? recommendedPolicySheets(report) : observedPolicySheets(report);
+    return buildXlsx([policyOfficeSummarySheet(report), ...detailSheets]);
+  }
+
+  function downloadPolicyOfficeReport(kind, format) {
+    const report = buildPolicyOfficeReport(kind);
+    if (!report.policies.length) {
+      toast(`No ${kind} policies are available to download`);
+      return;
+    }
+    try {
+      const blob = format === 'xlsx' ? buildPolicyOfficeXlsx(report) : buildPolicyOfficeDocx(report);
+      const stamp = new Date().toISOString().slice(0, 10);
+      downloadBlob(blob, `ca-architect-${kind}-policies-${stamp}.${format}`);
+      toast(`${kind === 'recommended' ? 'Recommended' : 'Observed'} policies exported to ${format === 'xlsx' ? 'Excel' : 'Word'}`);
+    } catch (err) {
+      toast(`Could not build the ${kind} policy ${format.toUpperCase()} report: ${err.message}`);
+    }
   }
 
   function analyseImportText() {
@@ -11647,6 +12215,16 @@
     </button>`;
   }
 
+  function renderLogPolicyDownloadActions(kind, count) {
+    const label = kind === 'recommended' ? 'recommended' : 'observed';
+    const disabled = count ? '' : ' disabled';
+    const title = count ? '' : ` title="No ${label} policies are available to download"`;
+    return `<div class="log-journey-download-actions" aria-label="Download ${label} policy reports">
+      <button type="button" class="btn primary" data-log-policy-download data-policy-kind="${label}" data-policy-format="docx" aria-label="Download ${label} policies as a Word document"${disabled}${title}>Download DOCX</button>
+      <button type="button" class="btn primary" data-log-policy-download data-policy-kind="${label}" data-policy-format="xlsx" aria-label="Download ${label} policies as an Excel workbook"${disabled}${title}>Download XLSX</button>
+    </div>`;
+  }
+
   function renderLogJourneyPolicyBoard(model) {
     const observed = [...model.observedPolicies].sort((a, b) => {
       const rank = policy => policy.state === 'enforcing' ? 0 : policy.state === 'reportOnly' ? 1 : 2;
@@ -11679,11 +12257,11 @@
       </nav>
       <div class="log-journey-policy-panels">
         <section class="log-journey-policy-panel" id="logJourneyPolicyPanelRecommended" role="tabpanel" aria-labelledby="logJourneyPolicyTabRecommended" data-log-policy-panel="recommended"${activePolicyTab === 'recommended' ? '' : ' hidden'}>
-          <header><div><span class="eyebrow">Recommended next controls</span><h4>${esc(model.recommendedPolicies.length)} proposed · ${esc(actNowRecommendations.length)} act now · ${esc(validateRecommendations.length)} validate first · ${esc(optionalRecommendations.length)} optional</h4></div></header>
+          <header><div><span class="eyebrow">Recommended next controls</span><h4>${esc(model.recommendedPolicies.length)} proposed · ${esc(actNowRecommendations.length)} act now · ${esc(validateRecommendations.length)} validate first · ${esc(optionalRecommendations.length)} optional</h4></div><div class="log-journey-panel-actions">${renderLogPolicyDownloadActions('recommended', model.recommendedPolicies.length)}</div></header>
           <div class="log-journey-policy-list">${recommendations}</div>
         </section>
         <section class="log-journey-policy-panel" id="logJourneyPolicyPanelObserved" role="tabpanel" aria-labelledby="logJourneyPolicyTabObserved" data-log-policy-panel="observed"${activePolicyTab === 'observed' ? '' : ' hidden'}>
-          <header><div><span class="eyebrow">Observed in this window</span><h4>${esc(relevant.length)} active or report-only ${relevant.length === 1 ? 'policy' : 'policies'}</h4></div>${remainder.length ? `<button type="button" class="btn secondary" data-log-toggle-observed>${state.logAnalysis.observedPoliciesExpanded ? 'Show relevant only' : `View all observed policies (${observed.length})`}</button>` : ''}</header>
+          <header><div><span class="eyebrow">Observed in this window</span><h4>${esc(relevant.length)} active or report-only ${relevant.length === 1 ? 'policy' : 'policies'}</h4></div><div class="log-journey-panel-actions">${renderLogPolicyDownloadActions('observed', observed.length)}${remainder.length ? `<button type="button" class="btn secondary" data-log-toggle-observed>${state.logAnalysis.observedPoliciesExpanded ? 'Show relevant only' : `View all observed policies (${observed.length})`}</button>` : ''}</div></header>
           <div class="log-journey-policy-list">${observedContent}</div>
         </section>
       </div>
@@ -12469,6 +13047,11 @@
     }
     if (event.target.closest('[data-log-build-guide]')) {
       exportBuildGuideDocx();
+      return;
+    }
+    const policyDownload = event.target.closest('[data-log-policy-download]');
+    if (policyDownload && !policyDownload.disabled) {
+      downloadPolicyOfficeReport(policyDownload.dataset.policyKind, policyDownload.dataset.policyFormat);
       return;
     }
     if (event.target.closest('[data-log-toggle-observed]')) {
