@@ -116,6 +116,40 @@
     { id: 'outsideCaFlow', label: 'Outside Conditional Access', icon: 'external', tone: 'neutral', description: 'The workload is explicitly outside Conditional Access eligibility; govern it through permissions, credentials and vendor controls.' },
     { id: 'otherFailure', label: 'Other sign-in failure', icon: 'warning', tone: 'neutral', description: 'The event failed for a reason other than an observed Conditional Access block.' }
   ];
+  const CA_COVERAGE_CATEGORIES = [
+    {
+      id: 'confirmedGap',
+      label: 'Confirmed scoping gap',
+      confidence: 'Confirmed from policy evaluation',
+      tone: 'gap',
+      interpretation: 'Conditional Access evaluated the successful sign-in, but every returned policy was filtered out or did not apply.',
+      action: 'Review the returned policies and unsatisfied conditions, then widen only the assignment or condition that created the unintended gap.'
+    },
+    {
+      id: 'reportOnlyExposure',
+      label: 'Report-only exposure',
+      confidence: 'Confirmed non-enforcement',
+      tone: 'review',
+      interpretation: 'A report-only user or workload policy matched, but no enabled policy enforced a control on the successful event.',
+      action: 'Review report-only results, exclusions and user impact before moving the intended control through a staged rollout.'
+    },
+    {
+      id: 'evidenceUnknown',
+      label: 'Evidence unknown',
+      confidence: 'Requires richer evidence or scope validation',
+      tone: 'blind',
+      interpretation: 'The event succeeded without enough returned policy detail to prove whether this is a scoping gap, an export limitation or an intended workload route.',
+      action: 'Load the equivalent JSON sign-in export and validate the event in the Entra Conditional Access details before changing policy.'
+    },
+    {
+      id: 'expectedOutsideCa',
+      label: 'Expected outside CA',
+      confidence: 'Recognised platform or eligibility boundary',
+      tone: 'neutral',
+      interpretation: 'The successful event followed a recognised platform flow or involved a workload that Conditional Access cannot target.',
+      action: 'Do not count this as a bypass. Confirm the classification and govern the activity through the appropriate platform, credential, permission or vendor control.'
+    }
+  ];
   const LOG_LEARN_GUIDANCE = {
     deviceFilters: { label: 'Filter for devices', url: 'https://learn.microsoft.com/entra/identity/conditional-access/concept-condition-filters-for-devices' },
     grantControls: { label: 'Conditional Access grant controls', url: 'https://learn.microsoft.com/entra/identity/conditional-access/concept-conditional-access-grant' },
@@ -1977,7 +2011,8 @@
       });
     });
     logDropzone.addEventListener('drop', e => handleLogFiles(e.dataTransfer.files));
-    $('logExportBtn').addEventListener('click', exportLogReport);
+    $('logExportDocxBtn').addEventListener('click', () => exportLogReport('docx'));
+    $('logExportXlsxBtn').addEventListener('click', () => exportLogReport('xlsx'));
     $('logClearBtn').addEventListener('click', clearLogAnalysis);
     $('logFilterControl').addEventListener('click', e => {
       const btn = e.target.closest('button[data-log-filter]');
@@ -6623,6 +6658,7 @@
     const props = [];
     if (opts.style) props.push(`<w:pStyle w:val="${opts.style}"/>`);
     if (opts.bullet) props.push('<w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr>');
+    if (opts.pageBreakBefore) props.push('<w:pageBreakBefore/>');
     if (opts.spaceAfter !== undefined) props.push(`<w:spacing w:after="${opts.spaceAfter}"/>`);
     if (opts.shade) props.push(`<w:shd w:val="clear" w:color="auto" w:fill="${opts.shade}"/>`);
     const pPr = props.length ? `<w:pPr>${props.join('')}</w:pPr>` : '';
@@ -6752,6 +6788,120 @@
     return (items || []).map(formatter || policyOfficeValue).filter(Boolean).join('; ');
   }
 
+  function caCoverageTopEntries(map, cap = LOG_TOP_CAP) {
+    return [...map.entries()]
+      .sort((a, b) => b[1] - a[1] || String(a[0]).localeCompare(String(b[0])))
+      .slice(0, cap)
+      .map(([name, count]) => ({ name, count }));
+  }
+
+  function caCoveragePercent(value, total) {
+    return total ? value / total : 0;
+  }
+
+  function buildCaCoverageReport(la = state.logAnalysis) {
+    const journey = la.agg?.journey || createSignInAgg().journey;
+    const successful = Number(la.summary?.success) || 0;
+    const categoryMap = new Map(CA_COVERAGE_CATEGORIES.map(meta => [meta.id, {
+      ...meta,
+      count: 0,
+      share: 0,
+      sources: new Map(),
+      identities: new Map(),
+      apps: new Map(),
+      locations: new Map(),
+      routes: [],
+      samples: []
+    }]));
+    const decisionLabels = new Map(LOG_JOURNEY_DECISIONS.map(item => [item.id, item.label]));
+    const outcomeLabels = new Map(LOG_JOURNEY_OUTCOMES.map(item => [item.id, item.label]));
+    [...journey.routes.values()].forEach(route => {
+      const categoryId = caCoverageCategoryId(route.decision, route.outcome);
+      const category = categoryMap.get(categoryId);
+      const count = Number(route.success) || 0;
+      if (!category || !count) return;
+      category.count += count;
+      incrementJourneyMap(category.sources, route.source, count);
+      route.identities.forEach((value, key) => incrementJourneyMap(category.identities, key, value));
+      route.apps.forEach((value, key) => incrementJourneyMap(category.apps, key, value));
+      route.locations.forEach((value, key) => incrementJourneyMap(category.locations, key, value));
+      category.routes.push({
+        category: categoryId,
+        source: route.source,
+        sourceLabel: LOG_SOURCES[route.source]?.label || route.source,
+        decision: route.decision,
+        decisionLabel: decisionLabels.get(route.decision) || route.decision,
+        outcome: route.outcome,
+        outcomeLabel: outcomeLabels.get(route.outcome) || route.outcome,
+        count,
+        share: caCoveragePercent(count, successful),
+        confidence: category.confidence,
+        interpretation: category.interpretation,
+        action: category.action
+      });
+    });
+    const events = [...(journey.coverageEvents || [])]
+      .sort((a, b) => String(b.time || '').localeCompare(String(a.time || '')))
+      .map(event => {
+        const category = categoryMap.get(event.category);
+        return {
+          ...event,
+          categoryLabel: category?.label || event.category,
+          confidence: category?.confidence || '',
+          decisionLabel: decisionLabels.get(event.decision) || event.decision,
+          outcomeLabel: outcomeLabels.get(event.outcome) || event.outcome,
+          sourceLabel: LOG_SOURCES[event.source]?.label || event.source,
+          policySummary: policyOfficeList(event.evaluatedPolicies, policy => `${policy.name} (${policy.result})`),
+          unsatisfiedConditions: policyOfficeList(event.evaluatedPolicies?.flatMap(policy => policy.conditions || []))
+        };
+      });
+    const categories = CA_COVERAGE_CATEGORIES.map(meta => {
+      const category = categoryMap.get(meta.id);
+      category.share = caCoveragePercent(category.count, successful);
+      category.topSources = caCoverageTopEntries(category.sources).map(item => ({ ...item, name: LOG_SOURCES[item.name]?.label || item.name }));
+      category.topIdentities = caCoverageTopEntries(category.identities);
+      category.topApps = caCoverageTopEntries(category.apps);
+      category.topLocations = caCoverageTopEntries(category.locations);
+      category.samples = events.filter(event => event.category === category.id).slice(0, 10);
+      return category;
+    });
+    const byId = Object.fromEntries(categories.map(category => [category.id, category]));
+    const protectedSuccess = journey.outcomes.get('protectedSuccess') || 0;
+    const confirmedGap = byId.confirmedGap?.count || 0;
+    const reportOnlyExposure = byId.reportOnlyExposure?.count || 0;
+    const evidenceUnknown = byId.evidenceUnknown?.count || 0;
+    const expectedOutsideCa = byId.expectedOutsideCa?.count || 0;
+    const reviewTotal = confirmedGap + reportOnlyExposure + evidenceUnknown;
+    const reconciled = protectedSuccess + reviewTotal + expectedOutsideCa;
+    return {
+      title: 'Conditional Access coverage',
+      headline: 'Successful access without enforcing CA',
+      successful,
+      protectedSuccess,
+      confirmedGap,
+      reportOnlyExposure,
+      evidenceUnknown,
+      expectedOutsideCa,
+      reviewTotal,
+      reconciled,
+      reconciliationDifference: successful - reconciled,
+      blocked: journey.outcomes.get('blocked') || 0,
+      categories,
+      routes: categories.flatMap(category => category.routes),
+      events,
+      retention: {
+        limit: LOG_COVERAGE_EVENT_ROW_CAP,
+        eligibleRows: journey.coverageEventRows || 0,
+        retainedRows: events.length,
+        omittedRows: journey.coverageOmittedRows || 0,
+        representedEvents: journey.coverageRepresentedEvents || 0,
+        retainedRepresentedEvents: journey.coverageRetainedRepresentedEvents || 0,
+        omittedRepresentedEvents: journey.coverageOmittedRepresentedEvents || 0,
+        truncated: Boolean(journey.coverageOmittedRows)
+      }
+    };
+  }
+
   function policyOfficeStateLabel(state) {
     return state === 'enforcing' ? 'Enforcing' : state === 'reportOnly' ? 'Report-only' : 'Never matched';
   }
@@ -6875,6 +7025,7 @@
       ...common,
       title: 'Observed Conditional Access policies',
       caveat: 'This is runtime evidence from the loaded sign-in window, not an authoritative tenant policy export. A quiet or never-matched policy can still exist and be correctly configured; compare with a Graph configuration export before changing it.',
+      coverage: buildCaCoverageReport(la),
       policies
     };
   }
@@ -6907,9 +7058,86 @@
       ['Policy states', `${states.enforcing || 0} enforcing; ${states.reportOnly || 0} report-only; ${states.neverMatched || 0} never matched`],
       ['Evaluations', report.policies.reduce((sum, policy) => sum + policy.evaluations, 0).toLocaleString()],
       ['Sign-ins assessed', report.signIns.toLocaleString()],
+      ['Successful access without enforcing CA', report.coverage.reviewTotal.toLocaleString()],
+      ['Confirmed scoping gaps', report.coverage.confirmedGap.toLocaleString()],
+      ['Report-only exposure', report.coverage.reportOnlyExposure.toLocaleString()],
+      ['Evidence unknown', report.coverage.evidenceUnknown.toLocaleString()],
       ['Evidence window', report.evidenceRange],
       ['Loaded sources', report.sources || 'None recorded']
     ];
+  }
+
+  function caCoveragePercentLabel(count, total) {
+    return `${Math.round(caCoveragePercent(count, total) * 1000) / 10}%`;
+  }
+
+  function caCoverageConcentration(category) {
+    return [
+      category.topSources.length ? `Sources: ${category.topSources.map(item => `${item.name} (${item.count.toLocaleString()})`).join(', ')}` : '',
+      category.topIdentities.length ? `Identities: ${category.topIdentities.map(item => `${item.name} (${item.count.toLocaleString()})`).join(', ')}` : '',
+      category.topApps.length ? `Apps / resources: ${category.topApps.map(item => `${item.name} (${item.count.toLocaleString()})`).join(', ')}` : '',
+      category.topLocations.length ? `Locations: ${category.topLocations.map(item => `${item.name} (${item.count.toLocaleString()})`).join(', ')}` : ''
+    ].filter(Boolean);
+  }
+
+  function buildCaCoverageDocxBlocks(coverage, headingStyle = 'Heading1') {
+    const detailHeadingStyle = headingStyle === 'Heading1' ? 'Heading2' : 'Heading3';
+    const blocks = [
+      docxPara('Conditional Access coverage', { style: headingStyle }),
+      docxPara([
+        docxRun(`${coverage.reviewTotal.toLocaleString()} successful event${coverage.reviewTotal === 1 ? '' : 's'} require coverage review. `, { bold: true }),
+        docxRun('The categories below deliberately separate confirmed policy gaps, report-only exposure, incomplete evidence and activity that sits outside Conditional Access by design or eligibility.')
+      ], { style: 'Callout' }),
+      docxReportTable([
+        ['Measure', 'Result'],
+        ['Successful events analysed', coverage.successful.toLocaleString()],
+        ['Protected by an enforcing CA policy', `${coverage.protectedSuccess.toLocaleString()} (${caCoveragePercentLabel(coverage.protectedSuccess, coverage.successful)})`],
+        ['Successful access without enforcing CA', `${coverage.reviewTotal.toLocaleString()} (${caCoveragePercentLabel(coverage.reviewTotal, coverage.successful)})`],
+        ['Confirmed scoping gap', `${coverage.confirmedGap.toLocaleString()} (${caCoveragePercentLabel(coverage.confirmedGap, coverage.successful)})`],
+        ['Report-only exposure', `${coverage.reportOnlyExposure.toLocaleString()} (${caCoveragePercentLabel(coverage.reportOnlyExposure, coverage.successful)})`],
+        ['Evidence unknown', `${coverage.evidenceUnknown.toLocaleString()} (${caCoveragePercentLabel(coverage.evidenceUnknown, coverage.successful)})`],
+        ['Expected outside CA', `${coverage.expectedOutsideCa.toLocaleString()} (${caCoveragePercentLabel(coverage.expectedOutsideCa, coverage.successful)}) - not counted as bypasses`],
+        ['Successful-event reconciliation', coverage.reconciliationDifference === 0 ? `${coverage.reconciled.toLocaleString()} of ${coverage.successful.toLocaleString()} - complete` : `${coverage.reconciled.toLocaleString()} of ${coverage.successful.toLocaleString()} - difference ${coverage.reconciliationDifference.toLocaleString()}`]
+      ], [4000, 5360]),
+      docxPara('Coverage classification', { style: detailHeadingStyle }),
+      docxReportTable([
+        ['Category', 'Events', 'Share', 'Meaning'],
+        ...coverage.categories.map(category => [
+          category.label,
+          category.count.toLocaleString(),
+          caCoveragePercentLabel(category.count, coverage.successful),
+          `${category.confidence}. ${category.interpretation}`
+        ])
+      ], [2000, 1100, 1200, 5060]),
+      docxPara('Expected outside CA activity is reported for reconciliation and context only. It is never included in the confirmed-gap or coverage-review totals.', { italic: true })
+    ];
+    coverage.categories.forEach(category => {
+      if (!category.count) return;
+      blocks.push(docxPara(`${category.label} - ${category.count.toLocaleString()} events`, { style: detailHeadingStyle }));
+      blocks.push(docxPara(category.interpretation));
+      blocks.push(docxPara([docxRun('Recommended action. ', { bold: true }), docxRun(category.action)]));
+      const concentration = caCoverageConcentration(category);
+      if (concentration.length) blocks.push(docxPara(concentration.join(' | ')));
+      if (category.samples.length) {
+        blocks.push(docxPara('Representative events', { style: 'Heading3' }));
+        blocks.push(docxReportTable([
+          ['UTC time', 'Source', 'Identity', 'App / resource', 'CA evidence'],
+          ...category.samples.map(sample => [
+            sample.time ? sample.time.replace('T', ' ').replace(/:\d{2}\.\d{3}Z$/, ' UTC') : 'Not returned',
+            LOG_SOURCES[sample.source]?.short || sample.source,
+            sample.principal,
+            sample.app,
+            `${sample.decisionLabel}; ${sample.caStatus}${sample.representedEvents > 1 ? `; represents ${sample.representedEvents} events` : ''}`
+          ])
+        ], [1600, 1200, 2200, 2400, 1960]));
+      }
+    });
+    const retained = coverage.retention;
+    blocks.push(docxPara([
+      docxRun('Event-detail handling. ', { bold: true }),
+      docxRun(`${retained.retainedRows.toLocaleString()} of ${retained.eligibleRows.toLocaleString()} qualifying imported rows are retained in the local evidence ledger, representing ${retained.retainedRepresentedEvents.toLocaleString()} of ${retained.representedEvents.toLocaleString()} events.${retained.truncated ? ` The ${retained.limit.toLocaleString()}-row browser safety limit omitted ${retained.omittedRows.toLocaleString()} rows representing ${retained.omittedRepresentedEvents.toLocaleString()} events; summary totals remain complete.` : ' The ledger is complete for the loaded evidence.'} Event details may contain identities, IP addresses and device information; handle the export as security-sensitive data.`)
+    ], { style: 'Callout' }));
+    return blocks;
   }
 
   function buildPolicyOfficeDocxBlocks(report) {
@@ -6921,6 +7149,7 @@
       docxReportTable([['Measure', 'Result'], ...policyOfficeSummaryRows(report)], [2700, 6660])
     ];
     if (report.files) blocks.push(docxPara([docxRun('Files analysed: ', { bold: true }), docxRun(report.files)]));
+    if (report.kind === 'observed') blocks.push(...buildCaCoverageDocxBlocks(report.coverage));
     blocks.push(docxPara('Policy overview', { style: 'Heading1' }));
     if (report.kind === 'recommended') {
       blocks.push(docxReportTable([
@@ -6935,7 +7164,7 @@
     }
     blocks.push(docxPara('Policy details', { style: 'Heading1' }));
     report.policies.forEach((policy, index) => {
-      blocks.push(docxPara(`${index + 1}. ${policy.name}`, { style: 'Heading2' }));
+      blocks.push(docxPara(`${index + 1}. ${policy.name}`, { style: 'Heading2', pageBreakBefore: report.kind === 'observed' }));
       if (report.kind === 'recommended') {
         blocks.push(docxReportTable([
           ['Field', 'Assessment'],
@@ -6974,7 +7203,10 @@
           ['Hit rate', `${policy.hitRate}%`],
           ['Controls recorded', policy.controls || 'None recorded'],
           ['Authentication strength', policy.authenticationStrength || 'None recorded'],
-          ['Observed targeting and exclusions', policy.observedScope || 'No satisfied assignment rules were returned'],
+          ['Observed targeting and exclusions', policy.observedScope || 'No satisfied assignment rules were returned']
+        ], [2700, 6660]));
+        blocks.push(docxReportTable([
+          ['Field', 'Observed evidence'],
           ['Report-only results', policy.reportOnlyResults || 'None recorded'],
           ['Conditions not satisfied', policy.notSatisfied || 'None recorded'],
           ['Top identities', policy.topUsers || 'None recorded'],
@@ -7143,7 +7375,10 @@
   }
 
   function policyOfficeSummarySheet(report) {
-    const numericMeasures = new Set(['Policies', 'Policies recorded', 'Evaluations', 'Sign-ins assessed']);
+    const numericMeasures = new Set([
+      'Policies', 'Policies recorded', 'Evaluations', 'Sign-ins assessed',
+      'Successful access without enforcing CA', 'Confirmed scoping gaps', 'Report-only exposure', 'Evidence unknown'
+    ]);
     const rows = [
       [xlsxCell(report.title, 'text', XLSX_STYLES.title), ''],
       [xlsxCell(`Generated locally by CA Architect V2 on ${report.generatedAt.slice(0, 10)}. ${report.caveat}`, 'text', XLSX_STYLES.subtitle), ''],
@@ -7159,6 +7394,80 @@
       [xlsxCell('Files analysed', 'text', XLSX_STYLES.label), xlsxCell(report.files || 'Not recorded', 'text', XLSX_STYLES.value)]
     ];
     return { name: 'Summary', rows, widths: [30, 90], headerRow: 4, freezeRows: 4, merges: ['A1:B1', 'A2:B2'] };
+  }
+
+  function caCoverageSheet(coverage) {
+    const headers = ['Category', 'Evidence confidence', 'Source', 'CA decision', 'Outcome', 'Events', 'Share of successful events', 'Interpretation', 'Recommended action'];
+    const rows = coverage.routes
+      .sort((a, b) => CA_COVERAGE_CATEGORIES.findIndex(item => item.id === a.category) - CA_COVERAGE_CATEGORIES.findIndex(item => item.id === b.category)
+        || b.count - a.count || a.sourceLabel.localeCompare(b.sourceLabel))
+      .map(route => [
+        CA_COVERAGE_CATEGORIES.find(item => item.id === route.category)?.label || route.category,
+        route.confidence,
+        route.sourceLabel,
+        route.decisionLabel,
+        route.outcomeLabel,
+        xlsxCell(route.count, 'integer'),
+        xlsxCell(route.share, 'percentage'),
+        route.interpretation,
+        route.action
+      ]);
+    const retention = coverage.retention;
+    const subtitle = `${coverage.reviewTotal.toLocaleString()} successful events require coverage review. Expected outside-CA activity is shown for reconciliation and is never counted as a bypass. ${retention.retainedRows.toLocaleString()} of ${retention.eligibleRows.toLocaleString()} qualifying imported rows are retained${retention.truncated ? `; ${retention.omittedRows.toLocaleString()} rows were omitted by the ${retention.limit.toLocaleString()}-row browser safety limit while summary totals remained complete` : '; the event ledger is complete for this evidence window'}.`;
+    return {
+      name: 'CA Coverage',
+      rows: [
+        [xlsxCell('Conditional Access coverage', 'text', XLSX_STYLES.title), ...headers.slice(1).map(() => '')],
+        [xlsxCell(subtitle, 'text', XLSX_STYLES.subtitle), ...headers.slice(1).map(() => '')],
+        headers,
+        ...rows
+      ],
+      widths: [24, 34, 28, 34, 38, 13, 20, 62, 62],
+      headerRow: 3,
+      freezeRows: 3,
+      merges: ['A1:I1', 'A2:I2']
+    };
+  }
+
+  function caCoverageEventsSheet(coverage) {
+    const headers = ['Category', 'Evidence confidence', 'UTC time', 'Source', 'Identity type', 'Identity', 'App / resource', 'Client app', 'Device', 'Platform', 'Location', 'IP address', 'CA status', 'Authentication requirement', 'CA decision', 'Outcome', 'Evaluated policies and results', 'Unsatisfied conditions', 'Represented events', 'Grouped evidence row'];
+    const rows = coverage.events.map(event => [
+      event.categoryLabel,
+      event.confidence,
+      event.time ? xlsxCell(policyOfficeUtcTimestamp(event.time), 'datetime') : '',
+      event.sourceLabel,
+      event.identityType,
+      event.principal,
+      event.app,
+      event.clientApp,
+      event.device,
+      event.platform,
+      event.location,
+      event.ip,
+      event.caStatus,
+      event.authenticationRequirement,
+      event.decisionLabel,
+      event.outcomeLabel,
+      event.policySummary,
+      event.unsatisfiedConditions,
+      xlsxCell(event.representedEvents, 'integer'),
+      event.groupedEvidence ? 'Yes' : 'No'
+    ]);
+    const retention = coverage.retention;
+    const subtitle = `Security-sensitive event evidence: identities, IP addresses and device information are not masked. Retained ${retention.retainedRows.toLocaleString()} of ${retention.eligibleRows.toLocaleString()} qualifying imported rows, representing ${retention.retainedRepresentedEvents.toLocaleString()} of ${retention.representedEvents.toLocaleString()} events.${retention.truncated ? ` The ${retention.limit.toLocaleString()}-row browser safety limit omitted ${retention.omittedRows.toLocaleString()} rows representing ${retention.omittedRepresentedEvents.toLocaleString()} events; summary totals remain complete.` : ' The ledger is complete for the loaded evidence.'}`;
+    return {
+      name: 'Coverage Events',
+      rows: [
+        [xlsxCell('Successful access without enforcing CA - event evidence', 'text', XLSX_STYLES.title), ...headers.slice(1).map(() => '')],
+        [xlsxCell(subtitle, 'text', XLSX_STYLES.subtitle), ...headers.slice(1).map(() => '')],
+        headers,
+        ...rows
+      ],
+      widths: [24, 34, 21, 27, 18, 38, 40, 28, 34, 24, 28, 18, 18, 26, 34, 38, 64, 48, 18, 20],
+      headerRow: 3,
+      freezeRows: 3,
+      merges: ['A1:T1', 'A2:T2']
+    };
   }
 
   function recommendedPolicySheets(report) {
@@ -7240,7 +7549,13 @@
 
   function buildPolicyOfficeXlsx(report) {
     const detailSheets = report.kind === 'recommended' ? recommendedPolicySheets(report) : observedPolicySheets(report);
-    return buildXlsx([policyOfficeSummarySheet(report), ...detailSheets]);
+    if (report.kind === 'recommended') return buildXlsx([policyOfficeSummarySheet(report), ...detailSheets]);
+    return buildXlsx([
+      policyOfficeSummarySheet(report),
+      caCoverageSheet(report.coverage),
+      caCoverageEventsSheet(report.coverage),
+      ...detailSheets
+    ]);
   }
 
   function downloadPolicyOfficeReport(kind, format) {
@@ -7331,6 +7646,7 @@
   ]);
   const WEAK_MFA_METHODS = ['text message', 'sms', 'voice', 'phone call'];
   const LOG_SAMPLE_CAP = 25;
+  const LOG_COVERAGE_EVENT_ROW_CAP = 50000;
   const LOG_TOP_CAP = 5;
   const LOG_TRAVEL_WINDOW_MS = 60 * 60 * 1000;
   const LOG_SOURCES = {
@@ -9223,7 +9539,13 @@
         outcomes: new Map(LOG_JOURNEY_OUTCOMES.map(item => [item.id, 0])),
         sourceDecision: new Map(),
         decisionOutcome: new Map(),
-        routes: new Map()
+        routes: new Map(),
+        coverageEvents: [],
+        coverageEventRows: 0,
+        coverageRepresentedEvents: 0,
+        coverageRetainedRepresentedEvents: 0,
+        coverageOmittedRows: 0,
+        coverageOmittedRepresentedEvents: 0
       },
       coverageFacts: [],
       fieldsSeen: new Set(),
@@ -9306,6 +9628,56 @@
     return 'otherFailure';
   }
 
+  function caCoverageCategoryId(decision, outcome) {
+    if (outcome === 'allowedWithoutCa' && decision === 'filtered') return 'confirmedGap';
+    if ((decision === 'reportOnly' && outcome === 'allowedReportOnly')
+      || (decision === 'workloadReportOnly' && outcome === 'workloadReportOnlyFlow')) return 'reportOnlyExposure';
+    if ((decision === 'noEvaluation' && outcome === 'allowedWithoutCa')
+      || (decision === 'workloadBlindspot' && outcome === 'workloadUnknownFlow')
+      || (decision === 'workloadReview' && outcome === 'workloadReviewFlow')) return 'evidenceUnknown';
+    if ((decision === 'byDesign' && outcome === 'byDesignFlow')
+      || (decision === 'outsideCa' && outcome === 'outsideCaFlow')) return 'expectedOutsideCa';
+    return '';
+  }
+
+  function recordCaCoverageEvent(journey, rec, source, decision, outcome, weight) {
+    const category = caCoverageCategoryId(decision, outcome);
+    if (!rec.success || !category) return;
+    journey.coverageEventRows += 1;
+    journey.coverageRepresentedEvents += weight;
+    if (journey.coverageEvents.length >= LOG_COVERAGE_EVENT_ROW_CAP) {
+      journey.coverageOmittedRows += 1;
+      journey.coverageOmittedRepresentedEvents += weight;
+      return;
+    }
+    const evaluatedPolicies = (rec.appliedPolicies || []).map(policy => ({
+      name: policy.displayName || 'Unnamed policy',
+      result: policy.result || 'not returned',
+      conditions: (policy.conditionsNotSatisfied || []).slice(0, 12)
+    }));
+    journey.coverageEvents.push({
+      time: Number.isFinite(rec.time) ? new Date(rec.time).toISOString() : '',
+      category,
+      decision,
+      outcome,
+      source,
+      identityType: rec.identityType || (source === 'application' ? 'servicePrincipal' : 'user'),
+      principal: rec.principal || rec.userPrincipalName || rec.userDisplayName || 'Unknown identity',
+      app: rec.resourceDisplayName || rec.appDisplayName || 'Unknown app or resource',
+      clientApp: rec.appDisplayName && rec.resourceDisplayName && rec.appDisplayName !== rec.resourceDisplayName ? rec.appDisplayName : (rec.clientAppUsed || ''),
+      device: logDeviceLabel(rec) || '',
+      platform: [rec.operatingSystem, rec.operatingSystemVersion || rec.osVersion].filter(Boolean).join(' '),
+      location: logLocationLabel(rec) || 'Unknown location',
+      ip: rec.ipAddress || '',
+      caStatus: rec.conditionalAccessStatus || 'not returned',
+      authenticationRequirement: rec.authenticationRequirement || 'not returned',
+      evaluatedPolicies,
+      representedEvents: weight,
+      groupedEvidence: Boolean(rec.groupedEvidence)
+    });
+    journey.coverageRetainedRepresentedEvents += weight;
+  }
+
   function incrementJourneyMap(map, key, amount) {
     map.set(key, (map.get(key) || 0) + (amount || 1));
   }
@@ -9379,6 +9751,7 @@
     const sourceDecisionKey = `${source}|${decision}`;
     const decisionOutcomeKey = `${decision}|${outcome}`;
     const routeKey = `${source}|${decision}|${outcome}`;
+    recordCaCoverageEvent(journey, rec, source, decision, outcome, weight);
     journey.total += weight;
     incrementJourneyMap(journey.sources, source, weight);
     incrementJourneyMap(journey.decisions, decision, weight);
@@ -11473,6 +11846,8 @@
       ['Recommended replacement set', set ? `${set.policies.length} consolidated policies representing ${set.replaces.length} baseline policies` : 'No policy set was generated from the available evidence']
     ], { header: true, widths: [34, 66] }));
 
+    push(...buildCaCoverageDocxBlocks(buildCaCoverageReport(la), 'Heading2'));
+
     push(docxPara('Finding priorities', { style: 'Heading2' }));
     push(docxTable([
       ['Priority', 'Count', 'How to use this report'],
@@ -11561,13 +11936,85 @@
     return blocks;
   }
 
-  function exportLogReport() {
+  function gapAssessmentSummarySheet(la, coverage) {
+    const summary = la.summary;
+    const range = policyOfficeEvidenceRange(summary);
+    const rows = [
+      [xlsxCell('Conditional Access gap assessment', 'text', XLSX_STYLES.title), ''],
+      [xlsxCell(`Generated locally by CA Architect V2 on ${new Date().toISOString().slice(0, 10)}. Evidence window: ${range}. Successful access without enforcing CA is separated into confirmed gaps, report-only exposure and evidence unknown; expected outside-CA activity is context only.`, 'text', XLSX_STYLES.subtitle), ''],
+      ['', ''],
+      ['Measure', 'Result'],
+      [xlsxCell('Sign-ins analysed', 'text', XLSX_STYLES.label), xlsxCell(summary.total, 'integer')],
+      [xlsxCell('Successful events', 'text', XLSX_STYLES.label), xlsxCell(summary.success, 'integer')],
+      [xlsxCell('Failed events', 'text', XLSX_STYLES.label), xlsxCell(summary.failure, 'integer')],
+      [xlsxCell('Protected successful access', 'text', XLSX_STYLES.label), xlsxCell(coverage.protectedSuccess, 'integer')],
+      [xlsxCell('Successful access without enforcing CA', 'text', XLSX_STYLES.label), xlsxCell(coverage.reviewTotal, 'integer')],
+      [xlsxCell('Confirmed scoping gap', 'text', XLSX_STYLES.label), xlsxCell(coverage.confirmedGap, 'integer')],
+      [xlsxCell('Report-only exposure', 'text', XLSX_STYLES.label), xlsxCell(coverage.reportOnlyExposure, 'integer')],
+      [xlsxCell('Evidence unknown', 'text', XLSX_STYLES.label), xlsxCell(coverage.evidenceUnknown, 'integer')],
+      [xlsxCell('Expected outside CA', 'text', XLSX_STYLES.label), xlsxCell(coverage.expectedOutsideCa, 'integer')],
+      [xlsxCell('Successful-event reconciliation difference', 'text', XLSX_STYLES.label), xlsxCell(coverage.reconciliationDifference, 'integer')],
+      [xlsxCell('Findings', 'text', XLSX_STYLES.label), xlsxCell(la.findings.length, 'integer')],
+      [xlsxCell('Evidence window', 'text', XLSX_STYLES.label), xlsxCell(range, 'text', XLSX_STYLES.value)],
+      [xlsxCell('Loaded sources', 'text', XLSX_STYLES.label), xlsxCell(policyOfficeList(summary.sourcesLoaded, key => LOG_SOURCES[key]?.label || key) || 'None recorded', 'text', XLSX_STYLES.value)],
+      [xlsxCell('Files analysed', 'text', XLSX_STYLES.label), xlsxCell(policyOfficeList(la.files, file => `${file.name} (${file.representedEvents || 0} represented sign-ins)`) || 'Not recorded', 'text', XLSX_STYLES.value)]
+    ];
+    return { name: 'Summary', rows, widths: [42, 96], headerRow: 4, freezeRows: 4, merges: ['A1:B1', 'A2:B2'] };
+  }
+
+  function gapAssessmentFindingsSheet(la) {
+    const headers = ['Severity', 'Finding', 'Affected', 'Total', 'Percentage', 'Scope', 'Sources', 'Observation', 'Recommendation', 'Top identities', 'Top apps / resources', 'Top devices', 'Top locations'];
+    const rank = { high: 0, medium: 1, low: 2, info: 3 };
+    const rows = [...la.findings]
+      .sort((a, b) => (rank[a.severity] ?? 4) - (rank[b.severity] ?? 4) || (b.metric?.affected || 0) - (a.metric?.affected || 0))
+      .map(finding => [
+        gapReportSeverityLabel(finding.severity),
+        finding.title,
+        xlsxCell(Number(finding.metric?.affected) || 0, 'integer'),
+        xlsxCell(Number(finding.metric?.total) || 0, 'integer'),
+        xlsxCell((Number(finding.metric?.pct) || 0) / 100, 'percentage'),
+        finding.metric?.scope || 'sign-ins',
+        policyOfficeList(finding.metric?.sources, key => LOG_SOURCES[key]?.label || key),
+        finding.detail || '',
+        finding.recommendation || '',
+        policyOfficeList(finding.topUsers, item => `${item.name} (${item.count})`),
+        policyOfficeList(finding.topApps, item => `${item.name} (${item.count})`),
+        policyOfficeList(finding.topDevices, item => `${item.name} (${item.count})`),
+        policyOfficeList(finding.topLocations, item => `${item.name} (${item.count})`)
+      ]);
+    return {
+      name: 'Findings',
+      rows: [
+        [xlsxCell('Assessment findings', 'text', XLSX_STYLES.title), ...headers.slice(1).map(() => '')],
+        [xlsxCell('Affected-event totals can overlap across findings and must not be added together.', 'text', XLSX_STYLES.subtitle), ...headers.slice(1).map(() => '')],
+        headers,
+        ...rows
+      ],
+      widths: [14, 42, 13, 13, 14, 20, 30, 62, 62, 40, 40, 36, 36],
+      headerRow: 3,
+      freezeRows: 3,
+      merges: ['A1:M1', 'A2:M2']
+    };
+  }
+
+  function buildGapAssessmentXlsx(la) {
+    const coverage = buildCaCoverageReport(la);
+    return buildXlsx([
+      gapAssessmentSummarySheet(la, coverage),
+      caCoverageSheet(coverage),
+      caCoverageEventsSheet(coverage),
+      gapAssessmentFindingsSheet(la)
+    ]);
+  }
+
+  function exportLogReport(format = 'docx') {
     const la = state.logAnalysis;
     if (!la.summary) return;
     try {
-      const blob = buildDocx(buildGapReportBlocks(la));
-      downloadBlob(blob, `ca-architect-gap-assessment-${new Date().toISOString().slice(0, 10)}.docx`);
-      toast('Gap assessment exported to Word');
+      const blob = format === 'xlsx' ? buildGapAssessmentXlsx(la) : buildDocx(buildGapReportBlocks(la));
+      const extension = format === 'xlsx' ? 'xlsx' : 'docx';
+      downloadBlob(blob, `ca-architect-gap-assessment-${new Date().toISOString().slice(0, 10)}.${extension}`);
+      toast(`Gap assessment exported to ${format === 'xlsx' ? 'Excel' : 'Word'}`);
     } catch (err) {
       toast(`Could not build the gap assessment: ${err.message}`);
     }
@@ -11588,8 +12035,16 @@
     const visualWorkspace = $('logVisualWorkspace');
     const viewControl = $('logViewControl');
     const logStatus = $('logStatus');
-    $('logExportBtn').disabled = !la.summary;
-    $('logExportBtn').hidden = !hasResults;
+    ['logExportDocxBtn', 'logExportXlsxBtn'].forEach(id => {
+      const button = $(id);
+      const format = id.includes('Xlsx') ? 'Excel workbook' : 'Word document';
+      button.disabled = !la.summary;
+      button.setAttribute('aria-disabled', String(!la.summary));
+      button.setAttribute('aria-label', hasResults
+        ? `Download the Conditional Access assessment as a ${format}`
+        : `Assessment ${format} download unavailable until sign-in logs are analysed`);
+      button.title = hasResults ? '' : 'Load sign-in logs to enable this assessment download';
+    });
     $('logClearBtn').hidden = !hasResults && !la.failures.length;
     viewControl.hidden = !hasResults || la.view !== 'list';
     resultsWorkspace.hidden = !hasResults || la.view === 'visual';
@@ -12225,6 +12680,16 @@
     </div>`;
   }
 
+  function renderLogJourneyCoverageSummary(coverage) {
+    const metric = (label, count, tone) => `<article class="is-${esc(tone)}"><span>${esc(label)}</span><strong>${esc(count.toLocaleString())}</strong><small>${esc(caCoveragePercentLabel(count, coverage.successful))} of successful events</small></article>`;
+    const retention = coverage.retention;
+    return `<section class="log-journey-coverage-summary" aria-labelledby="logJourneyCoverageSummaryTitle">
+      <header><div><span class="eyebrow">CA coverage evidence</span><h5 id="logJourneyCoverageSummaryTitle">${esc(coverage.reviewTotal.toLocaleString())} successful access events without enforcing CA require review</h5></div><p>These same mutually exclusive counts appear in both Observed Policy downloads.</p></header>
+      <div>${metric('Confirmed scoping gap', coverage.confirmedGap, 'gap')}${metric('Report-only exposure', coverage.reportOnlyExposure, 'review')}${metric('Evidence unknown', coverage.evidenceUnknown, 'blind')}</div>
+      <footer><span>${esc(coverage.protectedSuccess.toLocaleString())} protected successful events</span><span>${esc(coverage.expectedOutsideCa.toLocaleString())} expected outside CA - not counted as bypasses</span><span>${esc(retention.retainedRows.toLocaleString())} of ${esc(retention.eligibleRows.toLocaleString())} evidence rows retained${retention.truncated ? ' - ledger truncated, totals complete' : ' - ledger complete'}</span></footer>
+    </section>`;
+  }
+
   function renderLogJourneyPolicyBoard(model) {
     const observed = [...model.observedPolicies].sort((a, b) => {
       const rank = policy => policy.state === 'enforcing' ? 0 : policy.state === 'reportOnly' ? 1 : 2;
@@ -12242,6 +12707,7 @@
     const reasonCounts = new Map();
     optionalRecommendations.forEach(policy => (policy.reasonLabels || []).forEach(reason => incrementJourneyMap(reasonCounts, reason, 1)));
     const optionalReasons = logJourneyTopEntries(reasonCounts, 4).map(item => `${item.name} ${item.count}`).join(' · ');
+    const coverage = buildCaCoverageReport();
     const actionLane = (className, title, description, policies) => `<section class="log-journey-action-lane ${esc(className)}"><header><div><span>${esc(title)}</span><small>${esc(description)}</small></div><strong>${esc(policies.length)}</strong></header><div>${policies.length ? policies.map(renderLogJourneyRecommendedPolicy).join('') : '<div class="log-journey-policy-blind"><strong>No policy in this tier</strong><p>The current evidence and assumption answers did not place a proposal here.</p></div>'}</div></section>`;
     const recommendations = model.recommendedPolicies.length
       ? `${actionLane('is-act-now', 'Act now', 'Begin investigation, design and staged rollout.', actNowRecommendations)}${actionLane('is-validate-first', 'Validate first', 'Resolve prerequisites before pilot deployment.', validateRecommendations)}${optionalRecommendations.length ? `<details class="log-journey-contextual"><summary><span>Optional / advanced (${optionalRecommendations.length})</span><small>${esc(optionalReasons || 'Unanswered assumptions and specialist scenarios')}</small></summary><div>${optionalRecommendations.map(renderLogJourneyRecommendedPolicy).join('')}</div></details>` : ''}`
@@ -12262,6 +12728,7 @@
         </section>
         <section class="log-journey-policy-panel" id="logJourneyPolicyPanelObserved" role="tabpanel" aria-labelledby="logJourneyPolicyTabObserved" data-log-policy-panel="observed"${activePolicyTab === 'observed' ? '' : ' hidden'}>
           <header><div><span class="eyebrow">Observed in this window</span><h4>${esc(relevant.length)} active or report-only ${relevant.length === 1 ? 'policy' : 'policies'}</h4></div><div class="log-journey-panel-actions">${renderLogPolicyDownloadActions('observed', observed.length)}${remainder.length ? `<button type="button" class="btn secondary" data-log-toggle-observed>${state.logAnalysis.observedPoliciesExpanded ? 'Show relevant only' : `View all observed policies (${observed.length})`}</button>` : ''}</div></header>
+          ${renderLogJourneyCoverageSummary(coverage)}
           <div class="log-journey-policy-list">${observedContent}</div>
         </section>
       </div>

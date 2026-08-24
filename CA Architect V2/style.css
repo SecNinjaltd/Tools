@@ -1685,6 +1685,21 @@ button.log-journey-severity:hover, button.log-journey-severity:focus-visible { t
 .log-journey-policy-panel h4 { margin: 3px 0 0; font-size: var(--ca-type-title, 1rem); }
 .log-journey-panel-actions, .log-journey-download-actions { display: flex; flex: 0 0 auto; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
 .log-journey-download-actions .btn { width: auto; flex: 0 0 auto; white-space: nowrap; }
+.log-panel .import-actions { width: auto; flex: 0 0 auto; flex-direction: row; align-items: center; justify-content: flex-end; }
+.log-panel .import-actions .btn { width: auto; flex: 0 0 auto; white-space: nowrap; }
+.log-journey-coverage-summary { padding: 12px; background: color-mix(in srgb, var(--orange) 3%, var(--surface-1)); border-bottom: 1px solid var(--line-soft); }
+.log-journey-coverage-summary > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.log-journey-coverage-summary h5 { margin: 2px 0 0; color: var(--ink); font: 800 12px/1.35 'Sora', sans-serif; }
+.log-journey-coverage-summary > header p { max-width: 430px; margin: 0; color: var(--ink-muted); font-size: 9.5px; line-height: 1.45; text-align: right; }
+.log-journey-coverage-summary > div { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
+.log-journey-coverage-summary article { min-width: 0; padding: 9px 10px; background: var(--surface-2); border: 1px solid var(--line-soft); border-left: 3px solid var(--line); border-radius: 5px; }
+.log-journey-coverage-summary article.is-gap { border-left-color: color-mix(in srgb, var(--red) 74%, var(--ink)); }
+.log-journey-coverage-summary article.is-review { border-left-color: var(--orange); }
+.log-journey-coverage-summary article.is-blind { border-left-color: var(--ink-muted); }
+.log-journey-coverage-summary article span, .log-journey-coverage-summary article small { display: block; color: var(--ink-muted); font: 700 8px/1.35 'JetBrains Mono', monospace; text-transform: uppercase; }
+.log-journey-coverage-summary article strong { display: block; margin: 5px 0 3px; color: var(--ink); font: 800 20px/1 'Sora', sans-serif; }
+.log-journey-coverage-summary article small { font-size: 7.5px; text-transform: none; }
+.log-journey-coverage-summary > footer { display: flex; flex-wrap: wrap; gap: 5px 12px; margin-top: 9px; color: var(--ink-muted); font: 700 7.5px/1.4 'JetBrains Mono', monospace; text-transform: uppercase; }
 .log-journey-policy-list { display: grid; }
 .log-journey-policy { width: 100%; min-width: 0; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 10px 12px; color: var(--ink); text-align: left; background: transparent; border: 0; border-bottom: 1px solid var(--line-soft); cursor: pointer; transition: background .18s ease; }
 .log-journey-policy:last-child { border-bottom: 0; }
@@ -1796,6 +1811,9 @@ button.log-journey-severity:hover, button.log-journey-severity:focus-visible { t
   .log-journey-policy-panel > header { display: grid; align-items: flex-start; }
   .log-journey-panel-actions { width: 100%; }
   .log-journey-panel-actions, .log-journey-download-actions { justify-content: flex-start; }
+  .log-journey-coverage-summary > header { display: grid; gap: 6px; }
+  .log-journey-coverage-summary > header p { max-width: none; text-align: left; }
+  .log-journey-coverage-summary > div { grid-template-columns: minmax(0, 1fr); }
   @keyframes logJourneyVerticalPulse { 0%,100% { transform: translateY(-4px); opacity: .35; } 50% { transform: translateY(7px); opacity: .9; } }
 }
 @media (prefers-reduced-motion: reduce) {
