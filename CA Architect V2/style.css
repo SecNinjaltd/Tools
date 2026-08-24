@@ -60,7 +60,7 @@ h4 { font-size: 13px; text-transform: uppercase; margin-bottom: 10px; }
 .intro-band p:not(.eyebrow) { max-width: 840px; color: rgba(255,255,255,.74); margin: 10px 0 0; }
 .intro-actions, .import-actions, .export-stack, .json-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 .export-stack { flex-direction: column; padding: 0 18px 18px; }
-.btn { border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.055); border-radius: var(--radius); padding: 10px 14px; font-weight: 800; cursor: pointer; transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition), background var(--transition); min-height: 38px; color: var(--ink); backdrop-filter: blur(12px); }
+.btn { border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.055); border-radius: var(--radius); padding: 10px 14px; font-weight: 800; cursor: pointer; transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition), background var(--transition); min-height: 38px; color: var(--ink); backdrop-filter: none; }
 .btn:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(28,32,36,.12); }
 .btn.primary { background: var(--orange); border-color: rgba(242,157,29,.84); color: #fff; }
 .btn.secondary { background: var(--surface-2); }
@@ -1660,6 +1660,13 @@ button.log-journey-severity:hover, button.log-journey-severity:focus-visible { t
 .log-journey-workspace-panels, .log-journey-policy-panels { min-width: 0; }
 .log-journey-workspace-panels > [role="tabpanel"]:not([hidden]), .log-journey-policy-panels > [role="tabpanel"]:not([hidden]) { animation: logJourneyTabReveal .2s ease both; }
 @keyframes logJourneyTabReveal { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+.log-panel.is-large-analysis .log-journey-pulse,
+.log-panel.is-large-analysis .log-journey-pulse.is-replaying { animation: none; }
+.log-panel.is-large-analysis .log-journey-node,
+.log-panel.is-large-analysis .log-journey-element,
+.log-panel.is-large-analysis .log-journey-tab,
+.log-panel.is-large-analysis .log-journey-workspace-panels > [role="tabpanel"],
+.log-panel.is-large-analysis .log-journey-policy-panels > [role="tabpanel"] { animation: none; transition: none; }
 .log-journey-workspace-panels .log-journey-policy-board { padding-top: 0; border-top: 0; }
 .log-journey-policy-board { padding-top: 18px; border-top: 1px solid var(--line-soft); }
 .log-journey-board-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }

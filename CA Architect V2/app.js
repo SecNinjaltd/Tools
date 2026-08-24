@@ -6799,7 +6799,8 @@
     return total ? value / total : 0;
   }
 
-  function buildCaCoverageReport(la = state.logAnalysis) {
+  function buildCaCoverageReport(la = state.logAnalysis, options = {}) {
+    const includeEvents = options.includeEvents !== false;
     const journey = la.agg?.journey || createSignInAgg().journey;
     const successful = Number(la.summary?.success) || 0;
     const categoryMap = new Map(CA_COVERAGE_CATEGORIES.map(meta => [meta.id, {
@@ -6840,21 +6841,25 @@
         action: category.action
       });
     });
-    const events = [...(journey.coverageEvents || [])]
-      .sort((a, b) => String(b.time || '').localeCompare(String(a.time || '')))
-      .map(event => {
-        const category = categoryMap.get(event.category);
-        return {
-          ...event,
-          categoryLabel: category?.label || event.category,
-          confidence: category?.confidence || '',
-          decisionLabel: decisionLabels.get(event.decision) || event.decision,
-          outcomeLabel: outcomeLabels.get(event.outcome) || event.outcome,
-          sourceLabel: LOG_SOURCES[event.source]?.label || event.source,
-          policySummary: policyOfficeList(event.evaluatedPolicies, policy => `${policy.name} (${policy.result})`),
-          unsatisfiedConditions: policyOfficeList(event.evaluatedPolicies?.flatMap(policy => policy.conditions || []))
-        };
-      });
+    // The UI only needs aggregate coverage. Normalising and sorting the bounded 50,000-row
+    // ledger is reserved for Office exports so opening the visual policy board stays cheap.
+    const events = includeEvents
+      ? [...(journey.coverageEvents || [])]
+        .sort((a, b) => String(b.time || '').localeCompare(String(a.time || '')))
+        .map(event => {
+          const category = categoryMap.get(event.category);
+          return {
+            ...event,
+            categoryLabel: category?.label || event.category,
+            confidence: category?.confidence || '',
+            decisionLabel: decisionLabels.get(event.decision) || event.decision,
+            outcomeLabel: outcomeLabels.get(event.outcome) || event.outcome,
+            sourceLabel: LOG_SOURCES[event.source]?.label || event.source,
+            policySummary: policyOfficeList(event.evaluatedPolicies, policy => `${policy.name} (${policy.result})`),
+            unsatisfiedConditions: policyOfficeList(event.evaluatedPolicies?.flatMap(policy => policy.conditions || []))
+          };
+        })
+      : [];
     const categories = CA_COVERAGE_CATEGORIES.map(meta => {
       const category = categoryMap.get(meta.id);
       category.share = caCoveragePercent(category.count, successful);
@@ -6862,7 +6867,7 @@
       category.topIdentities = caCoverageTopEntries(category.identities);
       category.topApps = caCoverageTopEntries(category.apps);
       category.topLocations = caCoverageTopEntries(category.locations);
-      category.samples = events.filter(event => event.category === category.id).slice(0, 10);
+      category.samples = includeEvents ? events.filter(event => event.category === category.id).slice(0, 10) : [];
       return category;
     });
     const byId = Object.fromEntries(categories.map(category => [category.id, category]));
@@ -6892,7 +6897,7 @@
       retention: {
         limit: LOG_COVERAGE_EVENT_ROW_CAP,
         eligibleRows: journey.coverageEventRows || 0,
-        retainedRows: events.length,
+        retainedRows: journey.coverageEvents?.length || 0,
         omittedRows: journey.coverageOmittedRows || 0,
         representedEvents: journey.coverageRepresentedEvents || 0,
         retainedRepresentedEvents: journey.coverageRetainedRepresentedEvents || 0,
@@ -7647,6 +7652,7 @@
   const WEAK_MFA_METHODS = ['text message', 'sms', 'voice', 'phone call'];
   const LOG_SAMPLE_CAP = 25;
   const LOG_COVERAGE_EVENT_ROW_CAP = 50000;
+  const LOG_LARGE_ANALYSIS_THRESHOLD = 25000;
   const LOG_TOP_CAP = 5;
   const LOG_TRAVEL_WINDOW_MS = 60 * 60 * 1000;
   const LOG_SOURCES = {
@@ -12035,6 +12041,9 @@
     const visualWorkspace = $('logVisualWorkspace');
     const viewControl = $('logViewControl');
     const logStatus = $('logStatus');
+    const logPanel = $('logAnalysisPanel')?.querySelector('.log-panel');
+    const importedRows = (la.files || []).reduce((sum, file) => sum + (Number(file.importedRowCount) || 0), 0);
+    logPanel?.classList.toggle('is-large-analysis', importedRows >= LOG_LARGE_ANALYSIS_THRESHOLD);
     ['logExportDocxBtn', 'logExportXlsxBtn'].forEach(id => {
       const button = $(id);
       const format = id.includes('Xlsx') ? 'Excel workbook' : 'Word document';
@@ -12093,23 +12102,33 @@
     $('logDropzone').classList.add('compact');
     logStatus.hidden = false;
     logStatus.innerHTML = `Analysed <strong>${esc(s.total)}</strong> sign-ins${esc(range)} — ${esc(la.findings.length)} findings (${esc(s.high)} high).${details}`;
-    $('logDashboard').innerHTML = renderLogDashboard(s);
-    $('logSourceGrid').innerHTML = renderLogSourceGrid();
     const visible = la.findings.filter(f =>
       (la.filter === 'all' || f.severity === la.filter) &&
       (la.sourceFilter === 'all' || (f.metric.sources || []).includes(la.sourceFilter)));
-    $('logFindings').innerHTML = renderLogConfidence() + (visible.length
-      ? visible.map(renderLogFindingCard).join('')
-      : '<div class="empty-state">No findings match this filter.</div>');
-    $('logStrategyCta').innerHTML = renderLogStrategyCta();
-    $('logPolicyInventory').innerHTML = renderLogPolicyInventory();
-    $('logVisualContent').innerHTML = la.view === 'visual' ? renderLogVisualWorkspace() : '';
     if (la.view === 'visual') {
+      // Do not keep a second, fully populated detailed workspace behind the visual view.
+      // Large imports otherwise duplicate hundreds of policy/evidence nodes during draw.
+      $('logDashboard').innerHTML = '';
+      $('logSourceGrid').innerHTML = '';
+      $('logFindings').innerHTML = '';
+      $('logStrategyCta').innerHTML = '';
+      $('logPolicyInventory').innerHTML = '';
+      $('logVisualContent').innerHTML = renderLogVisualWorkspace();
       applyLogJourneyTabs();
       applyLogJourneySelection();
       queueLogJourneyDraw();
     }
-    else if (logJourneyResizeObserver) logJourneyResizeObserver.disconnect();
+    else {
+      $('logDashboard').innerHTML = renderLogDashboard(s);
+      $('logSourceGrid').innerHTML = renderLogSourceGrid();
+      $('logFindings').innerHTML = renderLogConfidence() + (visible.length
+        ? visible.map(renderLogFindingCard).join('')
+        : '<div class="empty-state">No findings match this filter.</div>');
+      $('logStrategyCta').innerHTML = renderLogStrategyCta();
+      $('logPolicyInventory').innerHTML = renderLogPolicyInventory();
+      $('logVisualContent').innerHTML = '';
+      if (logJourneyResizeObserver) logJourneyResizeObserver.disconnect();
+    }
     scheduleScrollableRegionEnhancement();
   }
 
@@ -12707,7 +12726,7 @@
     const reasonCounts = new Map();
     optionalRecommendations.forEach(policy => (policy.reasonLabels || []).forEach(reason => incrementJourneyMap(reasonCounts, reason, 1)));
     const optionalReasons = logJourneyTopEntries(reasonCounts, 4).map(item => `${item.name} ${item.count}`).join(' · ');
-    const coverage = buildCaCoverageReport();
+    const coverage = buildCaCoverageReport(state.logAnalysis, { includeEvents: false });
     const actionLane = (className, title, description, policies) => `<section class="log-journey-action-lane ${esc(className)}"><header><div><span>${esc(title)}</span><small>${esc(description)}</small></div><strong>${esc(policies.length)}</strong></header><div>${policies.length ? policies.map(renderLogJourneyRecommendedPolicy).join('') : '<div class="log-journey-policy-blind"><strong>No policy in this tier</strong><p>The current evidence and assumption answers did not place a proposal here.</p></div>'}</div></section>`;
     const recommendations = model.recommendedPolicies.length
       ? `${actionLane('is-act-now', 'Act now', 'Begin investigation, design and staged rollout.', actNowRecommendations)}${actionLane('is-validate-first', 'Validate first', 'Resolve prerequisites before pilot deployment.', validateRecommendations)}${optionalRecommendations.length ? `<details class="log-journey-contextual"><summary><span>Optional / advanced (${optionalRecommendations.length})</span><small>${esc(optionalReasons || 'Unanswered assumptions and specialist scenarios')}</small></summary><div>${optionalRecommendations.map(renderLogJourneyRecommendedPolicy).join('')}</div></details>` : ''}`
