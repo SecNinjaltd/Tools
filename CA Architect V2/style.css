@@ -1602,6 +1602,7 @@ button.log-journey-severity:hover, button.log-journey-severity:focus-visible { t
 .log-journey-evidence-body:has(> .log-journey-evidence-section) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 0 15px 15px; }
 .log-journey-evidence-section { min-width: 0; padding: 15px 14px 14px 0; border-bottom: 1px solid var(--line-soft); }
 .log-journey-evidence-section:nth-child(even) { padding-left: 14px; padding-right: 0; border-left: 1px solid var(--line-soft); }
+.log-journey-evidence-section:has(.log-affected-accounts), .log-journey-evidence-section:has(.log-mfa-exclusions) { grid-column: 1 / -1; padding-left: 0; padding-right: 0; border-left: 0; }
 .log-journey-evidence-section:last-child, .log-journey-evidence-section:nth-last-child(2):nth-child(odd) { border-bottom: 0; }
 .log-journey-evidence-section h4 { margin: 0 0 8px; color: var(--orange); font: 700 9px/1.2 'JetBrains Mono', monospace; letter-spacing: .055em; text-transform: uppercase; }
 .log-journey-evidence-section h5 { margin: 0 0 6px; color: var(--ink); font-size: 10.5px; }
@@ -1655,6 +1656,24 @@ button.log-journey-severity:hover, button.log-journey-severity:focus-visible { t
 .log-mfa-exclusion-table code { color: var(--ink-soft); font: 700 8px/1.4 'JetBrains Mono', monospace; }
 .log-mfa-exclusion-table td span { color: var(--ink-muted); }
 .log-mfa-exclusion-policy > .log-journey-evidence-muted { margin: 0 11px 11px; }
+.log-affected-accounts { min-width: 0; display: grid; gap: 10px; margin: 0 0 12px; padding: 12px; background: color-mix(in srgb, var(--orange) 3%, var(--surface-1)); border: 1px solid color-mix(in srgb, var(--orange) 28%, var(--line-soft)); border-left: 4px solid var(--orange); border-radius: 6px; }
+.log-affected-accounts > header h5 { margin: 2px 0 5px; color: var(--ink); font: 800 15px/1.25 'Sora', sans-serif; }
+.log-affected-accounts > header p { max-width: 900px; margin: 0; }
+.log-affected-account-method { margin: 0 !important; padding: 8px 9px; background: var(--surface-2); border-left: 2px solid var(--orange); }
+.log-affected-account-finding { min-width: 0; overflow: hidden; background: var(--surface-2); border: 1px solid var(--line-soft); border-radius: 5px; }
+.log-affected-account-finding > header { display: flex; justify-content: space-between; gap: 14px; align-items: flex-start; padding: 10px 11px; border-bottom: 1px solid var(--line-soft); }
+.log-affected-account-finding > header span { display: block; color: var(--orange-deep); font: 800 7.5px/1.2 'JetBrains Mono', monospace; text-transform: uppercase; }
+.log-affected-account-finding > header h6 { margin: 3px 0 0; color: var(--ink); font: 800 11px/1.35 'Sora', sans-serif; }
+.log-affected-account-finding > header > strong { flex: 0 0 auto; color: var(--ink-soft); font: 700 8px/1.4 'JetBrains Mono', monospace; text-transform: uppercase; }
+.log-affected-account-finding > .log-evidence-scroll { margin: 10px 11px; max-height: 420px; }
+.log-affected-account-table { width: 100%; min-width: 1180px; border-collapse: collapse; font-size: 10px; }
+.log-affected-account-table th { position: sticky; z-index: 1; top: 0; padding: 6px 8px; color: var(--ink-muted); background: var(--surface-2); border-bottom: 1px solid var(--line); font: 700 8px/1.3 'JetBrains Mono', monospace; text-align: left; text-transform: uppercase; white-space: nowrap; }
+.log-affected-account-table td { padding: 7px 8px; color: var(--ink-soft); border-bottom: 1px solid var(--line-soft); line-height: 1.4; vertical-align: top; overflow-wrap: anywhere; }
+.log-affected-account-table tr:last-child td { border-bottom: 0; }
+.log-affected-account-table code { display: block; color: var(--ink-soft); font: 700 8px/1.4 'JetBrains Mono', monospace; }
+.log-affected-account-table td span { color: var(--ink-muted); }
+.log-affected-account-finding > .log-journey-evidence-muted { margin: 0 11px 11px; }
+.log-affected-account-warning { margin: 0 11px 11px !important; padding: 8px 9px; background: color-mix(in srgb, var(--yellow) 10%, var(--surface-1)); border-left: 3px solid var(--yellow); }
 .log-journey-device-context { display: grid; gap: 10px; margin-bottom: 10px; }
 .log-journey-guidance { display: grid; gap: 10px; }
 .log-journey-guidance-links { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -1840,6 +1859,9 @@ button.log-journey-severity:hover, button.log-journey-severity:focus-visible { t
   .log-mfa-exclusions > header dl { grid-template-columns: minmax(0, 1fr); }
   .log-mfa-exclusion-policy > header { display: grid; }
   .log-mfa-exclusion-policy > header > strong { white-space: normal; }
+  .log-affected-accounts { padding: 10px; }
+  .log-affected-account-finding > header { display: grid; }
+  .log-affected-account-finding > header > strong { white-space: normal; }
   .log-journey-control-bridge::before, .log-journey-control-bridge::after { min-width: 14px; }
   .log-journey-control-bridge p { font-size: 9px; }
   .log-journey-policy-lanes > section > header { align-items: flex-start; }

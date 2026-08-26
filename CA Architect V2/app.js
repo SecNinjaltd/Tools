@@ -2011,8 +2011,8 @@
       });
     });
     logDropzone.addEventListener('drop', e => handleLogFiles(e.dataTransfer.files));
-    $('logExportDocxBtn').addEventListener('click', () => exportLogReport('docx'));
-    $('logExportXlsxBtn').addEventListener('click', () => exportLogReport('xlsx'));
+    $('logExportDocxBtn').addEventListener('click', event => exportLogReport('docx', event));
+    $('logExportXlsxBtn').addEventListener('click', event => exportLogReport('xlsx', event));
     $('logClearBtn').addEventListener('click', clearLogAnalysis);
     $('logFilterControl').addEventListener('click', e => {
       const btn = e.target.closest('button[data-log-filter]');
@@ -2041,7 +2041,7 @@
     document.addEventListener('keydown', onLogJourneyKeydown);
     $('logStrategyCta').addEventListener('click', e => {
       if (e.target.closest('#logBuildStrategyBtn')) buildStrategyFromFindings();
-      if (e.target.closest('#logBuildGuideBtn')) exportBuildGuideDocx();
+      if (e.target.closest('#logBuildGuideBtn')) exportBuildGuideDocx(e);
       const answer = e.target.closest('[data-declaration]');
       if (answer) setDeclaration(answer.dataset.declaration, answer.dataset.answer);
     });
@@ -6538,7 +6538,13 @@
     return String(value || 'conditional-access-policy').replace(/[^a-z0-9._-]+/gi, '-').replace(/^-+|-+$/g, '').toLowerCase();
   }
 
-  function downloadBlob(blob, filename) {
+  function officeDownloadIsUserInitiated(event) {
+    if (!event?.isTrusted) return false;
+    return !navigator.userActivation || navigator.userActivation.isActive;
+  }
+
+  function downloadBlob(blob, filename, userInitiated = false) {
+    if (!userInitiated) return false;
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = filename;
@@ -6547,6 +6553,7 @@
     a.click();
     a.remove();
     window.setTimeout(() => URL.revokeObjectURL(a.href), 0);
+    return true;
   }
 
   // ---------------------------------------------------------------------------
@@ -7683,7 +7690,12 @@
     ]);
   }
 
-  function downloadPolicyOfficeReport(kind, format) {
+  function downloadPolicyOfficeReport(kind, format, event) {
+    const userInitiated = officeDownloadIsUserInitiated(event);
+    if (!userInitiated) {
+      toast('Use the visible download button to create this Office report');
+      return;
+    }
     const report = buildPolicyOfficeReport(kind);
     if (!report.policies.length) {
       toast(`No ${kind} policies are available to download`);
@@ -7692,7 +7704,7 @@
     try {
       const blob = format === 'xlsx' ? buildPolicyOfficeXlsx(report) : buildPolicyOfficeDocx(report);
       const stamp = new Date().toISOString().slice(0, 10);
-      downloadBlob(blob, `ca-architect-${kind}-policies-${stamp}.${format}`);
+      downloadBlob(blob, `ca-architect-${kind}-policies-${stamp}.${format}`, userInitiated);
       toast(`${kind === 'recommended' ? 'Recommended' : 'Observed'} policies exported to ${format === 'xlsx' ? 'Excel' : 'Word'}`);
     } catch (err) {
       toast(`Could not build the ${kind} policy ${format.toUpperCase()} report: ${err.message}`);
@@ -7773,6 +7785,10 @@
   const LOG_SAMPLE_CAP = 25;
   const LOG_EXCLUSION_DISPLAY_CAP = 50;
   const LOG_EXCLUSION_DOCX_CAP = 25;
+  const LOG_AFFECTED_ACCOUNT_DETAIL_CAP = 50000;
+  const LOG_AFFECTED_ACCOUNT_DISPLAY_CAP = 50;
+  const LOG_AFFECTED_ACCOUNT_DOCX_CAP = 50;
+  const LOG_AFFECTED_ACCOUNT_SHEET_ROW_CAP = 50000;
   const LOG_COVERAGE_EVENT_ROW_CAP = 50000;
   const LOG_LARGE_ANALYSIS_THRESHOLD = 25000;
   const LOG_TOP_CAP = 5;
@@ -9898,6 +9914,24 @@
     map.set(key, (map.get(key) || 0) + (amount || 1));
   }
 
+  function observedAffectedAccounts(tally) {
+    return [...(tally.accountDetails || new Map()).values()].map(item => ({
+      name: item.name,
+      objectId: item.objectId,
+      identityType: item.identityType,
+      userType: item.userType,
+      count: item.count,
+      success: item.success,
+      failure: item.failure,
+      apps: [...item.apps.entries()].sort((a, b) => b[1] - a[1]).map(([name, count]) => ({ name, count })),
+      clientApps: [...item.clientApps.entries()].sort((a, b) => b[1] - a[1]).map(([name, count]) => ({ name, count })),
+      locations: [...item.locations.entries()].sort((a, b) => b[1] - a[1]).map(([name, count]) => ({ name, count })),
+      sources: [...item.sources],
+      from: Number.isFinite(item.minTime) ? new Date(item.minTime).toISOString() : null,
+      to: Number.isFinite(item.maxTime) ? new Date(item.maxTime).toISOString() : null
+    })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+  }
+
   function logDeviceJoinState(rec) {
     const trust = normToken(rec.trustType);
     if (trust === 'serverad' || trust.includes('hybrid')) return 'Microsoft Entra hybrid joined';
@@ -10042,7 +10076,7 @@
     stats.total += representedTotal;
     const tally = id => {
       if (!agg.tallies[id]) {
-        agg.tallies[id] = { count: 0, users: new Map(), apps: new Map(), devices: new Map(), locations: new Map(), samples: [], sources: new Set(), platformFlow: 0 };
+        agg.tallies[id] = { count: 0, users: new Map(), apps: new Map(), devices: new Map(), locations: new Map(), samples: [], sources: new Set(), platformFlow: 0, accountDetails: new Map(), accountDetailOmittedEvents: 0 };
       }
       return agg.tallies[id];
     };
@@ -10061,6 +10095,38 @@
       t.apps.set(app, (t.apps.get(app) || 0) + weight);
       if (device) t.devices.set(device, (t.devices.get(device) || 0) + weight);
       if (place) t.locations.set(place, (t.locations.get(place) || 0) + weight);
+      const accountKey = rec.userId || `${rec.identityType || 'identity'}:${who}`;
+      if (t.accountDetails.has(accountKey) || t.accountDetails.size < LOG_AFFECTED_ACCOUNT_DETAIL_CAP) {
+        const account = t.accountDetails.get(accountKey) || {
+          name: who,
+          objectId: rec.userId || '',
+          identityType: rec.identityType || 'user',
+          userType: rec.userType || '',
+          count: 0,
+          success: 0,
+          failure: 0,
+          apps: new Map(),
+          clientApps: new Map(),
+          locations: new Map(),
+          sources: new Set(),
+          minTime: Infinity,
+          maxTime: -Infinity
+        };
+        account.count += weight;
+        account.success += rec.success ? weight : 0;
+        account.failure += rec.success ? 0 : weight;
+        incrementJourneyMap(account.apps, app, weight);
+        incrementJourneyMap(account.clientApps, rec.clientAppUsed || 'Client app not returned', weight);
+        incrementJourneyMap(account.locations, place || 'Unknown location', weight);
+        account.sources.add(rec.source);
+        if (Number.isFinite(rec.time)) {
+          if (rec.time < account.minTime) account.minTime = rec.time;
+          if (rec.time > account.maxTime) account.maxTime = rec.time;
+        }
+        t.accountDetails.set(accountKey, account);
+      } else {
+        t.accountDetailOmittedEvents += weight;
+      }
       if (isPlatformFlow(rec)) t.platformFlow += weight;
       if (t.samples.length < LOG_SAMPLE_CAP) {
         t.samples.push({
@@ -11567,6 +11633,10 @@
       topApps: opts.topApps ?? top(t.apps),
       topDevices: opts.topDevices ?? top(t.devices || new Map()),
       topLocations: opts.topLocations ?? top(t.locations || new Map()),
+      affectedAccounts: observedAffectedAccounts(t),
+      affectedAccountCount: (t.users || new Map()).size,
+      affectedAccountOmittedIdentities: Math.max(0, (t.users || new Map()).size - (t.accountDetails || new Map()).size),
+      affectedAccountOmittedEvents: Number(t.accountDetailOmittedEvents) || 0,
       platformFlow: t.platformFlow || 0,
       topUsersLabel: opts.topUsersLabel || 'Top users',
       topAppsLabel: opts.topAppsLabel || 'Top apps',
@@ -12068,6 +12138,33 @@
     return values.length ? values.join(', ') : fallback;
   }
 
+  function buildAffectedAccountsDocxBlocks(finding) {
+    const accounts = finding.affectedAccounts || [];
+    if (!accounts.length) return [];
+    const visible = accounts.slice(0, LOG_AFFECTED_ACCOUNT_DOCX_CAP);
+    const blocks = [
+      docxPara('Affected accounts observed', { style: 'Heading3' }),
+      docxPara(`The imported sign-in rows identify ${finding.affectedAccountCount || accounts.length} account${(finding.affectedAccountCount || accounts.length) === 1 ? '' : 's'} in events matching this finding. Affected means observed on this path; it does not, by itself, prove account compromise.`, { style: 'Callout' }),
+      docxTable([
+        ['Account', 'Object ID / type', 'Events', 'Client and application evidence', 'Location and UTC window'],
+        ...visible.map(account => [
+          account.name,
+          `${account.objectId || 'Object ID not returned'}; ${[account.identityType, account.userType].filter(Boolean).join(' / ') || 'user'}`,
+          `${account.count} total; ${account.success} successful; ${account.failure} failed`,
+          `Clients: ${account.clientApps.slice(0, 8).map(item => `${item.name} (${item.count})`).join(', ') || 'not returned'}. Apps: ${account.apps.slice(0, 8).map(item => `${item.name} (${item.count})`).join(', ') || 'not returned'}.`,
+          `${account.locations.slice(0, 6).map(item => `${item.name} (${item.count})`).join(', ') || 'Location not returned'}. ${account.from ? account.from.replace('T', ' ').slice(0, 16) : 'Unknown'} to ${account.to ? account.to.replace('T', ' ').slice(0, 16) : 'Unknown'} UTC.`
+        ])
+      ], { header: true, widths: [20, 22, 12, 25, 21] })
+    ];
+    if ((finding.affectedAccountCount || accounts.length) > visible.length) {
+      blocks.push(docxPara(`This document shows ${visible.length} of ${finding.affectedAccountCount || accounts.length} affected accounts for this finding. The assessment XLSX export contains every retained affected-account row.`, { italic: true }));
+    }
+    if (finding.affectedAccountOmittedIdentities) {
+      blocks.push(docxPara(`Detail limit reached: ${finding.affectedAccountOmittedIdentities} additional account identities could not be retained, representing at least ${finding.affectedAccountOmittedEvents} events.`, { style: 'Callout' }));
+    }
+    return blocks;
+  }
+
   function buildGapReportBlocks(la) {
     const blocks = [];
     const summary = la.summary;
@@ -12150,6 +12247,7 @@
         ], { header: true, widths: [28, 72] })
       );
       if (concentration.length) push(docxPara(`Where it concentrates: ${concentration.join(' | ')}`));
+      push(...buildAffectedAccountsDocxBlocks(finding));
       if (guide.attack) push(docxPara([docxRun('Security impact. ', { bold: true }), docxRun(guide.attack)]));
       else if (guide.cause) push(docxPara([docxRun('Why it matters. ', { bold: true }), docxRun(guide.cause)]));
       push(docxPara('Recommended actions', { style: 'Heading3' }));
@@ -12203,6 +12301,7 @@
     const range = policyOfficeEvidenceRange(summary);
     const mfaExclusions = policyOfficeMfaExclusions(la.policyInventory?.policies || []);
     const mfaIdentities = new Set(mfaExclusions.flatMap(policy => policy.identities.map(identity => identity.objectId || `${identity.identityType}:${identity.name}`)));
+    const affectedAccountRows = la.findings.reduce((sum, finding) => sum + (finding.affectedAccounts || []).length, 0);
     const rows = [
       [xlsxCell('Conditional Access gap assessment', 'text', XLSX_STYLES.title), ''],
       [xlsxCell(`Generated locally by CA Architect V2 on ${new Date().toISOString().slice(0, 10)}. Evidence window: ${range}. Successful access without enforcing CA is separated into confirmed gaps, report-only exposure and evidence unknown; expected outside-CA activity is context only.`, 'text', XLSX_STYLES.subtitle), ''],
@@ -12221,6 +12320,7 @@
       [xlsxCell('Observed identities on MFA exclusion paths', 'text', XLSX_STYLES.label), xlsxCell(mfaIdentities.size, 'integer')],
       [xlsxCell('Successful-event reconciliation difference', 'text', XLSX_STYLES.label), xlsxCell(coverage.reconciliationDifference, 'integer')],
       [xlsxCell('Findings', 'text', XLSX_STYLES.label), xlsxCell(la.findings.length, 'integer')],
+      [xlsxCell('Affected finding-account detail rows', 'text', XLSX_STYLES.label), xlsxCell(affectedAccountRows, 'integer')],
       [xlsxCell('Evidence window', 'text', XLSX_STYLES.label), xlsxCell(range, 'text', XLSX_STYLES.value)],
       [xlsxCell('Loaded sources', 'text', XLSX_STYLES.label), xlsxCell(policyOfficeList(summary.sourcesLoaded, key => LOG_SOURCES[key]?.label || key) || 'None recorded', 'text', XLSX_STYLES.value)],
       [xlsxCell('Files analysed', 'text', XLSX_STYLES.label), xlsxCell(policyOfficeList(la.files, file => `${file.name} (${file.representedEvents || 0} represented sign-ins)`) || 'Not recorded', 'text', XLSX_STYLES.value)]
@@ -12263,24 +12363,72 @@
     };
   }
 
+  function gapAssessmentAffectedAccountsSheet(la) {
+    const headers = ['Severity', 'Finding', 'Observed account', 'Object ID', 'Identity type', 'User type', 'Observed events', 'Successful', 'Failed', 'Client apps / protocols', 'Apps / resources', 'Locations', 'First observed UTC', 'Last observed UTC', 'Sources', 'Detail status'];
+    const rank = { high: 0, medium: 1, low: 2, info: 3 };
+    const findings = [...la.findings].sort((a, b) => (rank[a.severity] ?? 4) - (rank[b.severity] ?? 4) || (b.metric?.affected || 0) - (a.metric?.affected || 0));
+    const rows = [];
+    let omittedRows = 0;
+    findings.forEach(finding => {
+      (finding.affectedAccounts || []).forEach(account => {
+        if (rows.length >= LOG_AFFECTED_ACCOUNT_SHEET_ROW_CAP) {
+          omittedRows += 1;
+          return;
+        }
+        rows.push([
+          gapReportSeverityLabel(finding.severity), finding.title, account.name, account.objectId, account.identityType, account.userType,
+          xlsxCell(account.count, 'integer'), xlsxCell(account.success, 'integer'), xlsxCell(account.failure, 'integer'),
+          account.clientApps.map(item => `${item.name} (${item.count})`).join('; '),
+          account.apps.map(item => `${item.name} (${item.count})`).join('; '),
+          account.locations.map(item => `${item.name} (${item.count})`).join('; '),
+          account.from ? xlsxCell(account.from, 'datetime') : '',
+          account.to ? xlsxCell(account.to, 'datetime') : '',
+          account.sources.map(key => LOG_SOURCES[key]?.label || key).join('; '),
+          finding.affectedAccountOmittedIdentities ? `Finding detail limit omitted ${finding.affectedAccountOmittedIdentities} account(s) / at least ${finding.affectedAccountOmittedEvents} event(s)` : 'Complete for retained finding-account detail'
+        ]);
+      });
+    });
+    const sourceRows = findings.reduce((sum, finding) => sum + (finding.affectedAccounts || []).length, 0);
+    const note = `One row per finding and observed account; the same account can appear under more than one finding. ${rows.length} of ${sourceRows} retained finding-account rows are included${omittedRows ? `; ${omittedRows} rows were omitted by the ${LOG_AFFECTED_ACCOUNT_SHEET_ROW_CAP.toLocaleString()}-row workbook limit` : ''}. Affected does not, by itself, mean compromised.`;
+    return {
+      name: 'Affected Accounts',
+      rows: [
+        [xlsxCell('Affected accounts observed in assessment findings', 'text', XLSX_STYLES.title), ...headers.slice(1).map(() => '')],
+        [xlsxCell(note, 'text', XLSX_STYLES.subtitle), ...headers.slice(1).map(() => '')],
+        headers,
+        ...rows
+      ],
+      widths: [14, 42, 38, 38, 18, 16, 18, 14, 14, 44, 44, 40, 22, 22, 30, 42],
+      headerRow: 3,
+      freezeRows: 3,
+      merges: ['A1:P1', 'A2:P2']
+    };
+  }
+
   function buildGapAssessmentXlsx(la) {
     const coverage = buildCaCoverageReport(la);
     return buildXlsx([
       gapAssessmentSummarySheet(la, coverage),
       caCoverageSheet(coverage),
       caCoverageEventsSheet(coverage),
+      gapAssessmentAffectedAccountsSheet(la),
       mfaExclusionSheet(policyOfficeMfaExclusions(la.policyInventory?.policies || [])),
       gapAssessmentFindingsSheet(la)
     ]);
   }
 
-  function exportLogReport(format = 'docx') {
+  function exportLogReport(format = 'docx', event) {
     const la = state.logAnalysis;
     if (!la.summary) return;
+    const userInitiated = officeDownloadIsUserInitiated(event);
+    if (!userInitiated) {
+      toast('Use the visible download button to create this assessment');
+      return;
+    }
     try {
       const blob = format === 'xlsx' ? buildGapAssessmentXlsx(la) : buildDocx(buildGapReportBlocks(la));
       const extension = format === 'xlsx' ? 'xlsx' : 'docx';
-      downloadBlob(blob, `ca-architect-gap-assessment-${new Date().toISOString().slice(0, 10)}.${extension}`);
+      downloadBlob(blob, `ca-architect-gap-assessment-${new Date().toISOString().slice(0, 10)}.${extension}`, userInitiated);
       toast(`Gap assessment exported to ${format === 'xlsx' ? 'Excel' : 'Word'}`);
     } catch (err) {
       toast(`Could not build the gap assessment: ${err.message}`);
@@ -13273,6 +13421,38 @@
     return `<div class="log-journey-samples">${rows.map(sample => `<article><span>${esc(sample.time || 'unknown')}${sample.representedEvents > 1 ? ` · represents ${esc(sample.representedEvents)} events` : ''}</span><strong>${esc(sample.principal || 'unknown')}</strong><p>${esc(sample.app || 'unknown')} · ${esc(sample.location || 'unknown')}</p></article>`).join('')}</div>`;
   }
 
+  function renderLogJourneyAffectedAccounts(findings) {
+    const relevant = (findings || []).filter(finding => (finding.affectedAccounts || []).length);
+    if (!relevant.length) return '';
+    const articles = relevant.map(finding => {
+      const accounts = finding.affectedAccounts || [];
+      const visible = accounts.slice(0, LOG_AFFECTED_ACCOUNT_DISPLAY_CAP);
+      return `<article class="log-affected-account-finding">
+        <header><div><span>${esc(finding.severity)} finding</span><h6>${esc(finding.title)}</h6></div><strong>${esc((finding.affectedAccountCount || accounts.length).toLocaleString())} affected account${(finding.affectedAccountCount || accounts.length) === 1 ? '' : 's'}</strong></header>
+        <div class="log-evidence-scroll"><table class="log-affected-account-table">
+          <thead><tr><th>Observed account</th><th>Object ID / type</th><th>Events</th><th>Outcome</th><th>Client / protocol</th><th>Apps / resources</th><th>Locations</th><th>Observed UTC</th></tr></thead>
+          <tbody>${visible.map(account => `<tr>
+            <td><strong>${esc(account.name)}</strong></td>
+            <td><code>${esc(account.objectId || 'Not returned')}</code><span>${esc([account.identityType, account.userType].filter(Boolean).join(' / ') || 'user')}</span></td>
+            <td>${esc(account.count.toLocaleString())}</td>
+            <td>${esc(account.success.toLocaleString())} successful<br><span>${esc(account.failure.toLocaleString())} failed</span></td>
+            <td>${esc(account.clientApps.slice(0, 5).map(item => `${item.name} (${item.count})`).join(' · ') || 'Not returned')}</td>
+            <td>${esc(account.apps.slice(0, 5).map(item => `${item.name} (${item.count})`).join(' · ') || 'Not returned')}</td>
+            <td>${esc(account.locations.slice(0, 5).map(item => `${item.name} (${item.count})`).join(' · ') || 'Not returned')}</td>
+            <td>${esc(account.from ? account.from.replace('T', ' ').slice(0, 16) : 'Unknown')}<br><span>to ${esc(account.to ? account.to.replace('T', ' ').slice(0, 16) : 'Unknown')}</span></td>
+          </tr>`).join('')}</tbody>
+        </table></div>
+        ${(finding.affectedAccountCount || accounts.length) > visible.length ? `<p class="log-journey-evidence-muted">Showing ${esc(visible.length.toLocaleString())} of ${esc((finding.affectedAccountCount || accounts.length).toLocaleString())} affected accounts here. The assessment XLSX export includes every retained affected-account row.</p>` : ''}
+        ${finding.affectedAccountOmittedIdentities ? `<p class="log-affected-account-warning"><strong>Detail limit reached:</strong> ${esc(finding.affectedAccountOmittedIdentities.toLocaleString())} additional account${finding.affectedAccountOmittedIdentities === 1 ? '' : 's'} could not be retained in the detailed ledger, representing at least ${esc(finding.affectedAccountOmittedEvents.toLocaleString())} event${finding.affectedAccountOmittedEvents === 1 ? '' : 's'}.</p>` : ''}
+      </article>`;
+    }).join('');
+    return `<section class="log-affected-accounts">
+      <header><div><p class="eyebrow">Affected identities</p><h5>Accounts observed in the affected events</h5><p>These are the identities returned by the imported sign-in rows that matched this finding, with their client protocol, applications, locations and observation window.</p></div></header>
+      <p class="log-affected-account-method"><strong>Interpretation:</strong> affected means the account appeared in matching sign-in evidence. It does not, by itself, prove the account was compromised. Quiet accounts and activity outside the imported window are not represented.</p>
+      ${articles}
+    </section>`;
+  }
+
   function renderLogJourneyPolicies(policies) {
     if (!policies.length) return '';
     return `<div class="log-journey-evidence-policies"><strong>Policies and conditions observed</strong>${policies.map(policy => {
@@ -13543,6 +13723,7 @@
       ].slice(0, 10);
       const policyEvidence = (state.logAnalysis.policyInventory?.policies || []).filter(policy => finding.policyIds.includes(policy.baselineId)).slice(0, 6);
       const deviceEvidence = finding.id === 'noncompliant-device' ? renderLogJourneyDeviceContext('device-compliance', model.deviceContext) : '';
+      const affectedAccountEvidence = renderLogJourneyAffectedAccounts([finding]);
       const findingGuidance = finding.id === 'noncompliant-device' ? LOG_JOURNEY_GUIDANCE['device-compliance'] : null;
       return {
         title: finding.title,
@@ -13551,7 +13732,7 @@
         body: [
           renderLogJourneyEvidenceSection('What happened', `<p>${esc(finding.detail)}</p>`),
           renderLogJourneyEvidenceSection('Why it matters', `<p>${esc(guide.attack || guide.cause || finding.recommendation)}</p>`),
-          renderLogJourneyEvidenceSection('Evidence', `<dl class="log-journey-evidence-facts"><div><dt>Affected</dt><dd>${esc(finding.metric.affected)} of ${esc(finding.metric.total)} ${esc(finding.metric.scope || 'sign-ins')} (${esc(finding.metric.pct)}%)</dd></div><div><dt>Sources</dt><dd>${esc((finding.metric.sources || []).map(key => LOG_SOURCES[key].label).join(', ') || 'Loaded sign-in logs')}</dd></div></dl>${deviceEvidence}${top.length ? `<ul>${top.map(item => `<li>${esc(item)}</li>`).join('')}</ul>` : ''}${finding.diagnosis?.conditions?.length ? `<p><strong>Conditions that filtered policies:</strong> ${esc(finding.diagnosis.conditions.map(item => `${item.label} (${item.count})`).join(' · '))}</p>` : ''}${renderLogJourneyPolicies(policyEvidence)}${renderLogJourneySamples(finding.samples)}`),
+          renderLogJourneyEvidenceSection('Evidence', `<dl class="log-journey-evidence-facts"><div><dt>Affected</dt><dd>${esc(finding.metric.affected)} of ${esc(finding.metric.total)} ${esc(finding.metric.scope || 'sign-ins')} (${esc(finding.metric.pct)}%)</dd></div><div><dt>Sources</dt><dd>${esc((finding.metric.sources || []).map(key => LOG_SOURCES[key].label).join(', ') || 'Loaded sign-in logs')}</dd></div></dl>${affectedAccountEvidence}${deviceEvidence}${top.length ? `<ul>${top.map(item => `<li>${esc(item)}</li>`).join('')}</ul>` : ''}${finding.diagnosis?.conditions?.length ? `<p><strong>Conditions that filtered policies:</strong> ${esc(finding.diagnosis.conditions.map(item => `${item.label} (${item.count})`).join(' · '))}</p>` : ''}${renderLogJourneyPolicies(policyEvidence)}${renderLogJourneySamples(finding.samples)}`),
           findingGuidance ? renderLogJourneyEvidenceSection('Microsoft guidance', renderLogJourneyGuidance(findingGuidance)) : '',
           renderLogJourneyEvidenceSection('Recommended action', `<ol>${(guide.fix?.length ? guide.fix : [finding.recommendation]).filter(Boolean).map(item => `<li>${esc(item)}</li>`).join('')}</ol>${finding.policies.length ? `<p><strong>Relevant baseline controls:</strong> ${esc(finding.policies.map(policy => `${policy.id} ${tenantPolicyName(policy.displayName)}`).join(' · '))}</p>` : ''}`),
           renderLogJourneyEvidenceSection('How to validate', `<p>${esc(guide.verify || 'Re-export a representative sign-in window and confirm the Conditional Access result and enforced controls changed as expected.')}</p><button type="button" class="btn secondary" data-log-open-finding="${esc(finding.id)}">Open full finding evidence</button>`)
@@ -13570,6 +13751,7 @@
       const deviceEvidence = renderLogJourneyDeviceContext(element.id, model.deviceContext);
       const reportOnlyEvidence = element.id === 'report-only-state' ? renderLogJourneyReportOnlyResults(model.observedPolicies) : '';
       const mfaExclusionEvidence = element.id === 'mfa-coverage' ? renderLogJourneyMfaExclusions(policies) : '';
+      const affectedAccountEvidence = renderLogJourneyAffectedAccounts(element.findings);
       return {
         title: element.label,
         kicker: `${element.parentLabel} · ${LOG_JOURNEY_STATUS_META[element.status].label}`,
@@ -13577,7 +13759,7 @@
         body: [
           renderLogJourneyEvidenceSection('What happened', `<p>${esc(element.statusReason)}</p>${element.findings.length ? `<ul>${element.findings.map(finding => `<li><strong>${esc(finding.title)}</strong> — ${esc(finding.metric.affected)} affected</li>`).join('')}</ul>` : '<p>No related gap finding was produced from the loaded activity.</p>'}`),
           renderLogJourneyEvidenceSection('Why it matters', `<p>${esc(element.why)}</p>`),
-          renderLogJourneyEvidenceSection('Evidence', `${deviceEvidence}${mfaExclusionEvidence}${renderLogJourneyPolicies(policies)}${reportOnlyEvidence}${!policies.length ? (reportOnlyEvidence ? '<p class="log-journey-evidence-muted">Report-only state is shown as secondary evidence here; each policy card remains owned by its primary control relationship.</p>' : '<p class="log-journey-evidence-muted">No policy configuration is inferred here unless the sign-in export recorded it acting or being evaluated.</p>') : ''}${proposed.length ? `<p><strong>Primary proposed controls connected here:</strong> ${esc(proposed.map(policy => tenantPolicyName(policy.displayName)).join(' · '))}</p>` : ''}`),
+          renderLogJourneyEvidenceSection('Evidence', `${deviceEvidence}${mfaExclusionEvidence}${affectedAccountEvidence}${renderLogJourneyPolicies(policies)}${reportOnlyEvidence}${!policies.length ? (reportOnlyEvidence ? '<p class="log-journey-evidence-muted">Report-only state is shown as secondary evidence here; each policy card remains owned by its primary control relationship.</p>' : '<p class="log-journey-evidence-muted">No policy configuration is inferred here unless the sign-in export recorded it acting or being evaluated.</p>') : ''}${proposed.length ? `<p><strong>Primary proposed controls connected here:</strong> ${esc(proposed.map(policy => tenantPolicyName(policy.displayName)).join(' · '))}</p>` : ''}`),
           element.guidance ? renderLogJourneyEvidenceSection('Microsoft guidance', renderLogJourneyGuidance(element.guidance)) : '',
           renderLogJourneyEvidenceSection('Recommended action', actions.length ? `<ol>${actions.map(item => `<li>${esc(item)}</li>`).join('')}</ol>` : '<p>Keep this element in the review cycle and validate intent against the tenant policy configuration.</p>'),
           renderLogJourneyEvidenceSection('How to validate', verifies.length ? `<ul>${verifies.map(item => `<li>${esc(item)}</li>`).join('')}</ul>` : '<p>Re-run the assessment with a representative JSON sign-in export and confirm the relevant policy result and control fields are present.</p>')
@@ -13837,12 +14019,12 @@
       return;
     }
     if (event.target.closest('[data-log-build-guide]')) {
-      exportBuildGuideDocx();
+      exportBuildGuideDocx(event);
       return;
     }
     const policyDownload = event.target.closest('[data-log-policy-download]');
     if (policyDownload && !policyDownload.disabled) {
-      downloadPolicyOfficeReport(policyDownload.dataset.policyKind, policyDownload.dataset.policyFormat);
+      downloadPolicyOfficeReport(policyDownload.dataset.policyKind, policyDownload.dataset.policyFormat, event);
       return;
     }
     if (event.target.closest('[data-log-toggle-observed]')) {
@@ -14414,7 +14596,12 @@
     return b;
   }
 
-  function exportBuildGuideDocx() {
+  function exportBuildGuideDocx(event) {
+    const userInitiated = officeDownloadIsUserInitiated(event);
+    if (!userInitiated) {
+      toast('Use the visible download button to create this build guide');
+      return;
+    }
     const set = state.logAnalysis.recommendedPolicySet;
     if (!set || !set.policies.length) {
       toast('Analyse sign-in logs first');
@@ -14422,7 +14609,7 @@
     }
     try {
       const blob = buildDocx(buildGuideBlocks(set, { evaluated: set.evaluated }));
-      downloadBlob(blob, `conditional-access-build-guide-${new Date().toISOString().slice(0, 10)}.docx`);
+      downloadBlob(blob, `conditional-access-build-guide-${new Date().toISOString().slice(0, 10)}.docx`, userInitiated);
       toast(`Build guide exported — ${set.policies.length} policies`);
     } catch (err) {
       toast(`Could not build the document: ${err.message}`);
