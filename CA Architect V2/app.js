@@ -6927,6 +6927,25 @@
     return `${summary.from.slice(0, 10)} to ${summary.to.slice(0, 10)}`;
   }
 
+  function policyOfficeMfaExclusions(policies) {
+    return mfaExclusionPolicies(policies).map(policy => ({
+      id: policy.id || '',
+      name: policy.name,
+      state: policy.state,
+      stateLabel: policyOfficeStateLabel(policy.state),
+      excludedEventCount: Number(policy.excludedEventCount) || 0,
+      rules: (policy.exclusionRules || []).filter(rule => rule.identityAssignment).map(rule => ({ ...rule })),
+      identities: (policy.exclusionIdentities || []).map(identity => ({
+        ...identity,
+        rules: (identity.rules || []).map(rule => ({ ...rule })),
+        apps: (identity.apps || []).map(item => ({ ...item })),
+        locations: (identity.locations || []).map(item => ({ ...item })),
+        sources: [...(identity.sources || [])]
+      })),
+      samples: (policy.exclusionSamples || []).map(sample => ({ ...sample, rules: [...(sample.rules || [])] }))
+    }));
+  }
+
   function buildPolicyOfficeReport(kind) {
     const la = state.logAnalysis;
     const journey = buildLogJourneyModel();
@@ -6999,6 +7018,7 @@
         const strengths = policy.authStrength.map(item => `${item.name} (${item.count})`);
         const observedScope = policyOfficeList(policy.observedConfig, item => `${item.label}: ${item.value}${item.note ? ` - ${item.note}` : ''}`);
         const excludedPrincipals = policyOfficeList(policy.excludedPrincipals, item => `${item.name} (${item.count})`);
+        const mfaExclusion = policyOfficeMfaExclusions([policy])[0] || null;
         return {
           id: policy.id || '',
           name: policy.name,
@@ -7023,7 +7043,8 @@
           sources: policyOfficeList(policy.sources, key => LOG_SOURCES[key]?.label || key),
           from: policy.from || '',
           to: policy.to || '',
-          samples: (policy.samples || []).slice(0, 25).map(sample => ({ ...sample }))
+          samples: (policy.samples || []).slice(0, 25).map(sample => ({ ...sample })),
+          mfaExclusion
         };
       });
     return {
@@ -7031,6 +7052,7 @@
       title: 'Observed Conditional Access policies',
       caveat: 'This is runtime evidence from the loaded sign-in window, not an authoritative tenant policy export. A quiet or never-matched policy can still exist and be correctly configured; compare with a Graph configuration export before changing it.',
       coverage: buildCaCoverageReport(la),
+      mfaExclusions: policyOfficeMfaExclusions(journey.observedPolicies),
       policies
     };
   }
@@ -7067,6 +7089,8 @@
       ['Confirmed scoping gaps', report.coverage.confirmedGap.toLocaleString()],
       ['Report-only exposure', report.coverage.reportOnlyExposure.toLocaleString()],
       ['Evidence unknown', report.coverage.evidenceUnknown.toLocaleString()],
+      ['MFA policies with observed identity exclusions', report.mfaExclusions.length.toLocaleString()],
+      ['Observed identities on MFA exclusion paths', new Set(report.mfaExclusions.flatMap(policy => policy.identities.map(identity => identity.objectId || `${identity.identityType}:${identity.name}`))).size.toLocaleString()],
       ['Evidence window', report.evidenceRange],
       ['Loaded sources', report.sources || 'None recorded']
     ];
@@ -7145,6 +7169,59 @@
     return blocks;
   }
 
+  function buildMfaExclusionDocxBlocks(exclusions, headingStyle = 'Heading1') {
+    const detailHeadingStyle = headingStyle === 'Heading1' ? 'Heading2' : 'Heading3';
+    const identityKeys = new Set((exclusions || []).flatMap(policy => policy.identities.map(identity => identity.objectId || `${identity.identityType}:${identity.name}`)));
+    const observations = (exclusions || []).reduce((sum, policy) => sum + policy.excludedEventCount, 0);
+    const blocks = [
+      docxPara('MFA exclusion risk', { style: headingStyle }),
+      docxPara([
+        docxRun('High review priority. ', { bold: true }),
+        docxRun(exclusions.length
+          ? `${exclusions.length} MFA-related polic${exclusions.length === 1 ? 'y' : 'ies'} returned an exercised identity-assignment exclusion, affecting ${identityKeys.size} observed identit${identityKeys.size === 1 ? 'y' : 'ies'} across ${observations.toLocaleString()} policy-event observation${observations === 1 ? '' : 's'}. An exclusion may be intentional, including emergency access, but it can also remove MFA from high-value identities.`
+          : 'No exercised identity-assignment exclusion was returned for an MFA-related policy in this sign-in window. This is not proof that the stored tenant configuration contains no exclusions.'),
+      ], { style: 'Callout' }),
+      docxPara('Evidence boundary: sign-in data identifies the affected identity and the exclusion rule category. For directory-role and group exclusions it does not return the configured role or group name/object ID. Inspect the policy in Microsoft Entra or compare an authorised Conditional Access configuration export before accepting the exclusion.', { italic: true })
+    ];
+    exclusions.forEach((policy, policyIndex) => {
+      blocks.push(docxPara(`${policyIndex + 1}. ${policy.name}`, { style: detailHeadingStyle }));
+      blocks.push(docxReportTable([
+        ['Rule category', 'Observed events', 'What the sign-in evidence proves'],
+        ...policy.rules.map(rule => [rule.ruleLabel, rule.count.toLocaleString(), rule.detail])
+      ], [2100, 1400, 5860]));
+      const visibleIdentities = policy.identities.slice(0, LOG_EXCLUSION_DOCX_CAP);
+      if (visibleIdentities.length) {
+        blocks.push(docxPara('Identities observed taking the exclusion path', { style: 'Heading3', pageBreakBefore: policyIndex > 0 }));
+        blocks.push(docxReportTable([
+          ['Identity', 'Object ID / type', 'Events', 'Rule / affected context'],
+          ...visibleIdentities.map(identity => [
+            identity.name,
+            `${identity.objectId || 'Object ID not returned'}; ${[identity.identityType, identity.userType].filter(Boolean).join(' / ') || 'user'}`,
+            identity.count.toLocaleString(),
+            `${identity.rules.map(rule => `${rule.label} (${rule.count})`).join('; ')}. Apps: ${identity.apps.slice(0, 5).map(item => `${item.name} (${item.count})`).join(', ') || 'not returned'}. Locations: ${identity.locations.slice(0, 5).map(item => `${item.name} (${item.count})`).join(', ') || 'not returned'}. Observed ${identity.from ? identity.from.slice(0, 16).replace('T', ' ') : 'unknown'} to ${identity.to ? identity.to.slice(0, 16).replace('T', ' ') : 'unknown'} UTC.`
+          ])
+        ], [2100, 2350, 900, 4010]));
+        if (policy.identities.length > visibleIdentities.length) {
+          blocks.push(docxPara(`The document shows the top ${visibleIdentities.length} of ${policy.identities.length} observed identities for readability. The XLSX export contains the complete observed identity list.`, { italic: true }));
+        }
+      }
+      if (policy.samples.length) {
+        blocks.push(docxPara('Representative exclusion events', { style: 'Heading3' }));
+        blocks.push(docxReportTable([
+          ['UTC time', 'Identity', 'App / location', 'Rule and result'],
+          ...policy.samples.slice(0, 10).map(sample => [
+            sample.time ? sample.time.replace('T', ' ').slice(0, 19) : 'Not returned',
+            `${sample.principal}${sample.objectId ? ` (${sample.objectId})` : ''}`,
+            `${sample.app}; ${sample.location}; ${sample.source}`,
+            `${sample.rules.join(', ')}; ${sample.result}; represents ${sample.representedEvents} event${sample.representedEvents === 1 ? '' : 's'}`
+          ])
+        ], [1700, 2500, 2700, 2460]));
+      }
+    });
+    blocks.push(docxPara('Event details may contain personal, device, location or network information. Store and share this report as security-sensitive evidence.', { style: 'Callout' }));
+    return blocks;
+  }
+
   function buildPolicyOfficeDocxBlocks(report) {
     const blocks = [
       docxPara(report.title, { style: 'Title' }),
@@ -7154,7 +7231,10 @@
       docxReportTable([['Measure', 'Result'], ...policyOfficeSummaryRows(report)], [2700, 6660])
     ];
     if (report.files) blocks.push(docxPara([docxRun('Files analysed: ', { bold: true }), docxRun(report.files)]));
-    if (report.kind === 'observed') blocks.push(...buildCaCoverageDocxBlocks(report.coverage));
+    if (report.kind === 'observed') {
+      blocks.push(...buildCaCoverageDocxBlocks(report.coverage));
+      blocks.push(...buildMfaExclusionDocxBlocks(report.mfaExclusions));
+    }
     blocks.push(docxPara('Policy overview', { style: 'Heading1' }));
     if (report.kind === 'recommended') {
       blocks.push(docxReportTable([
@@ -7169,7 +7249,7 @@
     }
     blocks.push(docxPara('Policy details', { style: 'Heading1' }));
     report.policies.forEach((policy, index) => {
-      blocks.push(docxPara(`${index + 1}. ${policy.name}`, { style: 'Heading2', pageBreakBefore: report.kind === 'observed' }));
+      blocks.push(docxPara(`${index + 1}. ${policy.name}`, { style: 'Heading2' }));
       if (report.kind === 'recommended') {
         blocks.push(docxReportTable([
           ['Field', 'Assessment'],
@@ -7208,7 +7288,8 @@
           ['Hit rate', `${policy.hitRate}%`],
           ['Controls recorded', policy.controls || 'None recorded'],
           ['Authentication strength', policy.authenticationStrength || 'None recorded'],
-          ['Observed targeting and exclusions', policy.observedScope || 'No satisfied assignment rules were returned']
+          ['Observed targeting and exclusions', policy.observedScope || 'No satisfied assignment rules were returned'],
+          ['MFA identity-exclusion evidence', policy.mfaExclusion ? `${policy.mfaExclusion.identities.length} observed identities across ${policy.mfaExclusion.excludedEventCount.toLocaleString()} policy-event observations; see MFA exclusion risk section` : 'No exercised MFA identity-assignment exclusion was returned for this policy']
         ], [2700, 6660]));
         blocks.push(docxReportTable([
           ['Field', 'Observed evidence'],
@@ -7514,6 +7595,42 @@
     ];
   }
 
+  function mfaExclusionSheet(exclusions) {
+    const headers = ['Review priority', 'Policy ID', 'Policy name', 'State', 'Rule categories', 'Rule observations', 'Evidence limitation', 'Observed identity', 'Object ID', 'Identity type', 'User type', 'Exclusion observations', 'Apps / resources', 'Locations', 'First observed UTC', 'Last observed UTC', 'Sources'];
+    const rows = [];
+    (exclusions || []).forEach(policy => {
+      const rules = policy.rules.map(rule => rule.ruleLabel).join('; ');
+      const ruleObservations = policy.rules.map(rule => `${rule.ruleLabel}: ${rule.count}`).join('; ');
+      const limitation = [...new Set(policy.rules.map(rule => rule.detail))].join(' ');
+      if (!policy.identities.length) {
+        rows.push(['High review priority', policy.id, policy.name, policy.stateLabel, rules, ruleObservations, limitation, '', '', '', '', xlsxCell(policy.excludedEventCount, 'integer'), '', '', '', '', '']);
+        return;
+      }
+      policy.identities.forEach(identity => rows.push([
+        'High review priority', policy.id, policy.name, policy.stateLabel, rules, ruleObservations, limitation,
+        identity.name, identity.objectId, identity.identityType, identity.userType, xlsxCell(identity.count, 'integer'),
+        identity.apps.map(item => `${item.name} (${item.count})`).join('; '),
+        identity.locations.map(item => `${item.name} (${item.count})`).join('; '),
+        identity.from ? xlsxCell(identity.from, 'datetime') : '',
+        identity.to ? xlsxCell(identity.to, 'datetime') : '',
+        identity.sources.map(key => LOG_SOURCES[key]?.label || key).join('; ')
+      ]));
+    });
+    return {
+      name: 'MFA Exclusions',
+      rows: [
+        [xlsxCell('MFA exclusion risk - observed identities', 'text', XLSX_STYLES.title), ...headers.slice(1).map(() => '')],
+        [xlsxCell('One row per observed identity and MFA policy. Sign-in evidence identifies the affected identity and exclusion rule category; it does not return the configured role or group name/object ID. Event details may contain personal or network information.', 'text', XLSX_STYLES.subtitle), ...headers.slice(1).map(() => '')],
+        headers,
+        ...rows
+      ],
+      widths: [21, 24, 48, 16, 28, 28, 70, 38, 38, 18, 16, 20, 48, 40, 22, 22, 30],
+      headerRow: 3,
+      freezeRows: 3,
+      merges: [`A1:${xlsxColumnName(headers.length - 1)}1`, `A2:${xlsxColumnName(headers.length - 1)}2`]
+    };
+  }
+
   function observedPolicySheets(report) {
     const headers = ['State', 'Policy ID', 'Policy name', 'Evaluated', 'Applied', 'Blocked', 'Report-only', 'Not applied', 'Hit rate', 'Controls', 'Authentication strength', 'Observed targeting and exclusions', 'Report-only results', 'Conditions not satisfied', 'Top identities', 'Top apps / resources', 'Top devices', 'Top locations', 'Sources', 'From', 'To'];
     const policyRows = report.policies.map(policy => [
@@ -7540,6 +7657,9 @@
         headerRow: 3,
         freezeRows: 3,
         merges: [`A1:${xlsxColumnName(headers.length - 1)}1`, `A2:${xlsxColumnName(headers.length - 1)}2`]
+      },
+      {
+        ...mfaExclusionSheet(report.mfaExclusions)
       },
       {
         name: 'Evidence Samples',
@@ -7651,6 +7771,8 @@
   ]);
   const WEAK_MFA_METHODS = ['text message', 'sms', 'voice', 'phone call'];
   const LOG_SAMPLE_CAP = 25;
+  const LOG_EXCLUSION_DISPLAY_CAP = 50;
+  const LOG_EXCLUSION_DOCX_CAP = 25;
   const LOG_COVERAGE_EVENT_ROW_CAP = 50000;
   const LOG_LARGE_ANALYSIS_THRESHOLD = 25000;
   const LOG_TOP_CAP = 5;
@@ -8475,6 +8597,53 @@
     devicestate: 'Device state',
     acr: 'Authentication context'
   };
+  const LOG_EXCLUSION_RULE_NOTES = {
+    roleid: 'The sign-in export identifies a directory-role exclusion, but does not return the configured role name, role template ID, or role assignment ID.',
+    groupid: 'The sign-in export identifies a group exclusion, but does not return the configured group name or object ID.',
+    userid: 'The sign-in export identifies a named-user exclusion. The affected sign-in identity and user object ID are shown where Entra returned them.',
+    guestorexternaluser: 'The sign-in export identifies an external-user classification exclusion, not a named directory object.',
+    internalguest: 'The sign-in export identifies an internal-guest classification exclusion, not a named directory object.',
+    b2bcollaborationguest: 'The sign-in export identifies a B2B collaboration guest exclusion, not a named directory object.',
+    b2bcollaborationmember: 'The sign-in export identifies a B2B collaboration member exclusion, not a named directory object.',
+    b2bdirectconnectuser: 'The sign-in export identifies a B2B direct-connect exclusion, not a named directory object.',
+    otherexternaluser: 'The sign-in export identifies an external-user classification exclusion, not a named directory object.',
+    serviceprovider: 'The sign-in export identifies a service-provider classification exclusion, not a named directory object.'
+  };
+
+  function observedExclusionRules(inv) {
+    const rows = [];
+    inv.excludeRules.forEach((count, key) => {
+      const [condition, rule] = key.split('|');
+      const token = normToken(rule);
+      rows.push({
+        condition,
+        conditionLabel: LOG_RULE_CONDITIONS[normToken(condition)] || condition,
+        rule,
+        ruleLabel: LOG_RULE_LABELS[token] || rule,
+        count,
+        identityAssignment: normToken(condition) === 'users',
+        reviewPriority: normToken(condition) === 'users' ? 'High review priority' : 'Review',
+        detail: LOG_EXCLUSION_RULE_NOTES[token] || 'The sign-in export records the exclusion rule category, not the authoritative stored Conditional Access policy assignment.'
+      });
+    });
+    return rows.sort((a, b) => Number(b.identityAssignment) - Number(a.identityAssignment) || b.count - a.count || a.ruleLabel.localeCompare(b.ruleLabel));
+  }
+
+  function observedExclusionIdentities(inv) {
+    return [...inv.exclusionIdentityDetails.values()].map(item => ({
+      name: item.name,
+      objectId: item.objectId,
+      identityType: item.identityType,
+      userType: item.userType,
+      count: item.count,
+      rules: [...item.rules.entries()].sort((a, b) => b[1] - a[1]).map(([name, count]) => ({ name, label: LOG_RULE_LABELS[normToken(name)] || name, count })),
+      apps: [...item.apps.entries()].sort((a, b) => b[1] - a[1]).map(([name, count]) => ({ name, count })),
+      locations: [...item.locations.entries()].sort((a, b) => b[1] - a[1]).map(([name, count]) => ({ name, count })),
+      sources: [...item.sources],
+      from: Number.isFinite(item.minTime) ? new Date(item.minTime).toISOString() : null,
+      to: Number.isFinite(item.maxTime) ? new Date(item.maxTime).toISOString() : null
+    })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+  }
 
   // Reconstructs what a deployed policy targets, from the rules Entra reported as satisfied
   // across its evaluations. This is OBSERVED scope, not the policy definition — the tenant
@@ -8542,6 +8711,10 @@
         notSatisfied: top(inv.notSatisfied, 6).map(c => ({ ...c, label: LOG_CA_CONDITIONS[c.name] || c.name })),
         observedConfig: observedPolicyConfig(inv),
         excludedPrincipals: top(inv.excludedPrincipals, 5),
+        exclusionRules: observedExclusionRules(inv),
+        exclusionIdentities: observedExclusionIdentities(inv),
+        exclusionSamples: inv.exclusionSamples,
+        excludedEventCount: inv.excludedEventCount,
         sources: [...inv.sources],
         samples: inv.samples,
         from: Number.isFinite(inv.minTime) ? new Date(inv.minTime).toISOString() : null,
@@ -8575,6 +8748,40 @@
           .filter(c => ![...enforcedControls].some(e => e.includes(c.key) || c.key.includes(e)))
           .map(c => c.label)
       }
+    };
+  }
+
+  function policyHasMfaEvidence(policy) {
+    const evidence = [
+      policy.name,
+      ...(policy.grants || []).flatMap(item => [item.name, item.label]),
+      ...(policy.authStrength || []).map(item => item.name)
+    ].filter(Boolean).join(' ');
+    return /\bmfa\b|multifactor|multi-factor|authentication strength/i.test(evidence);
+  }
+
+  function mfaExclusionPolicies(policies) {
+    return (policies || []).filter(policy => policyHasMfaEvidence(policy)
+      && (policy.exclusionRules || []).some(rule => rule.identityAssignment));
+  }
+
+  function mfaExclusionSummary(policies) {
+    const relevant = mfaExclusionPolicies(policies);
+    const identities = new Map();
+    relevant.forEach(policy => (policy.exclusionIdentities || []).forEach(identity => {
+      const key = identity.objectId || `${identity.identityType}:${identity.name}`;
+      const current = identities.get(key) || { ...identity, count: 0, policies: new Set() };
+      current.count += identity.count;
+      current.policies.add(policy.name);
+      identities.set(key, current);
+    }));
+    return {
+      policies: relevant,
+      policyCount: relevant.length,
+      identities: [...identities.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)),
+      identityCount: identities.size,
+      policyEventObservations: relevant.reduce((sum, policy) => sum + (policy.excludedEventCount || 0), 0),
+      ruleCount: relevant.reduce((sum, policy) => sum + (policy.exclusionRules || []).filter(rule => rule.identityAssignment).length, 0)
     };
   }
 
@@ -9202,6 +9409,7 @@
       identityType: 'servicePrincipal',
       principal: name || 'unknown identity',
       time: Date.parse(row.createdDateTime || ''),
+      userId: '',
       userPrincipalName: '',
       userDisplayName: '',
       userType: '',
@@ -9281,6 +9489,7 @@
       principal: row.userPrincipalName || row.userDisplayName || row.signInIdentifier ||
         (row.userId ? `user ${row.userId}` : 'unknown user'),
       time: Date.parse(row.createdDateTime || ''),
+      userId: row.userId || '',
       userPrincipalName: row.userPrincipalName || '',
       userDisplayName: row.userDisplayName || '',
       userType: String(row.userType || '').toLowerCase(),
@@ -9423,6 +9632,7 @@
         identityType: isWorkload ? 'servicePrincipal' : 'user',
         principal: (isWorkload ? spName : upn || col(cells, 'userDisplayName')) || (isWorkload ? 'unknown identity' : 'unknown user'),
         time: Date.parse(col(cells, 'createdDateTime')),
+        userId: '',
         userPrincipalName: isWorkload ? '' : upn,
         userDisplayName: isWorkload ? '' : col(cells, 'userDisplayName'),
         userType: isWorkload ? '' : normToken(col(cells, 'userType')),
@@ -10037,6 +10247,7 @@
           users: new Map(), apps: new Map(), devices: new Map(), locations: new Map(),
           notSatisfied: new Map(), sources: new Set(), samples: [],
           includeRules: new Map(), excludeRules: new Map(), excludedPrincipals: new Map(),
+          exclusionIdentityDetails: new Map(), exclusionSamples: [], excludedEventCount: 0,
           minTime: Infinity, maxTime: -Infinity
         };
         inv.evaluations += weight;
@@ -10067,12 +10278,56 @@
         policy.excludeRules.forEach(r => {
           const k = `${r.condition}|${r.rule}`;
           inv.excludeRules.set(k, (inv.excludeRules.get(k) || 0) + weight);
-          // An exclusion that fired names the identity it spared — the one exclusion view logs give.
-          if (normToken(r.condition) === 'users') {
-            const who = rec.principal || 'unknown identity';
-            inv.excludedPrincipals.set(who, (inv.excludedPrincipals.get(who) || 0) + weight);
-          }
         });
+        const identityExclusionRules = policy.excludeRules.filter(r => normToken(r.condition) === 'users');
+        if (identityExclusionRules.length) {
+          const who = rec.principal || 'unknown identity';
+          const identityKey = rec.userId || `${rec.identityType || 'identity'}:${who}`;
+          const app = rec.appDisplayName || rec.resourceDisplayName || 'unknown app';
+          const place = logLocationLabel(rec) || 'Unknown location';
+          const detail = inv.exclusionIdentityDetails.get(identityKey) || {
+            name: who,
+            objectId: rec.userId || '',
+            identityType: rec.identityType || 'user',
+            userType: rec.userType || '',
+            count: 0,
+            rules: new Map(),
+            apps: new Map(),
+            locations: new Map(),
+            sources: new Set(),
+            minTime: Infinity,
+            maxTime: -Infinity
+          };
+          detail.count += weight;
+          identityExclusionRules.forEach(r => incrementJourneyMap(detail.rules, r.rule, weight));
+          incrementJourneyMap(detail.apps, app, weight);
+          incrementJourneyMap(detail.locations, place, weight);
+          detail.sources.add(rec.source);
+          if (Number.isFinite(rec.time)) {
+            if (rec.time < detail.minTime) detail.minTime = rec.time;
+            if (rec.time > detail.maxTime) detail.maxTime = rec.time;
+          }
+          inv.exclusionIdentityDetails.set(identityKey, detail);
+          inv.excludedPrincipals.set(who, (inv.excludedPrincipals.get(who) || 0) + weight);
+          inv.excludedEventCount += weight;
+          if (inv.exclusionSamples.length < LOG_SAMPLE_CAP) {
+            inv.exclusionSamples.push({
+              time: Number.isFinite(rec.time) ? new Date(rec.time).toISOString() : '',
+              source: LOG_SOURCES[rec.source].short,
+              principal: who,
+              objectId: rec.userId || '',
+              identityType: rec.identityType || 'user',
+              userType: rec.userType || '',
+              app,
+              location: place,
+              ipAddress: rec.ipAddress || '',
+              clientApp: rec.clientAppUsed || '',
+              result: policy.result,
+              rules: identityExclusionRules.map(r => LOG_RULE_LABELS[normToken(r.rule)] || r.rule),
+              representedEvents: weight
+            });
+          }
+        }
         policy.grants.forEach(g => inv.grants.set(g, (inv.grants.get(g) || 0) + weight));
         policy.sessions.forEach(s => inv.sessions.set(s, (inv.sessions.get(s) || 0) + weight));
         if (policy.authStrength) inv.authStrength.set(policy.authStrength, (inv.authStrength.get(policy.authStrength) || 0) + weight);
@@ -11853,6 +12108,7 @@
     ], { header: true, widths: [34, 66] }));
 
     push(...buildCaCoverageDocxBlocks(buildCaCoverageReport(la), 'Heading2'));
+    push(...buildMfaExclusionDocxBlocks(policyOfficeMfaExclusions(inventory?.policies || []), 'Heading2'));
 
     push(docxPara('Finding priorities', { style: 'Heading2' }));
     push(docxTable([
@@ -11945,6 +12201,8 @@
   function gapAssessmentSummarySheet(la, coverage) {
     const summary = la.summary;
     const range = policyOfficeEvidenceRange(summary);
+    const mfaExclusions = policyOfficeMfaExclusions(la.policyInventory?.policies || []);
+    const mfaIdentities = new Set(mfaExclusions.flatMap(policy => policy.identities.map(identity => identity.objectId || `${identity.identityType}:${identity.name}`)));
     const rows = [
       [xlsxCell('Conditional Access gap assessment', 'text', XLSX_STYLES.title), ''],
       [xlsxCell(`Generated locally by CA Architect V2 on ${new Date().toISOString().slice(0, 10)}. Evidence window: ${range}. Successful access without enforcing CA is separated into confirmed gaps, report-only exposure and evidence unknown; expected outside-CA activity is context only.`, 'text', XLSX_STYLES.subtitle), ''],
@@ -11959,6 +12217,8 @@
       [xlsxCell('Report-only exposure', 'text', XLSX_STYLES.label), xlsxCell(coverage.reportOnlyExposure, 'integer')],
       [xlsxCell('Evidence unknown', 'text', XLSX_STYLES.label), xlsxCell(coverage.evidenceUnknown, 'integer')],
       [xlsxCell('Expected outside CA', 'text', XLSX_STYLES.label), xlsxCell(coverage.expectedOutsideCa, 'integer')],
+      [xlsxCell('MFA policies with observed identity exclusions', 'text', XLSX_STYLES.label), xlsxCell(mfaExclusions.length, 'integer')],
+      [xlsxCell('Observed identities on MFA exclusion paths', 'text', XLSX_STYLES.label), xlsxCell(mfaIdentities.size, 'integer')],
       [xlsxCell('Successful-event reconciliation difference', 'text', XLSX_STYLES.label), xlsxCell(coverage.reconciliationDifference, 'integer')],
       [xlsxCell('Findings', 'text', XLSX_STYLES.label), xlsxCell(la.findings.length, 'integer')],
       [xlsxCell('Evidence window', 'text', XLSX_STYLES.label), xlsxCell(range, 'text', XLSX_STYLES.value)],
@@ -12009,6 +12269,7 @@
       gapAssessmentSummarySheet(la, coverage),
       caCoverageSheet(coverage),
       caCoverageEventsSheet(coverage),
+      mfaExclusionSheet(policyOfficeMfaExclusions(la.policyInventory?.policies || [])),
       gapAssessmentFindingsSheet(la)
     ]);
   }
@@ -13021,6 +13282,49 @@
     }).join('')}</div>`;
   }
 
+  function renderLogJourneyMfaExclusions(policies) {
+    const summary = mfaExclusionSummary(policies);
+    if (!summary.policyCount) {
+      return `<section class="log-mfa-exclusions log-mfa-exclusions-empty">
+        <div><p class="eyebrow">MFA exclusion review</p><h5>No exercised identity-assignment exclusion was returned</h5></div>
+        <p>The loaded sign-in evidence did not show an MFA policy excluding a user through a directory role, group, named-user or external-user assignment. This is not proof that the stored tenant policies contain no exclusions; inspect the authoritative Conditional Access policy configuration as well.</p>
+      </section>`;
+    }
+    const policiesHtml = summary.policies.map(policy => {
+      const rules = policy.exclusionRules.filter(rule => rule.identityAssignment);
+      const identities = policy.exclusionIdentities || [];
+      const visible = identities.slice(0, LOG_EXCLUSION_DISPLAY_CAP);
+      const roleOrGroupUnknown = rules.some(rule => ['roleid', 'groupid'].includes(normToken(rule.rule)));
+      return `<article class="log-mfa-exclusion-policy">
+        <header><div><span>High review priority</span><h6>${esc(policy.name)}</h6></div><strong>${esc((policy.excludedEventCount || 0).toLocaleString())} observed exclusion event${policy.excludedEventCount === 1 ? '' : 's'}</strong></header>
+        <div class="log-mfa-exclusion-rules">${rules.map(rule => `<div><strong>${esc(rule.ruleLabel)}</strong><span>${esc(rule.count.toLocaleString())} observed event${rule.count === 1 ? '' : 's'}</span><p>${esc(rule.detail)}</p></div>`).join('')}</div>
+        ${roleOrGroupUnknown ? '<p class="log-mfa-exclusion-warning"><strong>Configuration detail required:</strong> the sign-in export does not identify the configured role or group object. Open this policy in Microsoft Entra or compare an authorised policy configuration export before accepting the exclusion.</p>' : ''}
+        ${visible.length ? `<div class="log-evidence-scroll"><table class="log-mfa-exclusion-table">
+          <thead><tr><th>Observed identity</th><th>Object ID</th><th>Type</th><th>Events</th><th>Exclusion rule</th><th>Apps / resources</th><th>Locations</th><th>Observed UTC</th></tr></thead>
+          <tbody>${visible.map(identity => `<tr>
+            <td><strong>${esc(identity.name)}</strong></td>
+            <td><code>${esc(identity.objectId || 'Not returned')}</code></td>
+            <td>${esc([identity.identityType, identity.userType].filter(Boolean).join(' / ') || 'user')}</td>
+            <td>${esc(identity.count.toLocaleString())}</td>
+            <td>${esc(identity.rules.map(rule => `${rule.label} (${rule.count})`).join(' · '))}</td>
+            <td>${esc(identity.apps.slice(0, 5).map(item => `${item.name} (${item.count})`).join(' · '))}</td>
+            <td>${esc(identity.locations.slice(0, 5).map(item => `${item.name} (${item.count})`).join(' · '))}</td>
+            <td>${esc(identity.from ? identity.from.replace('T', ' ').slice(0, 16) : 'Unknown')}<br><span>to ${esc(identity.to ? identity.to.replace('T', ' ').slice(0, 16) : 'Unknown')}</span></td>
+          </tr>`).join('')}</tbody>
+        </table></div>` : '<p>No event-level identity was retained for this exercised exclusion.</p>'}
+        ${identities.length > visible.length ? `<p class="log-journey-evidence-muted">Showing ${esc(visible.length.toLocaleString())} of ${esc(identities.length.toLocaleString())} observed identities here. The XLSX export includes the complete observed identity list.</p>` : ''}
+      </article>`;
+    }).join('');
+    return `<section class="log-mfa-exclusions">
+      <header>
+        <div><p class="eyebrow">High review priority</p><h5>Observed MFA exclusion paths</h5><p>These identities were observed taking an identity-assignment exclusion path in an MFA-related policy. That can create material business risk, but the evidence alone does not prove an emergency or intentional exclusion is wrong.</p></div>
+        <dl><div><dt>MFA policies</dt><dd>${esc(summary.policyCount.toLocaleString())}</dd></div><div><dt>Distinct identities</dt><dd>${esc(summary.identityCount.toLocaleString())}</dd></div><div><dt>Policy-event observations</dt><dd>${esc(summary.policyEventObservations.toLocaleString())}</dd></div></dl>
+      </header>
+      <p class="log-mfa-exclusion-method">Counts are policy-event observations and can overlap when one sign-in exercises exclusions in more than one MFA policy. They show what happened in the imported window, not every object configured in the tenant.</p>
+      ${policiesHtml}
+    </section>`;
+  }
+
   function renderLogJourneyEvidenceSection(title, content) {
     return `<section class="log-journey-evidence-section"><h4>${esc(title)}</h4>${content}</section>`;
   }
@@ -13204,7 +13508,7 @@
         status: policy.state === 'enforcing' && policy.applied ? 'protected' : policy.state === 'reportOnly' ? 'review' : 'noIssue',
         body: [
           renderLogJourneyEvidenceSection('What happened', `<dl class="log-journey-evidence-facts"><div><dt>Applied</dt><dd>${esc(policy.applied.toLocaleString())}</dd></div><div><dt>Evaluated</dt><dd>${esc(policy.evaluations.toLocaleString())}</dd></div><div><dt>Report-only</dt><dd>${esc(policy.reportOnly.toLocaleString())}</dd></div><div><dt>Did not match</dt><dd>${esc(policy.notApplied.toLocaleString())}</dd></div></dl>`),
-          renderLogJourneyEvidenceSection('Evidence', `${relationships.primary ? `<p><strong>Primary control relationship:</strong> ${esc(elementLabels.get(relationships.primary) || relationships.primary)}</p>` : ''}${relationships.secondary.length ? `<p><strong>Secondary relationships:</strong> ${esc(relationships.secondary.map(item => elementLabels.get(item) || item).join(' · '))}</p>` : ''}${controls.length ? `<p><strong>Controls recorded:</strong> ${esc([...new Set(controls)].join(' · '))}</p>` : '<p>No enforced grant or session control was recorded.</p>'}${renderLogJourneyReportOnlyResults([policy])}${top.length ? `<ul>${top.map(item => `<li>${esc(item)}</li>`).join('')}</ul>` : ''}${renderLogJourneySamples(policy.samples)}`),
+          renderLogJourneyEvidenceSection('Evidence', `${relationships.primary ? `<p><strong>Primary control relationship:</strong> ${esc(elementLabels.get(relationships.primary) || relationships.primary)}</p>` : ''}${relationships.secondary.length ? `<p><strong>Secondary relationships:</strong> ${esc(relationships.secondary.map(item => elementLabels.get(item) || item).join(' · '))}</p>` : ''}${controls.length ? `<p><strong>Controls recorded:</strong> ${esc([...new Set(controls)].join(' · '))}</p>` : '<p>No enforced grant or session control was recorded.</p>'}${mfaExclusionPolicies([policy]).length ? renderLogJourneyMfaExclusions([policy]) : ''}${renderLogJourneyReportOnlyResults([policy])}${top.length ? `<ul>${top.map(item => `<li>${esc(item)}</li>`).join('')}</ul>` : ''}${renderLogJourneySamples(policy.samples)}`),
           renderLogJourneyEvidenceSection('Recommended action', `<p>${policy.state === 'reportOnly' ? 'Review impact, exclusions and failures before moving this policy to On.' : policy.state === 'neverMatched' ? 'Confirm the policy is still required and that its assignments and conditions can match intended traffic.' : 'Keep the policy mapped to its control objective and investigate any gap findings on the same path.'}</p>`),
           renderLogJourneyEvidenceSection('How to validate', '<p>Inspect the policy in Entra and compare its stored configuration with the exercised scope shown here. Re-export the same sign-in types after any change.</p>')
         ].join('')
@@ -13265,6 +13569,7 @@
       const proposed = element.recommendedPolicies;
       const deviceEvidence = renderLogJourneyDeviceContext(element.id, model.deviceContext);
       const reportOnlyEvidence = element.id === 'report-only-state' ? renderLogJourneyReportOnlyResults(model.observedPolicies) : '';
+      const mfaExclusionEvidence = element.id === 'mfa-coverage' ? renderLogJourneyMfaExclusions(policies) : '';
       return {
         title: element.label,
         kicker: `${element.parentLabel} · ${LOG_JOURNEY_STATUS_META[element.status].label}`,
@@ -13272,7 +13577,7 @@
         body: [
           renderLogJourneyEvidenceSection('What happened', `<p>${esc(element.statusReason)}</p>${element.findings.length ? `<ul>${element.findings.map(finding => `<li><strong>${esc(finding.title)}</strong> — ${esc(finding.metric.affected)} affected</li>`).join('')}</ul>` : '<p>No related gap finding was produced from the loaded activity.</p>'}`),
           renderLogJourneyEvidenceSection('Why it matters', `<p>${esc(element.why)}</p>`),
-          renderLogJourneyEvidenceSection('Evidence', `${deviceEvidence}${renderLogJourneyPolicies(policies)}${reportOnlyEvidence}${!policies.length ? (reportOnlyEvidence ? '<p class="log-journey-evidence-muted">Report-only state is shown as secondary evidence here; each policy card remains owned by its primary control relationship.</p>' : '<p class="log-journey-evidence-muted">No policy configuration is inferred here unless the sign-in export recorded it acting or being evaluated.</p>') : ''}${proposed.length ? `<p><strong>Primary proposed controls connected here:</strong> ${esc(proposed.map(policy => tenantPolicyName(policy.displayName)).join(' · '))}</p>` : ''}`),
+          renderLogJourneyEvidenceSection('Evidence', `${deviceEvidence}${mfaExclusionEvidence}${renderLogJourneyPolicies(policies)}${reportOnlyEvidence}${!policies.length ? (reportOnlyEvidence ? '<p class="log-journey-evidence-muted">Report-only state is shown as secondary evidence here; each policy card remains owned by its primary control relationship.</p>' : '<p class="log-journey-evidence-muted">No policy configuration is inferred here unless the sign-in export recorded it acting or being evaluated.</p>') : ''}${proposed.length ? `<p><strong>Primary proposed controls connected here:</strong> ${esc(proposed.map(policy => tenantPolicyName(policy.displayName)).join(' · '))}</p>` : ''}`),
           element.guidance ? renderLogJourneyEvidenceSection('Microsoft guidance', renderLogJourneyGuidance(element.guidance)) : '',
           renderLogJourneyEvidenceSection('Recommended action', actions.length ? `<ol>${actions.map(item => `<li>${esc(item)}</li>`).join('')}</ol>` : '<p>Keep this element in the review cycle and validate intent against the tenant policy configuration.</p>'),
           renderLogJourneyEvidenceSection('How to validate', verifies.length ? `<ul>${verifies.map(item => `<li>${esc(item)}</li>`).join('')}</ul>` : '<p>Re-run the assessment with a representative JSON sign-in export and confirm the relevant policy result and control fields are present.</p>')
@@ -13844,6 +14149,7 @@
             </dl>
             <p class="log-evidence-note">Reconstructed from the rules Entra reported as satisfied — this is the scope as exercised by real sign-ins, not the stored policy definition. Review the policy in Microsoft Entra for the authoritative configuration.</p>
           </div>` : ''}
+          ${mfaExclusionPolicies([p]).length ? renderLogJourneyMfaExclusions([p]) : ''}
           ${(p.topUsers.length || p.topApps.length) ? `<div class="log-top-lists">
             ${topList('Top users', p.topUsers, 'hits')}${topList('Top apps', p.topApps, 'hits')}
             ${topList('Top devices', p.topDevices, 'hits')}${topList('Top locations', p.topLocations, 'hits')}
