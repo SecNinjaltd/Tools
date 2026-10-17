@@ -156,6 +156,12 @@ export function renderSignin({ chapter, nextChapter }) {
       <p class="eyebrow">Chapter ${chapter.n} · ${chapter.minutes} min</p>
       <h1 class="title">${chapter.title}</h1>
       <div class="guide-slot"></div>
+      <section class="card" style="margin-bottom:18px">
+        <p class="eyebrow">Missions</p>
+        <h3 style="margin:6px 0 4px">Can you make it happen?</h3>
+        <p style="color:var(--muted);font-size:14px;margin-bottom:12px">Change the signals below until each mission ticks.</p>
+        <div class="missions"></div>
+      </section>
       <div class="sim">
         <section class="card signals" aria-label="Sign-in signals"></section>
         <section>
@@ -170,17 +176,11 @@ export function renderSignin({ chapter, nextChapter }) {
           <div class="policies"></div>
         </section>
       </div>
-      <section class="card" style="margin-top:22px">
-        <p class="eyebrow">Missions</p>
-        <h3 style="margin:6px 0 4px">Can you make it happen?</h3>
-        <p style="color:var(--muted);font-size:14px;margin-bottom:12px">Change the signals above until each mission ticks.</p>
-        <div class="missions"></div>
-      </section>
       <div class="after" style="margin-top:22px"></div>
       <div class="chapter-foot"><a class="btn secondary" href="#/">All chapters</a></div>
     </article>`);
 
-  const ninja = guide("Every time someone signs in, Microsoft Entra [[conditional access]] looks at the signals and makes a decision. This is [[verify explicitly]] in action.\nChange the signals on the left and watch the decision change. Then try the missions underneath.", 'laptop');
+  const ninja = guide("Every time someone signs in, Microsoft Entra [[conditional access]] looks at the signals and makes a decision. This is [[verify explicitly]] in action.\nPick a mission below, then change the signals underneath it and watch the decision change.", 'laptop');
   el.querySelector('.guide-slot').appendChild(ninja.el);
 
   const signalsEl = el.querySelector('.signals');
