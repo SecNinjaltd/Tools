@@ -1,9 +1,22 @@
 import { CHAPTERS } from './content.js';
 import { store, h, rich, initGlossary } from './ui.js';
 import { renderCastle } from './chapters/castle.js';
+import { renderPrinciples } from './chapters/principles.js';
+import { renderPillars } from './chapters/pillars.js';
 import { renderSignin } from './chapters/signin.js';
+import { renderMissions } from './chapters/missions.js';
+import { renderLicences } from './chapters/licences.js';
+import { renderRoadmap } from './chapters/roadmap.js';
 
-const RENDERERS = { castle: renderCastle, signin: renderSignin };
+const RENDERERS = {
+  castle: renderCastle,
+  principles: renderPrinciples,
+  pillars: renderPillars,
+  signin: renderSignin,
+  missions: renderMissions,
+  licences: renderLicences,
+  roadmap: renderRoadmap
+};
 
 const rail = document.getElementById('rail');
 const stage = document.getElementById('stage');

@@ -1,7 +1,8 @@
-// Drag-to-sort activity. Works with a mouse, touch (pointer events) and keyboard (select, then choose a box).
+// Drag-to-sort activity: items go into the right bucket, with an explanation for every drop.
 import { h, rich, announce, escapeHtml } from '../ui.js';
+import { makeDraggable, makeTarget } from '../drag.js';
 
-export function makeSort({ title, prompt, buckets, items, onDone }) {
+export function makeSort({ title, prompt, buckets, items, onDone, doneText }) {
   const el = h(`
     <div class="card sort">
       <div>
@@ -9,8 +10,8 @@ export function makeSort({ title, prompt, buckets, items, onDone }) {
         <h3 style="margin:6px 0 4px">${escapeHtml(title)}</h3>
         <p style="color:var(--muted);font-size:14px">${escapeHtml(prompt)}</p>
       </div>
-      <div class="tray" aria-label="Ideas to sort"></div>
-      <div class="buckets"></div>
+      <div class="tray" aria-label="Items to sort"></div>
+      <div class="buckets" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr))"></div>
       <div class="sort-fb" aria-live="polite"></div>
     </div>`);
   const tray = el.querySelector('.tray');
@@ -20,11 +21,8 @@ export function makeSort({ title, prompt, buckets, items, onDone }) {
   let placed = 0;
 
   const bucketEls = buckets.map((b) => {
-    const be = h(`<div class="bucket" role="button" tabindex="0" data-bucket="${b.id}" aria-label="Put the selected idea in ${escapeHtml(b.label)}"><h4>${escapeHtml(b.label)}</h4></div>`);
-    be.addEventListener('click', () => { if (armed) place(armed, b.id); });
-    be.addEventListener('keydown', (e) => {
-      if ((e.key === 'Enter' || e.key === ' ') && armed) { e.preventDefault(); place(armed, b.id); }
-    });
+    const be = h(`<div class="bucket" data-bucket="${b.id}" aria-label="Put the selected item in ${escapeHtml(b.label)}"><h4>${escapeHtml(b.label)}</h4>${b.hint ? `<small style="color:var(--muted)">${escapeHtml(b.hint)}</small>` : ''}</div>`);
+    makeTarget(be, () => { if (armed) place(armed, b.id); });
     bucketWrap.appendChild(be);
     return be;
   });
@@ -38,8 +36,7 @@ export function makeSort({ title, prompt, buckets, items, onDone }) {
 
   function place(chip, bucketId) {
     const item = items[Number(chip.dataset.i)];
-    arm(null);
-    bucketEls.forEach((b) => b.classList.remove('armed'));
+    if (armed) arm(armed);
     if (item.bucket === bucketId) {
       chip.classList.remove('shake');
       chip.classList.add('right');
@@ -51,7 +48,7 @@ export function makeSort({ title, prompt, buckets, items, onDone }) {
       announce(`Correct. ${item.why}`);
       placed += 1;
       if (placed === items.length) {
-        fb.innerHTML = '<div class="feedback good"><strong>All sorted.</strong> Castle thinking trusts places; zero trust checks every request.</div>';
+        fb.innerHTML = `<div class="feedback good"><strong>All sorted.</strong> ${rich(doneText || '')}</div>`;
         onDone?.();
       } else {
         tray.querySelector('.chip:not(.right)')?.focus({ preventScroll: true });
@@ -71,48 +68,11 @@ export function makeSort({ title, prompt, buckets, items, onDone }) {
   order.forEach((i) => {
     const chip = h(`<button type="button" class="chip" data-i="${i}" aria-pressed="false">${escapeHtml(items[i].text)}</button>`);
     tray.appendChild(chip);
-
-    let start = null;
-    let ghost = null;
-    chip.addEventListener('pointerdown', (e) => {
-      if (chip.classList.contains('right') || e.button > 0) return;
-      start = { x: e.clientX, y: e.clientY, id: e.pointerId };
-      chip.setPointerCapture(e.pointerId);
-    });
-    chip.addEventListener('pointermove', (e) => {
-      if (!start) return;
-      if (!ghost && Math.hypot(e.clientX - start.x, e.clientY - start.y) > 6) {
-        ghost = chip.cloneNode(true);
-        ghost.classList.add('ghost');
-        document.body.appendChild(ghost);
-        chip.classList.add('dragging');
-      }
-      if (ghost) {
-        ghost.style.left = `${e.clientX - ghost.offsetWidth / 2}px`;
-        ghost.style.top = `${e.clientY - ghost.offsetHeight / 2}px`;
-        const over = document.elementFromPoint(e.clientX, e.clientY)?.closest('.bucket');
-        bucketEls.forEach((b) => b.classList.toggle('over', b === over));
-      }
-    });
-    const end = (e) => {
-      if (!start) return;
-      const wasDrag = !!ghost;
-      if (ghost) {
-        ghost.remove();
-        ghost = null;
-        chip.classList.remove('dragging');
-        bucketEls.forEach((b) => b.classList.remove('over'));
-        const over = document.elementFromPoint(e.clientX, e.clientY)?.closest('.bucket');
-        if (over && bucketEls.includes(over)) place(chip, over.dataset.bucket);
-      }
-      start = null;
-      chip.dataset.dragged = wasDrag ? '1' : '';
-    };
-    chip.addEventListener('pointerup', end);
-    chip.addEventListener('pointercancel', end);
-    chip.addEventListener('click', () => {
-      if (chip.dataset.dragged === '1') { chip.dataset.dragged = ''; return; }
-      if (!chip.classList.contains('right')) arm(chip);
+    makeDraggable(chip, {
+      targets: () => bucketEls,
+      canDrag: () => !chip.classList.contains('right'),
+      onDrop: (target) => place(chip, target.dataset.bucket),
+      onTap: () => arm(chip)
     });
   });
 

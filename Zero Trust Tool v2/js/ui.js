@@ -68,7 +68,8 @@ export function announce(message) {
 
 const POSES = {
   stance: 'ninja-stance', cheer: 'ninja-cheering', surprised: 'ninja-surprised', laptop: 'ninja-laptop',
-  sitting: 'ninja-sitting', arms: 'ninja-arms-crossed', crouch: 'ninja-crouch', wink: 'ninja-lying-wink'
+  sitting: 'ninja-sitting', arms: 'ninja-arms-crossed', crouch: 'ninja-crouch', wink: 'ninja-lying-wink',
+  wolfie: 'wolfie-lookup', shadow: 'shadow-peeking'
 };
 
 // The Ninja speech bubble. Returns { el, say(htmlText, pose) }.

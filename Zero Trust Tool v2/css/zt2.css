@@ -240,7 +240,7 @@ h2.title { font-family: var(--display); font-size: clamp(22px, 3vw, 30px); line-
 }
 .chip[aria-pressed='true'] { border-color: var(--orange); background: var(--orange-tint); }
 .chip.dragging { opacity: 0.4; }
-.chip.ghost { position: fixed; z-index: 100; pointer-events: none; box-shadow: var(--shadow); cursor: grabbing; }
+.ghost { position: fixed !important; z-index: 100; pointer-events: none; box-shadow: var(--shadow); cursor: grabbing; margin: 0; }
 .chip.right { border-color: var(--good); background: var(--good-bg); cursor: default; }
 .chip.shake { animation: shake 0.4s; border-color: var(--bad); }
 @keyframes shake { 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
@@ -318,6 +318,159 @@ h2.title { font-family: var(--display); font-size: clamp(22px, 3vw, 30px); line-
 .chapter-foot { margin-top: 26px; display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+
+/* ---------- Chapter 2: principles ---------- */
+.toggles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 18px 0; }
+.toggle {
+  display: grid; grid-template-columns: 36px 1fr 44px; gap: 10px; align-items: center; text-align: left;
+  background: var(--surface); border: 2px solid var(--line); border-radius: var(--radius); padding: 14px;
+}
+.toggle .t-icon { font-size: 26px; }
+.toggle small { display: block; font-size: 13px; color: var(--muted); line-height: 1.4; margin-top: 2px; }
+.toggle .switch { width: 44px; height: 26px; border-radius: 13px; background: var(--line); position: relative; transition: background 0.2s; }
+.toggle .switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: transform 0.2s var(--ease); box-shadow: 0 1px 3px rgba(0,0,0,.25); }
+.toggle[aria-pressed='true'] { border-color: var(--orange); background: var(--orange-tint); }
+.toggle[aria-pressed='true'] .switch { background: var(--orange); }
+.toggle[aria-pressed='true'] .switch::after { transform: translateX(18px); }
+.chain-head { margin: 4px 0 10px; font-size: 15px; }
+.chain { list-style: none; display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; counter-reset: s; }
+.step {
+  position: relative; background: var(--surface); border: 2px solid var(--line); border-radius: var(--radius); padding: 12px;
+  display: grid; gap: 4px; align-content: start; font-size: 14px; transition: all 0.3s var(--ease);
+}
+.step .s-icon { font-size: 24px; }
+.step .s-num, .kc-step .s-num { font-family: var(--mono); font-size: 10.5px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
+.step p { color: var(--muted); font-size: 13px; line-height: 1.45; }
+.step .s-state { font-family: var(--mono); font-size: 11px; font-weight: 700; margin-top: 4px; }
+.step.hit { border-color: var(--bad); background: var(--bad-bg); }
+.step.hit .s-state { color: var(--bad); }
+.step.stop { border-color: var(--good); background: var(--good-bg); }
+.step.stop .s-state { color: var(--good); }
+.step.stop p { color: var(--ink); }
+.step.gone { opacity: 0.45; border-style: dashed; }
+
+/* ---------- Chapter 3: pillars ---------- */
+.pillar-board { display: grid; gap: 10px; margin: 18px 0; }
+.pillar-band { border-radius: var(--radius); padding: 10px 14px; font-size: 14px; text-align: center; }
+.pillar-band.band-policy { background: var(--nav); color: #f5f3ef; }
+.pillar-band.band-visibility { background: var(--orange-tint); border: 1px solid var(--orange); }
+.pillar-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
+.pillar {
+  position: relative; display: grid; justify-items: center; gap: 6px; padding: 20px 8px;
+  background: var(--surface); border: 2px solid var(--line); border-radius: var(--radius); font-size: 15px;
+  transition: all 0.2s var(--ease); min-height: 120px; align-content: center;
+}
+.pillar .p-icon { font-size: 32px; }
+.pillar:hover { border-color: var(--orange); transform: translateY(-2px); }
+.pillar.active { border-color: var(--orange); background: var(--orange-tint); }
+.pillar .p-seen { position: absolute; top: 8px; right: 10px; color: var(--good); font-weight: 800; opacity: 0; }
+.pillar.seen .p-seen { opacity: 1; }
+.pillar.right { border-color: var(--good); background: var(--good-bg); }
+.pillar.wrong { border-color: var(--bad); background: var(--bad-bg); animation: shake 0.4s; }
+.pd-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-top: 8px; }
+.pd-grid h4 { font-size: 13px; font-family: var(--mono); letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag-chip { font-size: 12.5px; padding: 3px 9px; border-radius: 999px; background: var(--surface-soft); border: 1px solid var(--line); }
+.quiz-banner { background: var(--surface); border: 2px solid var(--yellow); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 12px; }
+.quiz-banner .q { font-family: var(--display); font-size: 20px; margin: 4px 0 8px; }
+
+/* ---------- Chapter 5: missions ---------- */
+.killchain { list-style: none; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+.kc-step {
+  display: grid; gap: 4px; align-content: start; padding: 12px; border-radius: var(--radius);
+  border: 2px solid var(--bad); background: var(--bad-bg); font-size: 14px; cursor: pointer;
+}
+.kc-step p { font-size: 13px; color: var(--muted); line-height: 1.45; }
+.kc-slot { margin-top: 6px; border: 1.5px dashed var(--line); border-radius: var(--radius-sm); padding: 8px; font-size: 12px; color: var(--muted); text-align: center; background: var(--surface); }
+.kc-step.armed .kc-slot, .kc-step.over .kc-slot { border-color: var(--orange); background: var(--orange-tint); color: var(--ink); }
+.kc-step.over { border-color: var(--orange); }
+.kc-step.broken { border-color: var(--good); background: var(--good-bg); cursor: default; }
+.kc-step.broken .kc-slot { border-style: solid; border-color: var(--good); color: var(--good); font-weight: 700; }
+.ctl-tray { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; margin-bottom: 12px; }
+.ctl {
+  touch-action: none; user-select: none; text-align: left; display: grid; gap: 2px; cursor: grab;
+  background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--radius-sm); padding: 10px 12px; font-size: 14px;
+}
+.ctl small { color: var(--muted); font-size: 12px; line-height: 1.35; }
+.ctl .ctl-pillar { font-family: var(--mono); font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--orange-text); }
+.ctl:hover:not(:disabled) { border-color: var(--orange); }
+.ctl[aria-pressed='true'] { border-color: var(--orange); background: var(--orange-tint); box-shadow: 0 0 0 3px var(--orange-tint); }
+.ctl.used { opacity: 0.35; cursor: default; }
+.ctl.dragging { opacity: 0.4; }
+.ctl.shake { animation: shake 0.4s; border-color: var(--bad); }
+
+/* ---------- Chapter 6: licences ---------- */
+.plan-picker { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 18px 0 10px; }
+.plan { background: var(--surface); border: 2px solid var(--line); border-radius: var(--radius); padding: 14px; text-align: left; }
+.plan strong { display: block; font-family: var(--display); font-size: 18px; }
+.plan small { color: var(--muted); font-size: 13px; }
+.plan[aria-pressed='true'] { border-color: var(--orange); background: var(--orange-tint); }
+.addon-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 14px; }
+.addon-label { font-family: var(--mono); font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); }
+.own-summary { font-size: 17px; margin-bottom: 12px; }
+.own-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
+.own-group { display: grid; gap: 6px; align-content: start; }
+.own-group h4 { font-size: 15px; }
+.own { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid var(--line); background: var(--surface); font-size: 14px; }
+.own small { display: block; color: var(--muted); font-size: 12px; }
+.own .own-note { color: var(--orange-text); }
+.own-badge { font-family: var(--mono); font-size: 10.5px; padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
+.own.inc { border-color: var(--good); } .own.inc .own-badge { background: var(--good-bg); color: var(--good); }
+.own.add { border-color: var(--orange); } .own.add .own-badge { background: var(--orange-tint); color: var(--orange-text); }
+.own.payg .own-badge { background: var(--warn-bg); color: var(--warn); }
+.own.miss { opacity: 0.75; } .own.miss .own-badge { background: var(--surface-soft); color: var(--muted); border: 1px solid var(--line); }
+.sources { margin-top: 18px; font-size: 12.5px; color: var(--muted); }
+.sources a { color: var(--muted); }
+
+/* ---------- Chapter 7: roadmap ---------- */
+.plan-line { margin: 4px 0 14px; font-size: 14px; color: var(--muted); }
+.pool-wrap { background: var(--surface-soft); border: 1.5px dashed var(--line); border-radius: var(--radius); padding: 12px; margin-bottom: 14px; }
+.pool-wrap h3 { font-size: 15px; margin-bottom: 8px; }
+.pool { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; }
+.lanes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.lane { background: var(--surface); border: 2px solid var(--line); border-radius: var(--radius); padding: 12px; min-height: 160px; }
+.lane h3 { font-size: 17px; margin-bottom: 8px; }
+.lane h3 small { font-family: var(--mono); font-size: 10.5px; color: var(--muted); font-weight: 500; margin-left: 6px; }
+.lane-body { display: grid; gap: 8px; }
+.lane.armed, .lane.over, .pool-wrap.over { border-color: var(--orange); background: var(--orange-tint); }
+.empty { color: var(--muted); font-size: 13px; }
+.ctl.rm .lic-line { font-size: 11.5px; margin-top: 4px; font-weight: 600; }
+.ctl.rm.included .lic-line { color: var(--good); }
+.ctl.rm.addon .lic-line { color: var(--orange-text); }
+.ctl.rm.missing .lic-line { color: var(--bad); }
+.ctl.rm.payg .lic-line { color: var(--warn); }
+.rm-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 16px; }
+.rm-card h3 { font-size: 16px; margin-bottom: 10px; }
+.rm-card ul { list-style: none; display: grid; gap: 8px; font-size: 14px; }
+.rm-card small { color: var(--muted); }
+.cov-row { display: grid; grid-template-columns: 170px 1fr 40px; gap: 10px; align-items: center; font-size: 14px; margin-bottom: 6px; }
+.cov-row .bar { height: 8px; background: var(--surface-soft); border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+.cov-row .bar span { display: block; height: 100%; background: var(--orange); transition: width 0.4s var(--ease); }
+.cov-row .n { font-family: var(--mono); font-size: 12px; color: var(--muted); text-align: right; }
+.print-only { display: none; }
+
+@media (max-width: 1100px) {
+  .chain { grid-template-columns: repeat(3, 1fr); }
+  .pillar-grid { grid-template-columns: repeat(3, 1fr); }
+  .killchain { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 760px) {
+  .toggles, .plan-picker, .lanes, .rm-summary, .pd-grid { grid-template-columns: 1fr; }
+  .chain, .killchain { grid-template-columns: 1fr; }
+  .pillar-grid { grid-template-columns: repeat(2, 1fr); }
+  .own-grid { grid-template-columns: 1fr; }
+  .cov-row { grid-template-columns: 130px 1fr 36px; }
+}
+@media print {
+  .nav, .rail, .no-print, .guide-slot, .chapter-foot, .pool-wrap { display: none !important; }
+  .print-only { display: block; margin-bottom: 12px; }
+  body { background: #fff; color: #000; }
+  .layout { grid-template-columns: 1fr; }
+  .shell { padding: 0; }
+  .lane, .card, .ctl { box-shadow: none; break-inside: avoid; }
+  .empty { display: none; }
+}
 
 @media (max-width: 960px) {
   .layout { grid-template-columns: 1fr; }

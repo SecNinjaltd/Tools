@@ -272,6 +272,7 @@ export function renderCastle({ chapter, nextChapter }) {
         { id: 'zt', label: '🛡️ Zero trust thinking' }
       ],
       items: SORT_ITEMS,
+      doneText: 'Castle thinking trusts places; zero trust checks every request.',
       onDone: () => { sorted = true; finish(); }
     }));
     after.appendChild(quiz({

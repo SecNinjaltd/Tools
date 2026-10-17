@@ -15,7 +15,7 @@ export const CHAPTERS = [
     title: 'Three principles, one story',
     blurb: 'Switch on each principle in turn and see where the attacker gets stopped.',
     minutes: 4,
-    ready: false
+    ready: true
   },
   {
     id: 'pillars',
@@ -23,7 +23,7 @@ export const CHAPTERS = [
     title: 'Meet the six pillars',
     blurb: 'Identity, endpoints, apps, data, infrastructure and network, in plain English.',
     minutes: 5,
-    ready: false
+    ready: true
   },
   {
     id: 'signin',
@@ -39,7 +39,7 @@ export const CHAPTERS = [
     title: 'Stop the attack',
     blurb: 'Drag Microsoft controls onto the step of the attack they break.',
     minutes: 6,
-    ready: false
+    ready: true
   },
   {
     id: 'licences',
@@ -47,7 +47,7 @@ export const CHAPTERS = [
     title: 'What do I already own?',
     blurb: 'Pick your Microsoft 365 plan and see what you can switch on today.',
     minutes: 4,
-    ready: false
+    ready: true
   },
   {
     id: 'roadmap',
@@ -55,7 +55,7 @@ export const CHAPTERS = [
     title: 'Build your roadmap',
     blurb: 'Plan your target state, see what it covers and export a one-page plan.',
     minutes: 8,
-    ready: false
+    ready: true
   }
 ];
 
