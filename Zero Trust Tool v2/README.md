@@ -10,7 +10,7 @@ A guided, hands-on course in seven chapters that teaches zero trust and how Micr
 4. **Signals and decisions:** a simplified Conditional Access engine. Change user, app, device, location, sign-in method and risk, and see the decision, the policies behind it and the licence each needs. Five missions to solve.
 5. **Stop the attack:** drag Microsoft controls onto the steps of two attacks (a fake sign-in page and ransomware through an unmanaged laptop) to break each chain.
 6. **What you already own:** Wolfie checks a Microsoft 365 plan (Business Basic, Standard or Premium, F3, E3, E5 or E7) plus add-ons and shows which of 33 zero trust controls (including five for securing AI and Copilot) are included, need an add-on, or are pay as you go, each linked to Microsoft Learn.
-7. **Build your roadmap:** drag controls into Now, Next and Later, see pillar coverage and what licences you'd need to add, and print a one-page plan.
+7. **Build your roadmap:** tap Now, Next or Later on each control, see pillar coverage and what licences you'd need to add, and print a one-page plan.
 
 ## Structure
 

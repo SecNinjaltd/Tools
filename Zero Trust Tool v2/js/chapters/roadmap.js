@@ -1,6 +1,5 @@
-// Chapter 7: build your roadmap. Drag controls into Now / Next / Later and print a one-page plan.
+// Chapter 7: build your roadmap. Tap Now / Next / Later on each control and print a one-page plan.
 import { h, guide, announce, store, escapeHtml } from '../ui.js';
-import { makeDraggable, makeTarget } from '../drag.js';
 import { CONTROLS, PILLARS, aiTag } from '../catalog.js';
 import { PLANS, ADDONS, CHECKED, coverage, howToGet, savedPlan, savedAddons } from '../licences.js';
 
@@ -14,7 +13,7 @@ const LANES = [
 const TIPS = [
   {
     when: (p) => !p.now.length,
-    say: 'Drag a control into "Now" to start. Most organisations begin with identity.', pose: 'laptop'
+    say: 'Tap "Now" on a control to start. Most organisations begin with identity.', pose: 'laptop'
   },
   {
     when: (p) => !p.now.includes('mfa') && !p.now.includes('passkeys'),
@@ -52,10 +51,9 @@ export function renderRoadmap({ chapter }) {
       <p class="print-only">My zero trust roadmap · Microsoft 365 plan: ${escapeHtml(PLANS[plan].name)}${addons.length ? ` + ${addons.map((a) => escapeHtml(ADDONS[a].name)).join(', ')}` : ''}</p>
       <div class="guide-slot no-print"></div>
       <p class="plan-line no-print">Planning for <strong>${escapeHtml(PLANS[plan].name)}</strong>${addons.length ? ` with ${addons.map((a) => escapeHtml(ADDONS[a].name)).join(', ')}` : ''}. <a href="#/licences">Change plan</a></p>
-      <div class="pool-wrap no-print">
-        <h3>Controls to plan</h3>
-        <div class="pool"></div>
-      </div>
+      <div class="rm-bar no-print" aria-live="polite"></div>
+      <div class="rm-list no-print"></div>
+      <h2 class="rm-head" id="rm-plan">Your roadmap</h2>
       <div class="lanes"></div>
       <div class="rm-summary"></div>
       <div class="row no-print" style="margin-top:18px">
@@ -66,71 +64,78 @@ export function renderRoadmap({ chapter }) {
       <div class="chapter-foot no-print"><a class="btn secondary" href="#/">All chapters</a></div>
     </article>`);
 
-  const ninja = guide("Time to put it together. Drag each control into Now, Next or Later, or tap a control then tap a lane.\nI'll show what each one needs from your licences, and give you a nudge if the order looks risky.", 'laptop');
+  const ninja = guide("Time to put it together. For each control, tap Now, Next or Later. Tap it again to take it off the plan.\nI'll show what each one needs from your licences, and give you a nudge if the order looks risky. Your roadmap builds up at the bottom.", 'laptop');
   el.querySelector('.guide-slot').appendChild(ninja.el);
-  const pool = el.querySelector('.pool');
+  const list = el.querySelector('.rm-list');
+  const bar = el.querySelector('.rm-bar');
   const lanesEl = el.querySelector('.lanes');
   const summary = el.querySelector('.rm-summary');
   const printBtn = el.querySelector('#printBtn');
-  let armed = null;
 
   const laneEls = {};
   LANES.forEach((l) => {
-    const le = h(`<section class="lane" data-lane="${l.id}" aria-label="Put the selected control in ${l.label}"><h3>${l.label} <small>${l.hint}</small></h3><div class="lane-body"></div></section>`);
-    makeTarget(le, () => { if (armed) move(armed, l.id); });
+    const le = h(`<section class="lane" data-lane="${l.id}"><h3>${l.label} <small>${l.hint}</small></h3><div class="lane-body"></div></section>`);
     laneEls[l.id] = le;
     lanesEl.appendChild(le);
   });
-  const poolTarget = el.querySelector('.pool-wrap');
-  makeTarget(poolTarget, () => { if (armed) move(armed, 'pool'); });
 
-  const cards = {};
-  Object.entries(CONTROLS).forEach(([id, c]) => {
-    const cov = coverage(id, plan, addons);
-    let lic = 'Included in your plan';
-    if (cov.status === 'addon') lic = `Via ${cov.via.join(', ')}`;
-    if (cov.status === 'payg') lic = c.paygNote || 'Azure, pay as you go';
-    if (cov.status === 'missing') lic = howToGet(id, plan);
-    const card = h(`
-      <button type="button" class="ctl rm ${cov.status}" data-id="${id}" aria-pressed="false">
-        <span class="ctl-pillar">${PILLARS[c.pillar].icon} ${PILLARS[c.pillar].name}</span>
-        <strong>${escapeHtml(c.name)}</strong>${aiTag(c)}
-        <small>${escapeHtml(c.plain)}</small>
-        <span class="lic-line">${escapeHtml(lic)}</span>
-      </button>`);
-    makeDraggable(card, {
-      targets: () => [...Object.values(laneEls), poolTarget],
-      onDrop: (t) => move(card, t.dataset.lane || 'pool'),
-      // Tapping a card that's already in a lane, while another is selected, drops the selected one there.
-      onTap: () => (armed && armed !== card && placement[id] !== 'pool' ? move(armed, placement[id]) : arm(card))
+  // One compact row per control, grouped by pillar, with the three lanes as buttons.
+  const lic = {};
+  const rows = {};
+  Object.entries(PILLARS).forEach(([pid, p]) => {
+    const ids = Object.keys(CONTROLS).filter((id) => CONTROLS[id].pillar === pid);
+    if (!ids.length) return;
+    const group = h(`<section class="rm-group" data-pillar="${pid}"><h3>${p.icon} ${p.name}</h3><div class="rm-rows"></div></section>`);
+    ids.forEach((id) => {
+      const c = CONTROLS[id];
+      const cov = coverage(id, plan, addons);
+      let line = 'Included in your plan';
+      if (cov.status === 'addon') line = `Via ${cov.via.join(', ')}`;
+      if (cov.status === 'payg') line = c.paygNote || 'Azure, pay as you go';
+      if (cov.status === 'missing') line = howToGet(id, plan);
+      lic[id] = { line, status: cov.status };
+      const row = h(`
+        <div class="rm-row ${cov.status}" data-id="${id}">
+          <div class="rm-text"><strong>${escapeHtml(c.name)}</strong>${aiTag(c)}<small>${escapeHtml(c.plain)}</small><span class="lic-line">${escapeHtml(line)}</span></div>
+          <div class="rm-seg" role="group" aria-label="When to do ${escapeHtml(c.name)}"></div>
+        </div>`);
+      LANES.forEach((l) => {
+        const b = h(`<button type="button" data-lane="${l.id}" aria-pressed="false">${l.label}</button>`);
+        b.addEventListener('click', () => move(id, placement[id] === l.id ? 'pool' : l.id));
+        row.querySelector('.rm-seg').appendChild(b);
+      });
+      rows[id] = row;
+      group.querySelector('.rm-rows').appendChild(row);
     });
-    cards[id] = card;
+    list.appendChild(group);
   });
 
-  function arm(card) {
-    if (armed) armed.setAttribute('aria-pressed', 'false');
-    armed = armed === card ? null : card;
-    if (armed) armed.setAttribute('aria-pressed', 'true');
-    Object.values(laneEls).forEach((l) => l.classList.toggle('armed', !!armed));
-  }
-
-  function move(card, lane) {
-    if (armed) arm(armed);
-    placement[card.dataset.id] = lane;
+  function move(id, lane) {
+    placement[id] = lane;
     store.set('roadmap', Object.fromEntries(Object.entries(placement).filter(([, v]) => v !== 'pool')));
     layout();
-    announce(`${CONTROLS[card.dataset.id].name} moved to ${lane === 'pool' ? 'the list' : lane}.`);
+    announce(`${CONTROLS[id].name} ${lane === 'pool' ? 'taken off the plan' : `moved to ${lane}`}.`);
   }
 
   function layout() {
     const byLane = { pool: [], now: [], next: [], later: [] };
     Object.keys(CONTROLS).forEach((id) => byLane[placement[id]].push(id));
-    pool.replaceChildren(...byLane.pool.map((id) => cards[id]));
-    if (!byLane.pool.length) pool.innerHTML = '<p class="empty">All controls placed. Drag one back here to remove it from the plan.</p>';
+    Object.entries(rows).forEach(([id, row]) => {
+      row.classList.toggle('placed', placement[id] !== 'pool');
+      row.querySelectorAll('.rm-seg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.lane === placement[id])));
+    });
+    bar.innerHTML = `<span><strong>Now ${byLane.now.length}</strong> · Next ${byLane.next.length} · Later ${byLane.later.length} <small>· ${byLane.pool.length} not planned</small></span><a href="#rm-plan" class="rm-jump">See my roadmap ↓</a>
+      <nav class="rm-pillars" aria-label="Jump to a pillar">${Object.entries(PILLARS).map(([pid, p]) => `<a href="#" data-pillar="${pid}">${p.icon} ${p.name}</a>`).join('')}</nav>`;
+    bar.querySelectorAll('.rm-pillars a').forEach((a) => a.addEventListener('click', (e) => { e.preventDefault(); list.querySelector(`.rm-group[data-pillar="${a.dataset.pillar}"]`).scrollIntoView({ behavior: 'smooth', block: 'start' }); }));
+    bar.querySelector('.rm-jump').addEventListener('click', (e) => { e.preventDefault(); el.querySelector('#rm-plan').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
     LANES.forEach((l) => {
       const body = laneEls[l.id].querySelector('.lane-body');
-      body.replaceChildren(...byLane[l.id].map((id) => cards[id]));
-      if (!byLane[l.id].length) body.innerHTML = '<p class="empty">Drop controls here</p>';
+      body.replaceChildren(...byLane[l.id].map((id) => {
+        const chip = h(`<div class="rm-chip ${lic[id].status}"><div><strong>${escapeHtml(CONTROLS[id].name)}</strong><small class="lic-line">${escapeHtml(lic[id].line)}</small></div><button type="button" class="rm-x no-print" aria-label="Take ${escapeHtml(CONTROLS[id].name)} off the plan">×</button></div>`);
+        chip.querySelector('.rm-x').addEventListener('click', () => move(id, 'pool'));
+        return chip;
+      }));
+      if (!byLane[l.id].length) body.innerHTML = `<p class="empty">Tap ${l.label} on a control above</p>`;
     });
 
     // Pillar coverage across Now and Next.
