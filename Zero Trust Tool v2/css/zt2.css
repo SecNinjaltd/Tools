@@ -693,7 +693,9 @@ body[data-theme='dark'] .lm-why { background: #1f3326; }
 .lm-bar:not([hidden]) { position: sticky; top: 72px; z-index: 6; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin: 0 0 14px; padding: 12px 16px; background: var(--surface); border: 2px solid var(--orange); border-radius: var(--radius); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12); font-size: 15px; }
 .lm-bar p { flex: 1 1 260px; margin: 0; }
 .lm-bar .lm-hint { flex-basis: 100%; order: 3; margin: 0; }
+.lm-bar .lm-off { flex-basis: 100%; order: 2; margin: 0; font-size: 14px; color: var(--muted); }
+.lm-bar .lm-off .hint-btn { padding: 0; }
 .lm-bar.solved { border-color: var(--good); background: var(--good-bg); }
 body[data-theme='dark'] .lm-bar.solved { background: #1f3326; }
 @media (max-width: 700px) { .lm-bar:not([hidden]) { top: 80px; font-size: 14px; padding: 10px 12px; } }
-.lm-actions .hint-btn, .lm-bar .hint-btn { border: 0; background: none; color: var(--orange-text); font-size: 14px; font-weight: 700; padding: 6px 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.lm-actions .hint-btn, .lm-bar .hint-btn, .lm-off .hint-btn { border: 0; background: none; color: var(--orange-text); font-size: 14px; font-weight: 700; padding: 6px 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }

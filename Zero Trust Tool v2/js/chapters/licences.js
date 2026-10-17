@@ -4,50 +4,50 @@ import { CONTROLS, PILLARS, aiTag } from '../catalog.js';
 import { PLANS, ADDONS, SOURCES, CHECKED, coverage, howToGet, savedPlan, savedAddons } from '../licences.js';
 import { learnLink } from '../learn.js';
 
-// Each mission is a short real-world scenario. Starting it sets the plan the company has today,
-// and it's solved when the learner changes the plan or add-ons to meet the need.
+// Each mission is a short real-world scenario. Opening it sets the plan the company has today,
+// and it's solved as soon as the learner's own change meets the need. keepPlan missions are add-on only.
 const MISSIONS = [
   {
     org: 'Fabrikam', size: '120 staff',
     start: { plan: 'standard', addons: [] },
     brief: 'Fabrikam is on Business Standard. They want MFA enforced by Conditional Access, only healthy managed laptops allowed in, and endpoint detection and response.',
-    task: 'Pick the Business plan that covers all three with no add-ons.',
+    task: 'Pick the Business plan that covers all three, with no add-ons.',
     check: (s) => s.plan === 'bp' && !s.addons.length,
     hint: 'Compare the three Business plans. Only one includes Entra ID P1, Intune and Defender for Business.',
     why: 'Business Premium adds Entra ID P1 (Conditional Access), Intune and Defender for Business to Business Standard. Business Basic and Standard include none of the controls on this page.'
   },
   {
     org: 'Fabrikam', size: '120 staff',
-    start: { plan: 'bp', addons: [] },
-    brief: "Fabrikam is now on Business Premium. A manager's password turned up in a data leak, and they want risky sign-ins challenged or blocked automatically.",
-    task: 'Switch on one add-on that unlocks risk-based sign-in policies.',
+    start: { plan: 'bp', addons: [] }, keepPlan: true,
+    brief: "Fabrikam now has Business Premium. A manager's password was found in a data breach. Fabrikam wants Microsoft to spot sign-ins that look risky, like someone using that leaked password from an unusual place, and ask for MFA or block them automatically.",
+    task: 'Keep Business Premium and switch on an add-on that spots risky sign-ins.',
     check: (s) => s.plan === 'bp' && coverage('risk', 'bp', s.addons).status === 'addon',
-    hint: 'Risk scores come from Entra ID Protection, which is part of Entra ID P2. Find an add-on that includes it.',
+    hint: 'Business Premium cannot judge risk on its own. That comes from Microsoft Entra ID Protection, which two of the add-ons include. Either one counts.',
     why: 'Business Premium has Entra ID P1, which runs Conditional Access but cannot score risk. Entra ID Protection adds a risk score to every user and sign-in, and both the Defender Suite for Business Premium and Microsoft Entra Suite include it.'
   },
   {
     org: 'Fabrikam', size: '120 staff',
-    start: { plan: 'bp', addons: [] },
+    start: { plan: 'bp', addons: [] }, keepPlan: true,
     brief: "Fabrikam's old VPN puts anyone who connects onto the whole office network, so one stolen laptop could reach every server.",
-    task: 'Switch on an add-on that replaces the VPN with access to one app at a time.',
+    task: 'Keep Business Premium and switch on an add-on that lets people reach one app at a time instead of the whole network.',
     check: (s) => s.plan === 'bp' && coverage('private', 'bp', s.addons).status === 'addon',
-    hint: 'Look for the Global Secure Access products in Microsoft Entra.',
+    hint: 'Look for Entra Private Access. It is sold on its own and inside Microsoft Entra Suite, so either one counts.',
     why: 'Entra Private Access connects people to a single app, not the network, and Conditional Access checks every connection. It is sold on its own or as part of Microsoft Entra Suite.'
   },
   {
     org: 'Contoso', size: '4,000 staff',
-    start: { plan: 'e3', addons: [] },
+    start: { plan: 'e3', addons: [] }, keepPlan: true,
     brief: 'Contoso is on Microsoft 365 E3. HR is worried about people downloading customer data in their last weeks before leaving.',
-    task: 'Switch on the add-on that spots risky data handling by insiders.',
+    task: 'Keep E3 and switch on the add-on that warns when someone handles data in a risky way, like a mass download before leaving.',
     check: (s) => s.plan === 'e3' && coverage('insiderrisk', 'e3', s.addons).status === 'addon',
     hint: 'Insider Risk Management is part of Microsoft Purview.',
     why: 'Insider Risk Management looks for patterns like mass downloads after a resignation. E3 does not include it; Microsoft Purview Suite (formerly E5 Compliance) adds it, along with Endpoint DLP.'
   },
   {
     org: 'Contoso', size: '4,000 staff',
-    start: { plan: 'e5', addons: [] },
+    start: { plan: 'e5', addons: [] }, keepPlan: true,
     brief: 'Contoso has moved to E5 and is rolling out Copilot. They worry Copilot will surface files that were shared with everyone years ago.',
-    task: 'Switch on the add-on that finds overshared sites and can hide them from Copilot.',
+    task: 'Keep E5 and switch on the add-on that finds files shared with everyone and can hide them from Copilot.',
     check: (s) => s.plan === 'e5' && coverage('copilotoversharing', 'e5', s.addons).status === 'addon',
     hint: 'These oversharing controls come with Copilot itself.',
     why: 'Copilot only shows people what they can already open, so old overshared files are the real risk. Assigning a Microsoft Copilot licence turns on SharePoint Advanced Management, which reports overshared sites and can hide them from Copilot.'
@@ -66,7 +66,6 @@ export function renderLicences({ chapter, nextChapter }) {
   const state = { plan, addons: savedAddons(store, plan) };
   const solved = new Set(store.get('licenceMissions2', []).filter((i) => MISSIONS[i]));
   let current = MISSIONS.findIndex((m, i) => !solved.has(i));
-  let started = false;
 
   const el = h(`
     <article>
@@ -118,23 +117,25 @@ export function renderLicences({ chapter, nextChapter }) {
     groups[p.family].appendChild(b);
   });
 
-  // One mission at a time: brief, task, hint, then the reason once it's solved.
+  // One mission at a time. Opening a mission sets the company's starting plan; no separate start step.
   function setPlan(p, addons) {
     state.plan = p;
     state.addons = addons.filter((x) => PLANS[p].addons.includes(x));
     update(true, true);
   }
 
-  function goNext() {
-    const next = MISSIONS.findIndex((x, j) => !solved.has(j));
-    current = next;
-    started = false;
-    if (next >= 0) begin(); else { renderMission(); bodyEl.closest('.card').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  function open(i, scroll) {
+    current = i;
+    if (current >= 0) setPlan(MISSIONS[current].start.plan, MISSIONS[current].start.addons);
+    renderMission();
+    if (scroll) (current >= 0 ? picker : bodyEl.closest('.card')).scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  // While a mission is running, a pinned bar keeps the task (and then the answer) in view beside the plans.
+  function goNext() { open(MISSIONS.findIndex((x, j) => !solved.has(j)), true); }
+
+  // A pinned bar keeps the task (and then the answer) in view beside the plans.
   function renderBar() {
-    barEl.hidden = !(started && current >= 0);
+    barEl.hidden = current < 0;
     if (barEl.hidden) return;
     const m = MISSIONS[current];
     if (solved.has(current)) {
@@ -144,22 +145,31 @@ export function renderLicences({ chapter, nextChapter }) {
       const nb = h(`<button type="button" class="btn">${last ? 'Finish' : 'Next mission →'}</button>`);
       nb.addEventListener('click', goNext);
       barEl.appendChild(nb);
-    } else {
-      barEl.className = 'lm-bar';
-      barEl.innerHTML = `<p><span class="lm-num">Mission ${current + 1} of ${MISSIONS.length} · ${escapeHtml(m.org)}</span>${escapeHtml(m.task)}</p><p class="lm-hint" hidden>💡 ${escapeHtml(m.hint)}</p>`;
-      const hb = h('<button type="button" class="hint-btn">Hint</button>');
-      hb.addEventListener('click', () => { barEl.querySelector('.lm-hint').hidden = false; hb.remove(); });
-      barEl.appendChild(hb);
+      return;
     }
+    barEl.className = 'lm-bar';
+    const off = m.keepPlan && state.plan !== m.start.plan;
+    barEl.innerHTML = `<p><span class="lm-num">Mission ${current + 1} of ${MISSIONS.length} · ${escapeHtml(m.org)}</span>${escapeHtml(m.task)}</p>
+      ${off ? `<p class="lm-off">${escapeHtml(m.org)} is staying on ${escapeHtml(PLANS[m.start.plan].short)} for this one. </p>` : ''}
+      <p class="lm-hint" hidden>💡 ${escapeHtml(m.hint)}</p>`;
+    if (off) {
+      const back = h(`<button type="button" class="hint-btn">Back to ${escapeHtml(PLANS[m.start.plan].short)}</button>`);
+      back.addEventListener('click', () => setPlan(m.start.plan, state.addons));
+      barEl.querySelector('.lm-off').appendChild(back);
+    }
+    const hb = h('<button type="button" class="hint-btn">Hint</button>');
+    hb.addEventListener('click', () => { barEl.querySelector('.lm-hint').hidden = false; hb.remove(); });
+    barEl.appendChild(hb);
   }
 
   function renderMission() {
     renderBar();
     dotsEl.innerHTML = '';
+    const firstOpen = MISSIONS.findIndex((x, j) => !solved.has(j));
     MISSIONS.forEach((m, i) => {
       const d = h(`<button type="button" class="lm-dot${solved.has(i) ? ' done' : ''}${i === current ? ' on' : ''}" aria-label="Mission ${i + 1}${solved.has(i) ? ', solved' : ''}">${solved.has(i) ? '✓' : i + 1}</button>`);
-      d.disabled = !(solved.has(i) || i === current || i === MISSIONS.findIndex((x, j) => !solved.has(j)));
-      d.addEventListener('click', () => { current = i; started = false; renderMission(); });
+      d.disabled = !(solved.has(i) || i === firstOpen) || i === current;
+      d.addEventListener('click', () => open(i));
       dotsEl.appendChild(d);
     });
     if (current < 0) {
@@ -169,43 +179,10 @@ export function renderLicences({ chapter, nextChapter }) {
       return;
     }
     const m = MISSIONS[current];
-    const done = solved.has(current);
     bodyEl.innerHTML = `
-      <p class="lm-org"><strong>${escapeHtml(m.org)}</strong> · ${escapeHtml(m.size)} · starts on ${escapeHtml(PLANS[m.start.plan].short)}</p>
+      <p class="lm-org"><strong>${escapeHtml(m.org)}</strong> · ${escapeHtml(m.size)} · on ${escapeHtml(PLANS[m.start.plan].short)} today</p>
       <p class="lm-brief">${escapeHtml(m.brief)}</p>
-      <p class="lm-task"><span class="lm-num">Mission ${current + 1} of ${MISSIONS.length}</span> ${escapeHtml(m.task)}</p>
-      <div class="lm-actions row"></div>
-      <p class="lm-hint" hidden>💡 ${escapeHtml(m.hint)}</p>
-      ${done && !started ? `<div class="lm-why"><strong>✓ Solved.</strong> ${escapeHtml(m.why)}</div>` : ''}`;
-    const actions = bodyEl.querySelector('.lm-actions');
-    if (done && started) {
-      actions.appendChild(h('<span class="lm-live">✓ Solved. The answer is pinned just below.</span>'));
-      return;
-    }
-    if (done) {
-      const nb = h(`<button type="button" class="btn">${solved.size === MISSIONS.length ? 'Finish' : 'Next mission →'}</button>`);
-      nb.addEventListener('click', goNext);
-      actions.appendChild(nb);
-      return;
-    }
-    if (!started) {
-      const sb = h(`<button type="button" class="btn">Start: switch to ${escapeHtml(PLANS[m.start.plan].short)}</button>`);
-      sb.addEventListener('click', begin);
-      actions.appendChild(sb);
-    } else {
-      actions.appendChild(h('<span class="lm-live">Mission running: change the plan or add-ons below.</span>'));
-    }
-    const hb = h('<button type="button" class="hint-btn">Show a hint</button>');
-    hb.addEventListener('click', () => { bodyEl.querySelector('.lm-hint').hidden = false; hb.remove(); });
-    actions.appendChild(hb);
-  }
-
-  function begin() {
-    if (current < 0) return;
-    started = true;
-    setPlan(MISSIONS[current].start.plan, MISSIONS[current].start.addons);
-    renderMission();
-    picker.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      <p class="lm-live">${solved.has(current) ? '✓ Solved. The answer is pinned below.' : 'Your task is pinned below, just above the plans. Change the plan or add-ons and it ticks as soon as you get it right.'}</p>`;
   }
 
   let finished = false;
@@ -274,18 +251,18 @@ export function renderLicences({ chapter, nextChapter }) {
       grid.appendChild(group);
     });
 
-    // Only the active, started mission can be solved, and only by the learner's own change.
-    if (changed && !fromMission && started && current >= 0 && !solved.has(current) && MISSIONS[current].check(state)) {
+    // Only the open mission can be solved, and only by the learner's own change.
+    if (changed && !fromMission && current >= 0 && !solved.has(current) && MISSIONS[current].check(state)) {
       solved.add(current);
       store.set('licenceMissions2', [...solved]);
       const left = MISSIONS.length - solved.size;
       wolfie.say(left ? `Nice work. ${left} to go.` : "All five solved. Now pick your own organisation's plan so chapter 7 uses it.", 'wolfie');
       renderMission();
-    }
+    } else if (changed && !fromMission && current >= 0) renderBar();
     if (solved.size === MISSIONS.length) finish();
   }
 
   update(false);
-  renderMission();
+  if (current >= 0) open(current); else renderMission();
   return el;
 }
