@@ -1,7 +1,7 @@
 // Chapter 6: what do I already own? Pick a plan and add-ons and see which controls light up.
 import { h, guide, quiz, announce, store, escapeHtml } from '../ui.js';
 import { CONTROLS, PILLARS } from '../catalog.js';
-import { PLANS, ADDONS, SOURCES, CHECKED, coverage, howToGet } from '../licences.js';
+import { PLANS, ADDONS, SOURCES, CHECKED, coverage, howToGet, savedPlan, savedAddons } from '../licences.js';
 
 const MISSIONS = [
   {
@@ -26,23 +26,24 @@ const STATUS = {
 };
 
 export function renderLicences({ chapter, nextChapter }) {
-  const state = { plan: store.get('plan', 'bp'), addons: store.get('addons', []) };
+  const plan = savedPlan(store);
+  const state = { plan, addons: savedAddons(store, plan) };
   const solved = new Set(store.get('licenceMissions', []));
 
   const el = h(`
     <article>
       <p class="eyebrow">Chapter ${chapter.n} · ${chapter.minutes} min</p>
-      <h2 class="title">${chapter.title}</h2>
+      <h1 class="title">${chapter.title}</h1>
       <div class="guide-slot"></div>
-      <div class="plan-picker" role="group" aria-label="Your Microsoft 365 plan"></div>
-      <div class="addon-row"></div>
-      <div class="own-summary" aria-live="polite"></div>
-      <div class="own-grid"></div>
-      <section class="card" style="margin-top:22px">
+      <section class="card" style="margin-bottom:18px">
         <p class="eyebrow">Missions</p>
         <h3 style="margin:6px 0 12px">Can you find it?</h3>
         <div class="missions"></div>
       </section>
+      <div class="plan-picker" role="group" aria-label="Your Microsoft 365 plan"></div>
+      <div class="addon-row"></div>
+      <div class="own-summary" aria-live="polite"></div>
+      <div class="own-grid"></div>
       <div class="after" style="margin-top:22px"></div>
       <p class="sources">Checked against Microsoft Learn in ${CHECKED}. Licensing changes often, so confirm with Microsoft or your partner before buying. Sources: </p>
       <div class="chapter-foot"><a class="btn secondary" href="#/">All chapters</a></div>

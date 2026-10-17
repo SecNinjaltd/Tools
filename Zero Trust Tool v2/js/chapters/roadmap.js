@@ -2,7 +2,7 @@
 import { h, guide, announce, store, escapeHtml } from '../ui.js';
 import { makeDraggable, makeTarget } from '../drag.js';
 import { CONTROLS, PILLARS } from '../catalog.js';
-import { PLANS, ADDONS, CHECKED, coverage, howToGet } from '../licences.js';
+import { PLANS, ADDONS, CHECKED, coverage, howToGet, savedPlan, savedAddons } from '../licences.js';
 
 const LANES = [
   { id: 'now', label: 'Now', hint: 'Next 3 months' },
@@ -39,16 +39,16 @@ const TIPS = [
 ];
 
 export function renderRoadmap({ chapter }) {
-  const plan = store.get('plan', 'bp');
-  const addons = store.get('addons', []);
+  const plan = savedPlan(store);
+  const addons = savedAddons(store, plan);
   const saved = store.get('roadmap', {});
   const placement = {};
-  Object.keys(CONTROLS).forEach((id) => { placement[id] = saved[id] || 'pool'; });
+  Object.keys(CONTROLS).forEach((id) => { placement[id] = LANES.some((l) => l.id === saved[id]) ? saved[id] : 'pool'; });
 
   const el = h(`
     <article class="roadmap">
       <p class="eyebrow no-print">Chapter ${chapter.n} · ${chapter.minutes} min</p>
-      <h2 class="title">${chapter.title}</h2>
+      <h1 class="title">${chapter.title}</h1>
       <p class="print-only">My zero trust roadmap · Microsoft 365 plan: ${escapeHtml(PLANS[plan].name)}${addons.length ? ` + ${addons.map((a) => escapeHtml(ADDONS[a].name)).join(', ')}` : ''}</p>
       <div class="guide-slot no-print"></div>
       <p class="plan-line no-print">Planning for <strong>${escapeHtml(PLANS[plan].name)}</strong>${addons.length ? ` with ${addons.map((a) => escapeHtml(ADDONS[a].name)).join(', ')}` : ''}. <a href="#/licences">Change plan</a></p>
@@ -165,7 +165,7 @@ export function renderRoadmap({ chapter }) {
     const ready = byLane.now.length >= 2 && planned.length >= 5;
     printBtn.disabled = !ready;
     printBtn.title = ready ? '' : 'Put at least two controls in Now and five across Now and Next';
-    if (ready) store.complete(chapter.id);
+    if (ready && !store.completed().has(chapter.id)) store.complete(chapter.id);
   }
 
   printBtn.addEventListener('click', () => window.print());

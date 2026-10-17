@@ -153,7 +153,7 @@ export function renderSignin({ chapter, nextChapter }) {
   const el = h(`
     <article>
       <p class="eyebrow">Chapter ${chapter.n} · ${chapter.minutes} min</p>
-      <h2 class="title">${chapter.title}</h2>
+      <h1 class="title">${chapter.title}</h1>
       <div class="guide-slot"></div>
       <div class="sim">
         <section class="card signals" aria-label="Sign-in signals"></section>
@@ -272,7 +272,7 @@ export function renderSignin({ chapter, nextChapter }) {
     if (newlySolved) {
       store.set('signinMissions', [...solved]);
       const left = MISSIONS.length - solved.size;
-      ninja.say(left ? `Mission done: "${newlySolved.text}"\n${left} to go.` : 'All five missions done. You just thought like a Conditional Access designer.', left ? 'cheer' : 'cheer');
+      ninja.say(left ? `Mission done: "${newlySolved.text}"\n${left} to go.` : 'All five missions done. You just thought like a Conditional Access designer.', 'cheer');
       announce(`Mission complete. ${left} left.`);
     }
     if (solved.size === MISSIONS.length) finishChapter();

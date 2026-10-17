@@ -85,7 +85,7 @@ export function renderCastle({ chapter, nextChapter }) {
   const el = h(`
     <article>
       <p class="eyebrow">Chapter ${chapter.n} · ${chapter.minutes} min</p>
-      <h2 class="title">${chapter.title}</h2>
+      <h1 class="title">${chapter.title}</h1>
       <div class="step-dots" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
       <div class="guide-slot"></div>
       <div class="scene-wrap">${sceneSvg()}</div>

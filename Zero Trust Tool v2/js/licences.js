@@ -75,6 +75,16 @@ export const SOURCES = [
   ['Microsoft Sentinel billing', 'https://learn.microsoft.com/azure/sentinel/billing']
 ];
 
+// Saved choices, checked against the current data in case a plan or add-on was renamed.
+export function savedPlan(store) {
+  const p = store.get('plan', 'bp');
+  return PLANS[p] ? p : 'bp';
+}
+export function savedAddons(store, planId) {
+  const a = store.get('addons', []);
+  return Array.isArray(a) ? a.filter((x) => ADDONS[x] && PLANS[planId].addons.includes(x)) : [];
+}
+
 // How a control is covered by a plan plus chosen add-ons.
 // Returns { status: 'included' | 'addon' | 'payg' | 'missing', missing: [capability keys], via: [add-on names] }
 export function coverage(controlId, planId, addonIds = []) {

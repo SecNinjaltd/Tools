@@ -181,7 +181,7 @@ export function renderMissions({ chapter, nextChapter }) {
   const el = h(`
     <article>
       <p class="eyebrow">Chapter ${chapter.n} · ${chapter.minutes} min</p>
-      <h2 class="title">${chapter.title}</h2>
+      <h1 class="title">${chapter.title}</h1>
       <div class="guide-slot"></div>
       <div class="boards" style="display:grid;gap:22px"></div>
       <div class="after" style="display:grid;gap:18px;margin-top:22px"></div>

@@ -59,11 +59,12 @@ export function renderPillars({ chapter, nextChapter }) {
   const seen = new Set();
   let mode = 'explore';
   let qIndex = 0;
+  let locked = false;
 
   const el = h(`
     <article>
       <p class="eyebrow">Chapter ${chapter.n} · ${chapter.minutes} min</p>
-      <h2 class="title">${chapter.title}</h2>
+      <h1 class="title">${chapter.title}</h1>
       <div class="guide-slot"></div>
       <div class="pillar-board">
         <div class="pillar-band band-policy">⚖️ <strong>Policy engine</strong> · Conditional Access checks every sign-in</div>
@@ -134,13 +135,14 @@ export function renderPillars({ chapter, nextChapter }) {
   function answer(p, tile) {
     const s = SCENARIOS[qIndex];
     const fb = banner.querySelector('.q-fb');
-    if (!s || tile.classList.contains('right')) return;
+    if (!s || locked || tile.classList.contains('right')) return;
     if (p.id === s.answer) {
       tile.classList.add('right');
       fb.innerHTML = `<div class="feedback good">Yes, that's ${p.name}. ${rich(p.microsoft[0])} is where Microsoft starts.</div>`;
       announce(`Correct, ${p.name}.`);
       qIndex += 1;
-      setTimeout(() => (qIndex < SCENARIOS.length ? ask() : done()), 1100);
+      locked = true;
+      setTimeout(() => { locked = false; if (qIndex < SCENARIOS.length) ask(); else done(); }, 1100);
     } else {
       tile.classList.add('wrong');
       const right = PILLARS.find((x) => x.id === s.answer);

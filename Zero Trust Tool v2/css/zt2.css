@@ -121,7 +121,10 @@ button { font: inherit; color: inherit; cursor: pointer; }
 /* ---------- Generic components ---------- */
 .eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--orange-text); }
 h1, .h1 { font-family: var(--display); font-size: clamp(28px, 4vw, 44px); line-height: 1.1; letter-spacing: -0.5px; }
-h2.title { font-family: var(--display); font-size: clamp(22px, 3vw, 30px); line-height: 1.15; margin: 6px 0 10px; }
+html { scroll-padding-top: 84px; }
+#stage:focus { outline: none; }
+.tray:empty { display: none; }
+h1.title, h2.title { font-family: var(--display); font-size: clamp(22px, 3vw, 30px); line-height: 1.15; margin: 6px 0 10px; }
 .lead { font-size: 17px; color: var(--muted); max-width: 62ch; }
 .card {
   background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg);
@@ -309,7 +312,7 @@ h2.title { font-family: var(--display); font-size: clamp(22px, 3vw, 30px); line-
 .policy .dot { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 800; background: var(--surface-soft); border: 1px solid var(--line); color: var(--muted); }
 .policy.hit { border-color: var(--orange); }
 .policy.hit .dot { background: var(--orange); border-color: var(--orange); color: #1a1a1c; }
-.policy.miss { opacity: 0.6; }
+.policy.miss { border-style: dashed; background: transparent; }
 .policy .lic { display: inline-block; margin-top: 4px; font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.5px; padding: 2px 7px; border-radius: 999px; background: var(--surface-soft); border: 1px solid var(--line); color: var(--muted); }
 .policy small { display: block; color: var(--muted); }
 
@@ -352,7 +355,8 @@ h2.title { font-family: var(--display); font-size: clamp(22px, 3vw, 30px); line-
 .step.hit { border-color: var(--bad); background: var(--bad-bg); }
 .step.stop { border-color: var(--shield); background: var(--shield-bg); border-width: 3px; }
 .step.stop p { color: var(--ink); }
-.step.gone { opacity: 0.5; border-style: dashed; }
+.step.gone { border-style: dashed; background: transparent; }
+.step.gone strong { color: var(--muted); }
 /* Status banner at the top of each attack step, so its meaning reads first. */
 .s-banner {
   display: inline-flex; gap: 6px; align-items: center; justify-self: start; margin-bottom: 4px;
@@ -443,12 +447,12 @@ body[data-theme='dark'] .stop .s-banner, body[data-theme='dark'] .kc-step.broken
 .own-group h4 { font-size: 15px; }
 .own { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid var(--line); background: var(--surface); font-size: 14px; }
 .own small { display: block; color: var(--muted); font-size: 12px; }
-.own .own-note { color: var(--orange-text); }
+.own .own-note { color: var(--ink); font-weight: 600; }
 .own-badge { font-family: var(--mono); font-size: 10.5px; padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
 .own.inc { border-color: var(--good); } .own.inc .own-badge { background: var(--good-bg); color: var(--good); }
 .own.add { border-color: var(--orange); } .own.add .own-badge { background: var(--orange-tint); color: var(--orange-text); }
 .own.payg .own-badge { background: var(--warn-bg); color: var(--warn); }
-.own.miss { opacity: 0.75; } .own.miss .own-badge { background: var(--surface-soft); color: var(--muted); border: 1px solid var(--line); }
+.own.miss { border-style: dashed; background: transparent; } .own.miss .own-badge { background: var(--surface-soft); color: var(--muted); border: 1px solid var(--line); }
 .sources { margin-top: 18px; font-size: 12.5px; color: var(--muted); }
 .sources a { color: var(--muted); }
 

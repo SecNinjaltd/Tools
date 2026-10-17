@@ -60,7 +60,7 @@ export function renderPrinciples({ chapter, nextChapter }) {
   const el = h(`
     <article>
       <p class="eyebrow">Chapter ${chapter.n} · ${chapter.minutes} min</p>
-      <h2 class="title">${chapter.title}</h2>
+      <h1 class="title">${chapter.title}</h1>
       <div class="guide-slot"></div>
       <div class="toggles" role="group" aria-label="Zero trust principles"></div>
       <div class="chain-head"><strong class="reach"></strong></div>
