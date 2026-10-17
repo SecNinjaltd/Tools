@@ -23,7 +23,7 @@ const RENDERERS = {
 const CHAPTER_KEYS = {
   principles: ['principlesMissions'],
   signin: ['signinMissions'],
-  licences: ['plan', 'addons', 'licenceMissions'],
+  licences: ['plan', 'addons', 'licenceMissions', 'licenceMissions2'],
   roadmap: ['roadmap']
 };
 
