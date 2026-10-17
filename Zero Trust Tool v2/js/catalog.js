@@ -7,7 +7,7 @@ export const PILLARS = {
   data: { name: 'Data', icon: '📄' },
   infrastructure: { name: 'Infrastructure', icon: '🏗️' },
   network: { name: 'Network', icon: '🌐' },
-  visibility: { name: 'Visibility & automation', icon: '📡' }
+  visibility: { name: 'Security operations', icon: '📡' }
 };
 
 export const CONTROLS = {
@@ -17,7 +17,7 @@ export const CONTROLS = {
   },
   passkeys: {
     name: 'Passkeys (phishing-resistant sign-in)', pillar: 'identity', product: 'Entra authentication strength',
-    plain: 'A private key locked in your device signs each sign-in, and only for the real Microsoft address, so a fake page has nothing to steal or relay.', needs: ['entraP1']
+    plain: 'A private key that is never sent to any website signs each sign-in, and only for the real Microsoft address, so a fake page has nothing to steal or relay.', needs: ['entraP1']
   },
   compliant: {
     name: 'Require a healthy, managed device', pillar: 'endpoints', product: 'Conditional Access + Intune',
@@ -25,14 +25,14 @@ export const CONTROLS = {
   },
   risk: {
     name: 'Risk-based sign-in policies', pillar: 'identity', product: 'Entra ID Protection',
-    plain: 'Unusual or leaked-password sign-ins are challenged or blocked automatically.', needs: ['entraP2']
+    plain: 'Unusual sign-ins, and accounts with leaked passwords, are challenged or blocked automatically.', needs: ['entraP2']
   },
   pim: {
     name: 'Just-in-time admin (PIM)', pillar: 'identity', product: 'Entra Privileged Identity Management',
     plain: 'Admin rights are switched on for a short time, with approval, then switched off again.', needs: ['entraP2']
   },
   reviews: {
-    name: 'Regular access reviews', pillar: 'identity', product: 'Entra ID Governance',
+    name: 'Regular access reviews', pillar: 'identity', product: 'Entra ID access reviews',
     plain: 'Managers confirm who still needs access, and leftover access is removed.', needs: ['entraP2']
   },
   edr: {
@@ -53,7 +53,7 @@ export const CONTROLS = {
   },
   labels: {
     name: 'Sensitivity labels', pillar: 'data', product: 'Purview Information Protection',
-    plain: 'Marks files as confidential and keeps them encrypted wherever they go.', needs: ['labels']
+    plain: 'Marks files as confidential and, if you choose, encrypts them so the protection travels with the file.', needs: ['labels']
   },
   dlp: {
     name: 'Data loss prevention for email and files', pillar: 'data', product: 'Purview DLP',
@@ -61,7 +61,8 @@ export const CONTROLS = {
   },
   endpointdlp: {
     name: 'Endpoint DLP', pillar: 'data', product: 'Purview Endpoint DLP',
-    plain: 'Stops sensitive files being copied to USB sticks, personal cloud storage or AI websites.', needs: ['endpointDlp']
+    plain: 'Stops sensitive files being copied to USB sticks, personal cloud storage or AI websites.', needs: ['endpointDlp'],
+    alsoVia: 'the Purview Suite add-on'
   },
   private: {
     name: 'Replace the VPN with Private Access', pillar: 'network', product: 'Entra Private Access',
@@ -73,14 +74,16 @@ export const CONTROLS = {
   },
   cspm: {
     name: 'Cloud security posture', pillar: 'infrastructure', product: 'Defender for Cloud',
-    plain: 'Finds misconfigured cloud resources, like storage left open to the internet.', needs: ['defenderCloud']
+    plain: 'Finds misconfigured cloud resources, like storage left open to the internet.', needs: ['defenderCloud'],
+    paygNote: 'Basic checks are free in Azure; the full Defender CSPM plan is billed by usage'
   },
   xdr: {
-    name: 'Automatic attack disruption', pillar: 'visibility', product: 'Defender XDR',
-    plain: 'Links signals from email, identity and devices, and can disable a hijacked account in minutes.', needs: ['xdrFull']
+    name: 'Automatic attack disruption', pillar: 'visibility', product: 'Defender XDR / Defender for Business',
+    plain: 'Links signals from email, identity and devices, and can contain a hijacked account and device in minutes.', needs: ['disruption']
   },
   sentinel: {
     name: 'Security monitoring (SIEM)', pillar: 'visibility', product: 'Microsoft Sentinel',
-    plain: 'Collects logs from everywhere so a security team can spot and investigate attacks.', needs: ['sentinel']
+    plain: 'Collects logs from everywhere so a security team can spot and investigate attacks.', needs: ['sentinel'],
+    paygNote: 'Billed by the data you send it; E5 includes a free data allowance'
   }
 };

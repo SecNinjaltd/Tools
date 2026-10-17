@@ -15,11 +15,11 @@ const SCENARIOS = [
       },
       {
         title: 'Jo signs in on the fake page', text: 'The fake page passes Jo\'s password and app approval to Microsoft and steals the session.',
-        accepts: ['passkeys'], win: 'Jo\'s device only signs in with a passkey when the browser confirms the address is the real login.microsoftonline.com. On the fake site there is no matching key, so nothing is sent, and there is no password or code for the page to pass on.'
+        accepts: ['passkeys'], win: 'Jo\'s device only signs in with a passkey when the browser confirms the address is Microsoft\'s real sign-in address. On the fake site there is no matching key, so nothing is sent, and there is no password or code for the page to pass on.'
       },
       {
         title: 'The attacker replays the stolen session', text: 'From their own laptop, the attacker opens Jo\'s mailbox.',
-        accepts: ['compliant', 'risk'], win: 'The attacker\'s laptop isn\'t a managed, healthy company device, or the sign-in looks risky, so access is refused.'
+        accepts: ['compliant', 'risk'], win: 'Microsoft only issues a session to a managed, healthy device, so the attacker\'s proxy never gets a usable one. And if a session is stolen, ID Protection flags it as risky and a risk policy makes Jo sign in again.'
       },
       {
         title: 'Invoice fraud from Jo\'s mailbox', text: 'The attacker hides replies with an inbox rule and emails customers new bank details.',
@@ -165,8 +165,8 @@ function PASSKEY_EXPLAINER() {
       <h3 style="margin:6px 0 4px">Why a passkey can't be phished</h3>
       <p style="color:var(--muted);font-size:14px">A passkey is a pair of cryptographic keys (the FIDO2 / WebAuthn standard), made by Jo's device for one website only.</p>
       <ol>
-        <li><strong>Setting up.</strong> Jo's laptop or phone creates a key pair for <code>login.microsoftonline.com</code>. The <strong>private key</strong> is kept in protected hardware on Jo's device (a TPM or Secure Enclave, or in Microsoft Authenticator) and is never sent to any website. Microsoft only stores the <strong>public key</strong>, which is useless to a thief.</li>
-        <li><strong>Signing in.</strong> Microsoft sends a random, one-time challenge. Jo unlocks the key with her face, fingerprint or PIN, which never leaves the device, and the device signs the challenge.</li>
+        <li><strong>Setting up.</strong> Jo's laptop or phone creates a key pair for Microsoft's real sign-in address. The <strong>private key</strong> is never sent to any website. With a device-bound passkey (a security key or Microsoft Authenticator) it stays on that one device; with a synced passkey (for example iCloud Keychain) it is encrypted and synced between Jo's own devices. Microsoft only stores the <strong>public key</strong>, which is useless to a thief.</li>
+        <li><strong>Signing in.</strong> Microsoft sends a random, one-time challenge. Jo unlocks the key with her face, fingerprint or PIN, which stays on her device, and the device signs the challenge.</li>
         <li><strong>The address check.</strong> The browser, not the web page, tells the device which site is asking, and that address is part of what gets signed. The device only uses the key if the address matches the one it was made for.</li>
         <li><strong>The result.</strong> On <code>login-micros0ft.com</code> there is no key to use, so nothing is sent. Even if an attacker relays Microsoft's challenge, the signature names the wrong address and Microsoft rejects it. Each signature works once, for one challenge, so there is nothing to steal and replay.</li>
       </ol>
@@ -207,7 +207,7 @@ export function renderMissions({ chapter, nextChapter }) {
       after.appendChild(quiz({
         question: 'An attacker\'s fake page sits between Jo and Microsoft, passing everything through. Why does Jo\'s passkey still keep the attacker out?',
         options: [
-          { text: 'The passkey is encrypted, so the fake page can\'t read it', why: 'Not quite. The passkey\'s private key never leaves Jo\'s device at all, so there is nothing to read. The real reason is what the device agrees to sign.' },
+          { text: 'The passkey is encrypted, so the fake page can\'t read it', why: 'Not quite. The passkey\'s private key is never sent to any website, so there is nothing to read. The real reason is what the device agrees to sign.' },
           { text: 'The device signs the challenge only for the real site address, and the browser includes the address it is on in what gets signed', right: true, why: 'Exactly. On the fake domain there is no matching key, and even a relayed challenge would carry the wrong address, so Microsoft rejects it. Nothing reusable ever crosses the network.' },
           { text: 'Passkeys use a longer code than the authenticator app', why: 'There is no code to type at all. App codes and push approvals can be relayed by a fake page in real time; a passkey signature can\'t, because it is bound to the real address.' }
         ],

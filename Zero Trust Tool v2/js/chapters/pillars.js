@@ -21,14 +21,14 @@ const PILLARS = [
     what: 'The cloud services and in-house apps where work happens, from Outlook to the finance system.',
     wrong: 'Staff use unapproved apps, risky apps are granted access to company data, and nobody watches the sessions.',
     example: 'A free file-sharing site becomes the place where contracts quietly leak.',
-    microsoft: ['Defender for Cloud Apps', 'Defender for Office 365', 'Entra app access controls']
+    microsoft: ['Defender for Cloud Apps', 'Defender for Office 365', 'Conditional Access app control']
   },
   {
     id: 'data', icon: '📄', name: 'Data',
     what: 'Files, emails, chats and databases: the thing attackers actually want.',
     wrong: 'Sensitive files are shared too widely, and data walks out through personal email, USB sticks or AI tools.',
     example: 'A spreadsheet of customer details is shared with "anyone with the link" and ends up online.',
-    microsoft: ['Purview sensitivity labels', 'Purview data loss prevention', 'Purview Insider Risk', 'Data security for Copilot']
+    microsoft: ['Purview sensitivity labels', 'Purview data loss prevention', 'Purview Insider Risk Management', 'Purview Data Security Posture Management']
   },
   {
     id: 'infrastructure', icon: '🏗️', name: 'Infrastructure',
@@ -66,9 +66,9 @@ export function renderPillars({ chapter, nextChapter }) {
       <h2 class="title">${chapter.title}</h2>
       <div class="guide-slot"></div>
       <div class="pillar-board">
-        <div class="pillar-band band-policy">⚖️ <strong>Policy engine</strong> · Conditional Access checks every request</div>
+        <div class="pillar-band band-policy">⚖️ <strong>Policy engine</strong> · Conditional Access checks every sign-in</div>
         <div class="pillar-grid"></div>
-        <div class="pillar-band band-visibility">📡 <strong>Visibility, automation and orchestration</strong> · Defender XDR, Microsoft Sentinel and Security Copilot watch all six</div>
+        <div class="pillar-band band-visibility">📡 <strong>Security operations (SecOps)</strong> · Defender XDR, Microsoft Sentinel and Security Copilot watch all six</div>
       </div>
       <div class="quiz-banner" hidden aria-live="polite"></div>
       <div class="pillar-detail card" aria-live="polite"></div>
@@ -76,7 +76,7 @@ export function renderPillars({ chapter, nextChapter }) {
       <div class="chapter-foot"><a class="btn secondary" href="#/">All chapters</a></div>
     </article>`);
 
-  const ninja = guide("Zero trust isn't one product. Microsoft splits it into six areas, called pillars, all protected by one policy engine and watched by one set of eyes.\nClick each pillar to find out what it is and what goes wrong. Open all six to unlock the challenge.", 'stance');
+  const ninja = guide("Zero trust isn't one product. Microsoft splits it into six areas, called pillars, all checked by one policy engine, plus security operations watching all of them.\nClick each pillar to find out what it is and what goes wrong. Open all six to unlock the challenge.", 'stance');
   el.querySelector('.guide-slot').appendChild(ninja.el);
   const grid = el.querySelector('.pillar-grid');
   const detail = el.querySelector('.pillar-detail');

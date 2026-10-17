@@ -19,7 +19,9 @@ export const CAPABILITIES = {
   privateAccess: 'Entra Private Access',
   internetAccess: 'Entra Internet Access',
   xdrFull: 'Full Defender XDR (Defender for Endpoint P2, Office 365 P2, Identity and Cloud Apps)',
-  defenderCloud: 'Defender for Cloud (Azure, pay as you go)',
+  // Built into Defender for Business (device and user containment) and Defender XDR (cross-product).
+  disruption: 'Automatic attack disruption (Defender for Business or Defender XDR)',
+  defenderCloud: 'Defender for Cloud (Foundational CSPM free; Defender CSPM billed by Azure usage)',
   sentinel: 'Microsoft Sentinel (Azure, pay as you go)'
 };
 
@@ -29,7 +31,7 @@ export const PAYG = new Set(['defenderCloud', 'sentinel']);
 export const PLANS = {
   bp: {
     name: 'Microsoft 365 Business Premium', short: 'Business Premium', who: 'Up to 300 users',
-    includes: ['entraP1', 'intune', 'edr', 'endpointProtection', 'mdoP1', 'labels', 'dlp'],
+    includes: ['entraP1', 'intune', 'edr', 'endpointProtection', 'mdoP1', 'labels', 'dlp', 'disruption'],
     addons: ['defenderSuiteBP', 'entraSuite']
   },
   e3: {
@@ -39,7 +41,7 @@ export const PLANS = {
   },
   e5: {
     name: 'Microsoft 365 E5', short: 'E5', who: 'Enterprise, any size',
-    includes: ['entraP1', 'entraP2', 'intune', 'edr', 'endpointProtection', 'mdoP1', 'mdca', 'labels', 'dlp', 'endpointDlp', 'xdrFull'],
+    includes: ['entraP1', 'entraP2', 'intune', 'edr', 'endpointProtection', 'mdoP1', 'mdca', 'labels', 'dlp', 'endpointDlp', 'xdrFull', 'disruption'],
     addons: ['entraSuite']
   }
 };
@@ -47,12 +49,14 @@ export const PLANS = {
 export const ADDONS = {
   defenderSuiteBP: {
     name: 'Defender Suite for Business Premium',
-    includes: ['entraP2', 'edr', 'endpointProtection', 'mdoP1', 'mdca', 'xdrFull']
+    includes: ['entraP2', 'edr', 'endpointProtection', 'mdoP1', 'mdca', 'xdrFull', 'disruption']
   },
   defenderSuite: {
     name: 'Microsoft Defender Suite (formerly E5 Security)',
-    includes: ['entraP2', 'edr', 'endpointProtection', 'mdoP1', 'mdca', 'xdrFull']
+    includes: ['entraP2', 'edr', 'endpointProtection', 'mdoP1', 'mdca', 'xdrFull', 'disruption']
   },
+  // Doesn't include the P2 licence itself, but bundles ID Protection and ID Governance, which cover the
+  // P2 identity controls used here. Requires Entra ID P1. Also included in Microsoft 365 E7.
   entraSuite: {
     name: 'Microsoft Entra Suite',
     includes: ['entraP2', 'privateAccess', 'internetAccess']
@@ -61,10 +65,13 @@ export const ADDONS = {
 
 export const SOURCES = [
   ['Microsoft Defender service description', 'https://learn.microsoft.com/office365/servicedescriptions/microsoft-365-service-descriptions/microsoft-365-tenantlevel-services-licensing-guidance/microsoft-defender-service-description'],
+  ['Defender for Office 365 service description', 'https://learn.microsoft.com/office365/servicedescriptions/office-365-advanced-threat-protection-service-description'],
+  ['Defender for Business attack disruption', 'https://learn.microsoft.com/defender-business/mdb-attack-disruption'],
   ['Microsoft Purview service description', 'https://learn.microsoft.com/office365/servicedescriptions/microsoft-365-service-descriptions/microsoft-365-tenantlevel-services-licensing-guidance/microsoft-purview-service-description'],
   ['Microsoft Entra licensing', 'https://learn.microsoft.com/entra/fundamentals/licensing'],
   ['Defender Suite for Business Premium', 'https://learn.microsoft.com/microsoft-365/admin/security-and-compliance/add-defender-suite-business-premium'],
   ['Global Secure Access licensing', 'https://learn.microsoft.com/entra/global-secure-access/overview-what-is-global-secure-access'],
+  ['Defender for Cloud posture management', 'https://learn.microsoft.com/azure/defender-for-cloud/concept-cloud-security-posture-management'],
   ['Microsoft Sentinel billing', 'https://learn.microsoft.com/azure/sentinel/billing']
 ];
 
@@ -98,9 +105,10 @@ export function plansThatInclude(controlId) {
 
 // One short line saying how to get a control that the current plan doesn't cover.
 export function howToGet(controlId, planId) {
+  const also = CONTROLS[controlId].alsoVia;
   const opts = addonsThatCover(controlId, planId);
-  if (opts.length) return `Available with ${opts.join(' or ')}`;
+  if (opts.length) return `Available with ${[...opts, ...(also ? [also] : [])].join(' or ')}`;
   const plans = plansThatInclude(controlId);
-  if (plans.length) return `Included in ${plans.join(', ')}`;
+  if (plans.length) return `Included in ${plans.join(', ')}${also ? `, or with ${also}` : ''}`;
   return `Needs ${CONTROLS[controlId].needs.map((n) => CAPABILITIES[n]).join(', ')}`;
 }

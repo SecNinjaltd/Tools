@@ -56,7 +56,7 @@ const POLICIES = [
     id: 'risk', name: 'React to risky sign-ins',
     lic: 'Entra ID P2 · ID Protection',
     test: (s) => {
-      if (s.risk === 'high') return { block: 'Microsoft rates this sign-in as high risk, for example a password seen in a leak.' };
+      if (s.risk === 'high') return { block: 'Microsoft rates this sign-in as high risk, for example it comes from an address known to be used by attackers. This policy blocks it; many organisations ask for strong MFA instead, so the real user can prove it is them.' };
       if (s.risk === 'medium') return { mfa: true, note: 'Medium risk: ask for MFA to prove it really is them.' };
       return null;
     }
@@ -69,7 +69,7 @@ const POLICIES = [
   {
     id: 'adminStrength', name: 'Admins need a phishing-resistant sign-in',
     lic: 'Entra ID P1 · authentication strength',
-    test: (s) => (s.user === 'priya' || s.app === 'admin' ? { passkey: true, note: 'Admin accounts are the biggest prize, so only a passkey will do.' } : null)
+    test: (s) => (s.user === 'priya' || s.app === 'admin' ? { passkey: true, note: 'Admin accounts are the biggest prize, so they need a phishing-resistant method, such as a passkey or Windows Hello for Business.' } : null)
   },
   {
     id: 'device', name: 'Sensitive apps need a healthy company device',
@@ -104,7 +104,7 @@ function evaluate(s) {
 
   const needPasskey = hits.find((x) => x.r.passkey);
   if (needPasskey && s.method !== 'passkey') {
-    return { verdict: 'mfa', title: 'Asks for a passkey', why: 'An app prompt can be phished. For admin access only a passkey is strong enough, so Priya is asked for one.', results, decisive: needPasskey.p.id };
+    return { verdict: 'mfa', title: 'Asks for a passkey', why: 'An app prompt can be relayed by a fake page. Admin access needs a phishing-resistant method, such as a passkey or Windows Hello for Business, so Priya is asked for one.', results, decisive: needPasskey.p.id };
   }
 
   const needMfa = hits.find((x) => x.r.mfa);

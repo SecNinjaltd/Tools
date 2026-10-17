@@ -89,7 +89,7 @@ export function renderRoadmap({ chapter }) {
     const cov = coverage(id, plan, addons);
     let lic = 'Included in your plan';
     if (cov.status === 'addon') lic = `Via ${cov.via.join(', ')}`;
-    if (cov.status === 'payg') lic = 'Azure, pay as you go';
+    if (cov.status === 'payg') lic = c.paygNote || 'Azure, pay as you go';
     if (cov.status === 'missing') lic = howToGet(id, plan);
     const card = h(`
       <button type="button" class="ctl rm ${cov.status}" data-id="${id}" aria-pressed="false">

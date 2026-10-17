@@ -13,7 +13,7 @@ const MISSIONS = [
     check: (s) => s.plan === 'bp' && coverage('risk', 'bp', s.addons).status === 'addon'
   },
   {
-    text: 'Find the add-on that lets you replace the VPN.',
+    text: 'Find an add-on that lets you replace the VPN. (Entra Private Access is also sold on its own.)',
     check: (s) => coverage('private', s.plan, s.addons).status === 'addon'
   }
 ];
@@ -130,6 +130,7 @@ export function renderLicences({ chapter, nextChapter }) {
         let note = '';
         if (cov.status === 'addon') note = `Via ${cov.via.join(', ')}`;
         if (cov.status === 'missing') note = howToGet(id, state.plan);
+        if (cov.status === 'payg') note = c.paygNote || '';
         group.appendChild(h(`
           <div class="own ${st.cls}">
             <div><strong>${escapeHtml(c.name)}</strong><small>${escapeHtml(c.product)}</small>${note ? `<small class="own-note">${escapeHtml(note)}</small>` : ''}</div>

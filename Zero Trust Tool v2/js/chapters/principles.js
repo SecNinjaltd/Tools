@@ -8,7 +8,7 @@ const PRINCIPLES = [
     plain: 'Check every sign-in using everything you know: who, which device, where from, how risky.'
   },
   {
-    id: 'least', icon: '🗝️', name: 'Use least privilege',
+    id: 'least', icon: '🗝️', name: 'Use least privilege access',
     plain: 'Give people only the access they need, only for as long as they need it.'
   },
   {
@@ -31,7 +31,7 @@ const STEPS = [
   },
   {
     icon: '📤', title: 'Spreads and steals data', text: 'The attacker hops to other systems and uploads customer files.',
-    stoppedBy: 'breach', how: 'Defender spots the unusual behaviour and isolates the account, and data loss prevention blocks the upload.'
+    stoppedBy: 'breach', how: 'Defender spots the unusual behaviour and disables or contains the account before the attacker can spread or upload anything.'
   }
 ];
 
@@ -49,7 +49,7 @@ const SORT_ITEMS = [
   { text: 'Just-in-time admin (PIM)', bucket: 'least', why: 'Switching admin rights on only when needed is least privilege.' },
   { text: 'Access reviews', bucket: 'least', why: 'Removing access people no longer need is least privilege.' },
   { text: 'Defender XDR detection', bucket: 'breach', why: 'Watching for attackers already inside is assume breach.' },
-  { text: 'Data loss prevention', bucket: 'breach', why: 'Stopping data leaving even after an account is compromised is assume breach.' },
+  { text: 'Data loss prevention', bucket: 'least', why: 'Limiting what anyone can do with sensitive data is least privilege access. Microsoft puts Purview data protection under this principle.' },
   { text: 'Microsoft Sentinel monitoring', bucket: 'breach', why: 'Collecting logs to spot and investigate attacks is assume breach.' }
 ];
 
