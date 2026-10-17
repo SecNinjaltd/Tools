@@ -36,19 +36,28 @@ const STATUS = {
 };
 
 export function renderMap() {
-  const plan = savedPlan(store);
-  const addons = savedAddons(store, plan);
+  let plan = savedPlan(store);
+  let addons = savedAddons(store, plan);
   let colour = true;
+  let selected = null;
 
   const el = h(`
     <article class="zt-map-page">
       <p class="eyebrow">Explore</p>
       <h1 class="title">The zero trust map</h1>
       <div class="guide-slot"></div>
+      <section class="lic-bar" aria-label="Your licences">
+        <div class="lic-head">
+          <span class="lic-title">Your licences</span>
+          <span class="lic-score" aria-live="polite"></span>
+        </div>
+        <div class="lic-plans" role="group" aria-label="Microsoft 365 plan"></div>
+        <div class="lic-addons" role="group" aria-label="Add-ons"></div>
+      </section>
+      <button type="button" class="lic-float" hidden></button>
       <div class="map-tools row">
         <button type="button" class="btn" id="traceBtn">▶ Follow a sign-in</button>
         <label class="map-toggle"><input type="checkbox" checked> Colour by my plan</label>
-        <span class="map-plan">Plan: <strong>${escapeHtml(PLANS[plan].short)}</strong>${addons.length ? ` + ${addons.map((a) => escapeHtml(ADDONS[a].name)).join(', ')}` : ''} · <a href="#/licences">Change</a></span>
       </div>
       <ul class="legend map-legend" aria-label="Key">
         <li><span class="sw inc"></span>Included in your plan</li>
@@ -98,8 +107,7 @@ export function renderMap() {
     const caps = zone.querySelector('.caps');
     ids.forEach((id) => {
       const c = CONTROLS[id];
-      const cov = coverage(id, plan, addons);
-      const chip = h(`<button type="button" class="cap ${STATUS[cov.status].cls}" data-id="${id}" aria-pressed="false"><span class="cap-name">${escapeHtml(c.name)}</span><span class="cap-product">${escapeHtml(c.product)}</span></button>`);
+      const chip = h(`<button type="button" class="cap" data-id="${id}" aria-pressed="false"><span class="cap-name">${escapeHtml(c.name)}</span><span class="cap-product">${escapeHtml(c.product)}</span></button>`);
       chip.addEventListener('click', () => show(id, chip));
       caps.appendChild(chip);
       chips.push(chip);
@@ -108,7 +116,89 @@ export function renderMap() {
     map.querySelector(`.col-${z.col}`).appendChild(zone);
   });
 
-  function show(id, chip) {
+  // Licence bar: switch plan or add-ons and the map recolours in place.
+  const planRow = el.querySelector('.lic-plans');
+  const addonRow = el.querySelector('.lic-addons');
+  const score = el.querySelector('.lic-score');
+  const families = [...new Set(Object.values(PLANS).map((p) => p.family))];
+  families.forEach((f) => {
+    const g = h(`<div class="lic-family"><span class="lic-family-label">${escapeHtml(f)}</span><div class="lic-pills"></div></div>`);
+    Object.entries(PLANS).filter(([, p]) => p.family === f).forEach(([id, p]) => {
+      const b = h(`<button type="button" class="lic-pill" data-plan="${id}" title="${escapeHtml(p.name)}" aria-label="${escapeHtml(p.short)}">${escapeHtml(p.short.replace(`${f} `, ''))}</button>`);
+      b.addEventListener('click', () => {
+        if (id === plan) return;
+        plan = id;
+        addons = addons.filter((a) => PLANS[id].addons.includes(a));
+        applyLicences(true);
+      });
+      g.querySelector('.lic-pills').appendChild(b);
+    });
+    planRow.appendChild(g);
+  });
+
+  function renderAddons() {
+    addonRow.innerHTML = '<span class="lic-family-label">Add-ons</span>';
+    const list = PLANS[plan].addons;
+    if (!list.length) addonRow.insertAdjacentHTML('beforeend', '<span class="addon-none">None needed: this plan already includes everything that can be added.</span>');
+    list.forEach((a) => {
+      const on = addons.includes(a);
+      const b = h(`<button type="button" class="lic-addon" aria-pressed="${on}">${on ? '✓' : '+'} ${escapeHtml(ADDONS[a].name)}</button>`);
+      b.addEventListener('click', () => {
+        addons = on ? addons.filter((x) => x !== a) : [...addons, a];
+        applyLicences(true);
+      });
+      addonRow.appendChild(b);
+    });
+  }
+
+  function applyLicences(changed) {
+    let ready = 0;
+    let gained = 0;
+    chips.forEach((chip) => {
+      const cov = coverage(chip.dataset.id, plan, addons);
+      const cls = STATUS[cov.status].cls;
+      const was = ['inc', 'add', 'payg', 'miss'].find((k) => chip.classList.contains(k));
+      if (cov.status === 'included' || cov.status === 'addon') ready += 1;
+      if (changed && was && was !== cls) {
+        chip.classList.remove('changed');
+        void chip.offsetWidth;
+        chip.classList.add('changed');
+        if ((cls === 'inc' || cls === 'add') && (was === 'miss' || was === 'payg')) gained += 1;
+        if ((was === 'inc' || was === 'add') && (cls === 'miss' || cls === 'payg')) gained -= 1;
+      }
+      chip.classList.remove('inc', 'add', 'payg', 'miss');
+      chip.classList.add(cls);
+    });
+    planRow.querySelectorAll('.lic-pill').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.plan === plan)));
+    renderAddons();
+    const delta = changed && gained ? ` <span class="lic-delta ${gained > 0 ? 'up' : 'down'}">${gained > 0 ? '+' : '−'}${Math.abs(gained)}</span>` : '';
+    score.innerHTML = `<strong>${ready} of ${chips.length}</strong> controls covered${delta}`;
+    float.innerHTML = `<span>${escapeHtml(PLANS[plan].short)}${addons.length ? ` +${addons.length}` : ''} · <strong>${ready}/${chips.length}</strong></span><span class="lic-float-cta">Change</span>`;
+    if (changed) {
+      store.set('plan', plan);
+      store.set('addons', addons);
+      window.dispatchEvent(new Event('zt-progress'));
+      announce(`${PLANS[plan].short}${addons.length ? ' plus ' + addons.map((a) => ADDONS[a].name).join(', ') : ''}. ${ready} of ${chips.length} controls covered.`);
+      if (selected) show(selected.dataset.id, selected, true);
+    }
+  }
+  // On narrow screens the bar scrolls away, so a floating button brings it back.
+  const float = el.querySelector('.lic-float');
+  const bar = el.querySelector('.lic-bar');
+  float.addEventListener('click', () => {
+    bar.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    bar.querySelector('[aria-pressed="true"]')?.focus({ preventScroll: true });
+  });
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver(([entry]) => {
+      float.hidden = entry.isIntersecting || entry.boundingClientRect.bottom >= 0;
+    });
+    io.observe(bar);
+  }
+  applyLicences(false);
+
+  function show(id, chip, quiet) {
+    selected = chip;
     chips.forEach((c) => c.setAttribute('aria-pressed', String(c === chip)));
     const c = CONTROLS[id];
     const cov = coverage(id, plan, addons);
@@ -125,6 +215,7 @@ export function renderMap() {
       ${c.note ? `<p class="detail-note">${escapeHtml(c.note)}</p>` : ''}
       <p style="margin-top:10px">${learnLink(c.learn)}</p>`;
     // On narrow screens the map is one long column, so show the detail right under the tapped zone.
+    if (quiet) return;
     if (matchMedia('(max-width: 1100px)').matches) {
       chip.closest('.zone').after(detail);
       detail.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -146,6 +237,7 @@ export function renderMap() {
   function renderStep() {
     if (step < 0) {
       map.classList.remove('tracing');
+      el.classList.remove('tracing-on');
       Object.values(zoneEls).forEach((z) => z.classList.remove('lit'));
       traceBar.hidden = true;
       traceBtn.textContent = '▶ Follow a sign-in';
@@ -153,6 +245,7 @@ export function renderMap() {
     }
     const t = TRACE[step];
     map.classList.add('tracing');
+    el.classList.add('tracing-on');
     Object.entries(zoneEls).forEach(([id, z]) => z.classList.toggle('lit', t.zones.includes(id)));
     traceBar.hidden = false;
     traceBar.innerHTML = `
