@@ -37,8 +37,40 @@ export const store = {
     done.add(id);
     this.set('completed', [...done]);
     window.dispatchEvent(new CustomEvent('zt-progress'));
+  },
+  // Forget a chapter: its saved keys and its completed tick.
+  resetChapter(id, keys = []) {
+    const data = readStore();
+    keys.forEach((k) => delete data[k]);
+    data.completed = (data.completed || []).filter((c) => c !== id);
+    writeStore(data);
+    window.dispatchEvent(new CustomEvent('zt-progress'));
+  },
+  // Forget everything except the theme.
+  resetAll() {
+    const data = readStore();
+    writeStore('theme' in data ? { theme: data.theme } : {});
+    window.dispatchEvent(new CustomEvent('zt-progress'));
   }
 };
+
+// A button that needs a second tap within a few seconds, so progress isn't wiped by accident.
+export function resetButton(label, onConfirm) {
+  const b = h(`<button type="button" class="btn secondary reset-btn no-print">↺ ${escapeHtml(label)}</button>`);
+  let timer = null;
+  b.addEventListener('click', () => {
+    if (!timer) {
+      b.textContent = 'Tap again to confirm';
+      b.classList.add('confirming');
+      announce(`${label}? Press again to confirm.`);
+      timer = setTimeout(() => { timer = null; b.textContent = `↺ ${label}`; b.classList.remove('confirming'); }, 3500);
+      return;
+    }
+    clearTimeout(timer);
+    onConfirm();
+  });
+  return b;
+}
 
 export function h(html) {
   const tpl = document.createElement('template');

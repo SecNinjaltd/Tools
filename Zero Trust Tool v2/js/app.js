@@ -1,5 +1,5 @@
 import { CHAPTERS } from './content.js';
-import { store, h, rich, initGlossary } from './ui.js';
+import { store, h, rich, initGlossary, resetButton, announce } from './ui.js';
 import { renderCastle } from './chapters/castle.js';
 import { renderPrinciples } from './chapters/principles.js';
 import { renderPillars } from './chapters/pillars.js';
@@ -16,6 +16,14 @@ const RENDERERS = {
   missions: renderMissions,
   licences: renderLicences,
   roadmap: renderRoadmap
+};
+
+// What each chapter saves, so "Reset chapter" can clear it.
+const CHAPTER_KEYS = {
+  principles: ['principlesMissions'],
+  signin: ['signinMissions'],
+  licences: ['plan', 'addons', 'licenceMissions'],
+  roadmap: ['roadmap']
 };
 
 const rail = document.getElementById('rail');
@@ -74,7 +82,15 @@ function renderHome() {
         <img src="assets/mascots/ninja-stance.webp" alt="The Security Ninja cat in a fighting stance" width="300" height="320">
       </section>
       <div class="chapters"></div>
+      <div class="home-foot"></div>
     </div>`);
+  if (done.size || Object.keys(CHAPTER_KEYS).some((id) => CHAPTER_KEYS[id].some((k) => store.get(k) !== undefined))) {
+    el.querySelector('.home-foot').appendChild(resetButton('Reset all progress', () => {
+      store.resetAll();
+      route();
+      announce('All progress reset.');
+    }));
+  }
   const grid = el.querySelector('.chapters');
   CHAPTERS.forEach((c) => {
     const tag = done.has(c.id) ? '<span class="tag done">Completed</span>'
@@ -110,7 +126,15 @@ function route() {
     stage.appendChild(renderHome());
   } else if (RENDERERS[chapter.id]) {
     const nextChapter = CHAPTERS.find((c) => c.n > chapter.n && c.ready);
-    stage.appendChild(RENDERERS[chapter.id]({ chapter, nextChapter }));
+    const view = RENDERERS[chapter.id]({ chapter, nextChapter });
+    const tools = h('<div class="chapter-tools"></div>');
+    tools.appendChild(resetButton('Reset chapter', () => {
+      store.resetChapter(chapter.id, CHAPTER_KEYS[chapter.id]);
+      route();
+      announce(`${chapter.title} reset. Starting again.`);
+    }));
+    view.prepend(tools);
+    stage.appendChild(view);
   } else {
     stage.appendChild(renderSoon(chapter));
   }

@@ -122,6 +122,11 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--orange-text); }
 h1, .h1 { font-family: var(--display); font-size: clamp(28px, 4vw, 44px); line-height: 1.1; letter-spacing: -0.5px; }
 html { scroll-padding-top: 84px; }
+.chapter-tools { float: right; margin: -4px 0 8px 12px; }
+.reset-btn { padding: 7px 14px; font-size: 13px; }
+.reset-btn.confirming { border-color: var(--bad); color: var(--bad); }
+.home-foot { display: flex; justify-content: center; margin-top: 28px; }
+@media print { .chapter-tools { display: none; } }
 #stage:focus { outline: none; }
 .tray:empty { display: none; }
 h1.title, h2.title { font-family: var(--display); font-size: clamp(22px, 3vw, 30px); line-height: 1.15; margin: 6px 0 10px; }
