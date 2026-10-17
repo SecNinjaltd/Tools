@@ -130,7 +130,32 @@ export const CONTROLS = {
   securitycopilot: {
     name: 'AI help for security tasks', pillar: 'visibility', product: 'Microsoft Security Copilot',
     plain: 'An AI assistant and agents inside Defender, Entra, Intune and Purview that summarise incidents, triage phishing reports and suggest fixes.', needs: ['securityCopilot'],
-    note: 'Other plans can buy Security Compute Units, paid for by use'
+    note: 'Other plans can buy Security Compute Units, paid for by use', ai: true
+  },
+  // Securing the use of AI. Copilot only sees what the signed-in user can already reach, so these sit on top of the controls above.
+  copilotoversharing: {
+    name: 'Stop Copilot finding overshared files', pillar: 'data', product: 'SharePoint Advanced Management', ai: true,
+    plain: 'Reports on overshared SharePoint sites and can hide sensitive sites from Copilot and search, so Copilot only surfaces what people should see.', needs: ['copilot'],
+    note: 'Turns on when at least one Copilot licence is assigned, or with the SharePoint Advanced Management Plan 1 add-on'
+  },
+  copilotdlp: {
+    name: 'Stop Copilot using sensitive files', pillar: 'data', product: 'Purview DLP for Copilot', ai: true,
+    plain: 'A data loss prevention policy stops Copilot from summarising files and emails with chosen sensitivity labels.', needs: ['copilot', 'copilotDlp'],
+    note: 'Blocking sensitive details typed into prompts works for every Copilot user'
+  },
+  aiposture: {
+    name: 'See how AI is used with your data', pillar: 'data', product: 'Purview DSPM for AI', ai: true,
+    plain: 'Shows which AI apps people use, flags sensitive data in prompts and offers one-click policies to protect it.', needs: ['dspmAi'],
+    note: 'E3 gets a basic view; watching third-party AI apps is billed pay as you go'
+  },
+  shadowai: {
+    name: 'Block risky AI apps', pillar: 'apps', product: 'Defender for Cloud Apps', ai: true,
+    plain: 'Finds the generative AI apps staff use, scores their risk and blocks the ones you unsanction.', needs: ['mdca'],
+    note: 'Blocking happens on devices onboarded to Defender for Endpoint'
+  },
+  agentaccess: {
+    name: 'Conditional Access for AI agents', pillar: 'identity', product: 'Microsoft Entra Agent ID', ai: true,
+    plain: 'Gives each AI agent its own identity and checks it with Conditional Access, blocking risky agents just like risky users.', needs: ['entraP1', 'agent365']
   }
 };
 
@@ -163,6 +188,16 @@ const LEARN = {
   insiderrisk: 'https://learn.microsoft.com/purview/insider-risk-management',
   compliantnetwork: 'https://learn.microsoft.com/entra/global-secure-access/how-to-compliant-network',
   exposure: 'https://learn.microsoft.com/security-exposure-management/microsoft-security-exposure-management',
-  securitycopilot: 'https://learn.microsoft.com/copilot/security/microsoft-security-copilot'
+  securitycopilot: 'https://learn.microsoft.com/copilot/security/microsoft-security-copilot',
+  copilotoversharing: 'https://learn.microsoft.com/microsoft-365/copilot/get-ready-copilot-sharepoint-advanced-management',
+  copilotdlp: 'https://learn.microsoft.com/purview/dlp-microsoft365-copilot-location-learn-about',
+  aiposture: 'https://learn.microsoft.com/purview/dspm-for-ai',
+  shadowai: 'https://learn.microsoft.com/microsoft-365/copilot/manage-generative-ai-apps',
+  agentaccess: 'https://learn.microsoft.com/entra/identity/conditional-access/agent-id'
 };
 Object.entries(LEARN).forEach(([id, url]) => { CONTROLS[id].learn = url; });
+
+// Small tag marking AI and Copilot controls wherever a control is listed.
+export function aiTag(c) {
+  return c.ai ? '<span class="ai-tag" title="AI and Copilot security">✨ AI</span>' : '';
+}

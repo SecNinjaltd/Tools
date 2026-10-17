@@ -1,7 +1,7 @@
 // The zero trust map: every Microsoft control placed where it acts, coloured by the learner's plan,
 // with a step-by-step walk through one sign-in.
 import { h, guide, announce, store, escapeHtml } from './ui.js';
-import { CONTROLS, PILLARS } from './catalog.js';
+import { CONTROLS, PILLARS, aiTag } from './catalog.js';
 import { PLANS, ADDONS, coverage, howToGet, savedPlan, savedAddons } from './licences.js';
 import { productChip, learnLink } from './learn.js';
 
@@ -58,6 +58,7 @@ export function renderMap() {
       <div class="map-tools row">
         <button type="button" class="btn" id="traceBtn">▶ Follow a sign-in</button>
         <label class="map-toggle"><input type="checkbox" checked> Colour by my plan</label>
+        <label class="map-toggle ai-toggle"><input type="checkbox"> ✨ AI and Copilot only</label>
       </div>
       <ul class="legend map-legend" aria-label="Key">
         <li><span class="sw inc"></span>Included in your plan</li>
@@ -107,11 +108,12 @@ export function renderMap() {
     const caps = zone.querySelector('.caps');
     ids.forEach((id) => {
       const c = CONTROLS[id];
-      const chip = h(`<button type="button" class="cap" data-id="${id}" aria-pressed="false"><span class="cap-name">${escapeHtml(c.name)}</span><span class="cap-product">${escapeHtml(c.product)}</span></button>`);
+      const chip = h(`<button type="button" class="cap${c.ai ? ' is-ai' : ''}" data-id="${id}" aria-pressed="false"><span class="cap-name">${escapeHtml(c.name)}${aiTag(c)}</span><span class="cap-product">${escapeHtml(c.product)}</span></button>`);
       chip.addEventListener('click', () => show(id, chip));
       caps.appendChild(chip);
       chips.push(chip);
     });
+    if (ids.some((id) => CONTROLS[id].ai)) zone.classList.add('has-ai');
     zoneEls[z.id] = zone;
     map.querySelector(`.col-${z.col}`).appendChild(zone);
   });
@@ -208,7 +210,7 @@ export function renderMap() {
     if (cov.status === 'missing') lic = `${howToGet(id, plan)}.`;
     detail.innerHTML = `
       <p class="eyebrow">${PILLARS[c.pillar].icon} ${escapeHtml(PILLARS[c.pillar].name)}</p>
-      <h3 style="margin:6px 0 4px">${escapeHtml(c.name)}</h3>
+      <h3 style="margin:6px 0 4px">${escapeHtml(c.name)} ${aiTag(c)}</h3>
       <p class="detail-product">${escapeHtml(c.product)}</p>
       <p style="margin:8px 0">${escapeHtml(c.plain)}</p>
       <p><span class="own-badge badge-${STATUS[cov.status].cls}">${STATUS[cov.status].label}</span> <span style="font-size:14px">${escapeHtml(lic)}</span></p>
@@ -224,6 +226,12 @@ export function renderMap() {
     }
     announce(`${c.name}. ${STATUS[cov.status].label}.`);
   }
+
+  el.querySelector('.ai-toggle input').addEventListener('change', (e) => {
+    map.classList.toggle('ai-only', e.target.checked);
+    if (e.target.checked) ninja.say("These are the AI and Copilot controls. Copilot only sees what each person can already open, so most AI security is the zero trust you've already built: tidy permissions, labels and DLP, plus a check on which AI apps and agents get in.", 'laptop');
+    announce(e.target.checked ? 'Showing AI and Copilot controls only.' : 'Showing all controls.');
+  });
 
   el.querySelector('.map-toggle input').addEventListener('change', (e) => {
     colour = e.target.checked;

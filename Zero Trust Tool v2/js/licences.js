@@ -29,6 +29,10 @@ export const CAPABILITIES = {
   disruption: 'Automatic attack disruption (Defender for Business or Defender XDR)',
   exposureMgmt: 'Microsoft Security Exposure Management',
   securityCopilot: 'Microsoft Security Copilot (included Security Compute Units)',
+  copilot: 'Microsoft Copilot licence (also turns on SharePoint Advanced Management for Copilot)',
+  copilotDlp: 'Purview DLP that stops Copilot processing labelled files and emails (E5 or Purview Suite)',
+  dspmAi: 'Purview Data Security Posture Management for AI (E5 or Purview Suite)',
+  agent365: 'Microsoft Agent 365',
   defenderCloud: 'Defender for Cloud (Foundational CSPM free; Defender CSPM billed by Azure usage)',
   sentinel: 'Microsoft Sentinel (Azure, pay as you go)'
 };
@@ -39,42 +43,42 @@ export const PAYG = new Set(['defenderCloud', 'sentinel']);
 const P2 = ['idProtection', 'idGovernance'];
 const BP = ['entraP1', 'intune', 'edr', 'endpointProtection', 'mdoP1', 'labels', 'dlp', 'disruption', 'exposureMgmt'];
 const E3 = ['entraP1', 'intune', 'endpointProtection', 'mdoP1', 'labels', 'dlp'];
-const E5 = [...E3, ...P2, 'edr', 'mdoP2', 'mdi', 'mdca', 'endpointDlp', 'insiderRisk', 'xdrFull', 'disruption', 'epm', 'exposureMgmt', 'securityCopilot'];
+const E5 = [...E3, ...P2, 'edr', 'mdoP2', 'mdi', 'mdca', 'endpointDlp', 'insiderRisk', 'xdrFull', 'disruption', 'epm', 'exposureMgmt', 'securityCopilot', 'copilotDlp', 'dspmAi'];
 
 export const PLANS = {
   basic: {
     name: 'Microsoft 365 Business Basic', short: 'Business Basic', family: 'Business', who: 'Up to 300 users · web and mobile apps',
     includes: [],
-    addons: ['entraP1Standalone', 'entraP2Standalone', 'defenderBusiness']
+    addons: ['entraP1Standalone', 'entraP2Standalone', 'defenderBusiness', 'copilotBusiness']
   },
   standard: {
     name: 'Microsoft 365 Business Standard', short: 'Business Standard', family: 'Business', who: 'Up to 300 users · desktop apps',
     includes: [],
-    addons: ['entraP1Standalone', 'entraP2Standalone', 'defenderBusiness']
+    addons: ['entraP1Standalone', 'entraP2Standalone', 'defenderBusiness', 'copilotBusiness']
   },
   bp: {
     name: 'Microsoft 365 Business Premium', short: 'Business Premium', family: 'Business', who: 'Up to 300 users · full security',
     includes: BP,
-    addons: ['defenderSuiteBP', 'entraSuite', 'idGovernance', 'privateAccess', 'internetAccess', 'intuneSuite']
+    addons: ['copilotBusiness', 'defenderSuiteBP', 'entraSuite', 'idGovernance', 'privateAccess', 'internetAccess', 'intuneSuite']
   },
   f3: {
     name: 'Microsoft 365 F3', short: 'F3', family: 'Frontline', who: 'Frontline staff on shared or mobile devices',
     includes: ['entraP1', 'intune', 'labels'],
-    addons: ['entraP2Standalone', 'entraSuite', 'idGovernance', 'privateAccess', 'internetAccess', 'intuneSuite']
+    addons: ['copilot', 'entraP2Standalone', 'entraSuite', 'idGovernance', 'privateAccess', 'internetAccess', 'intuneSuite']
   },
   e3: {
     name: 'Microsoft 365 E3', short: 'E3', family: 'Enterprise', who: 'Enterprise, any size',
     includes: E3,
-    addons: ['defenderSuite', 'purviewSuite', 'entraSuite', 'idGovernance', 'privateAccess', 'internetAccess', 'intuneSuite', 'mdeP2']
+    addons: ['copilot', 'agent365', 'defenderSuite', 'purviewSuite', 'entraSuite', 'idGovernance', 'privateAccess', 'internetAccess', 'intuneSuite', 'mdeP2']
   },
   e5: {
     name: 'Microsoft 365 E5', short: 'E5', family: 'Enterprise', who: 'Enterprise, any size · full security',
     includes: E5,
-    addons: ['entraSuite', 'privateAccess', 'internetAccess']
+    addons: ['copilot', 'agent365', 'entraSuite', 'privateAccess', 'internetAccess']
   },
   e7: {
     name: 'Microsoft 365 E7', short: 'E7', family: 'Enterprise', who: 'E5 plus Copilot, Entra Suite and Agent 365',
-    includes: [...E5, 'privateAccess', 'internetAccess'],
+    includes: [...E5, 'privateAccess', 'internetAccess', 'copilot', 'agent365'],
     addons: []
   }
 };
@@ -93,7 +97,7 @@ export const ADDONS = {
   },
   purviewSuite: {
     name: 'Microsoft Purview Suite (formerly E5 Compliance)',
-    includes: ['labels', 'dlp', 'endpointDlp', 'insiderRisk', 'mdca']
+    includes: ['labels', 'dlp', 'endpointDlp', 'insiderRisk', 'mdca', 'copilotDlp', 'dspmAi']
   },
   // Doesn't include the P2 licence itself, but bundles ID Protection and ID Governance, which cover the
   // P2 identity controls used here. Requires Entra ID P1. Also included in Microsoft 365 E7.
@@ -105,6 +109,11 @@ export const ADDONS = {
   privateAccess: { name: 'Entra Private Access', includes: ['privateAccess'] },
   internetAccess: { name: 'Entra Internet Access', includes: ['internetAccess'] },
   intuneSuite: { name: 'Intune Suite (or Endpoint Privilege Management)', includes: ['epm'] },
+  // Copilot Business is the add-on for Business plans (up to 300 users); Microsoft Copilot for the rest.
+  copilotBusiness: { name: 'Microsoft Copilot Business', includes: ['copilot'] },
+  copilot: { name: 'Microsoft Copilot', includes: ['copilot'] },
+  // Needs Entra ID P1 or Microsoft 365 E3 alongside it for Conditional Access for agents.
+  agent365: { name: 'Microsoft Agent 365', includes: ['agent365'] },
   mdeP2: { name: 'Defender for Endpoint P2', includes: ['edr', 'endpointProtection', 'disruption'] }
 };
 
@@ -123,6 +132,10 @@ export const SOURCES = [
   ['Security Copilot in E5 and E7', 'https://learn.microsoft.com/copilot/security/security-copilot-inclusion'],
   ['Exposure Management licensing', 'https://learn.microsoft.com/security-exposure-management/integration-licensing'],
   ['Defender for Cloud posture management', 'https://learn.microsoft.com/azure/defender-for-cloud/concept-cloud-security-posture-management'],
+  ['Microsoft Copilot license options', 'https://learn.microsoft.com/microsoft-365/copilot/microsoft-365-copilot-licensing'],
+  ['SharePoint Advanced Management prerequisites', 'https://learn.microsoft.com/sharepoint/sharepoint-advanced-management-prerequisites'],
+  ['Conditional Access for agents licensing', 'https://learn.microsoft.com/entra/identity/conditional-access/agent-id'],
+  ['DSPM licensing', 'https://learn.microsoft.com/purview/data-security-posture-management-get-started'],
   ['Microsoft Sentinel billing', 'https://learn.microsoft.com/azure/sentinel/billing']
 ];
 
@@ -168,6 +181,13 @@ export function plansThatInclude(controlId) {
 export function howToGet(controlId, planId) {
   const opts = addonsThatCover(controlId, planId);
   if (opts.length) return `Available with ${opts.join(' or ')}`;
+  // Some controls need two add-ons together, such as Copilot plus Purview Suite.
+  const list = PLANS[planId].addons;
+  const pairs = [];
+  list.forEach((a, i) => list.slice(i + 1).forEach((b) => {
+    if (coverage(controlId, planId, [a, b]).status === 'addon') pairs.push(`${ADDONS[a].name} plus ${ADDONS[b].name}`);
+  }));
+  if (pairs.length) return `Available with ${pairs.slice(0, 2).join(', or ')}`;
   const plans = plansThatInclude(controlId);
   if (plans.length) return `Included in ${plans.join(', ')}`;
   return `Needs ${CONTROLS[controlId].needs.map((n) => CAPABILITIES[n]).join(', ')}`;

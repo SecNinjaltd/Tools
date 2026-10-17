@@ -1,6 +1,6 @@
 // Chapter 6: what do I already own? Pick a plan and add-ons and see which controls light up.
 import { h, guide, quiz, announce, store, escapeHtml } from '../ui.js';
-import { CONTROLS, PILLARS } from '../catalog.js';
+import { CONTROLS, PILLARS, aiTag } from '../catalog.js';
 import { PLANS, ADDONS, SOURCES, CHECKED, coverage, howToGet, savedPlan, savedAddons } from '../licences.js';
 import { learnLink } from '../learn.js';
 
@@ -153,7 +153,7 @@ export function renderLicences({ chapter, nextChapter }) {
         const extra = c.note && cov.status !== 'included' ? c.note : '';
         group.appendChild(h(`
           <div class="own ${st.cls}">
-            <div><strong>${escapeHtml(c.name)}</strong><small>${escapeHtml(c.product)}</small>${note ? `<small class="own-note">${escapeHtml(note)}</small>` : ''}${extra ? `<small class="own-extra">${escapeHtml(extra)}</small>` : ''}<small>${learnLink(c.learn, 'Microsoft Learn')}</small></div>
+            <div><strong>${escapeHtml(c.name)}</strong>${aiTag(c)}<small>${escapeHtml(c.product)}</small>${note ? `<small class="own-note">${escapeHtml(note)}</small>` : ''}${extra ? `<small class="own-extra">${escapeHtml(extra)}</small>` : ''}<small>${learnLink(c.learn, 'Microsoft Learn')}</small></div>
             <span class="own-badge">${st.label}</span>
           </div>`));
       });

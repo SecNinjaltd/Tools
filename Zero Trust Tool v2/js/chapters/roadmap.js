@@ -1,7 +1,7 @@
 // Chapter 7: build your roadmap. Drag controls into Now / Next / Later and print a one-page plan.
 import { h, guide, announce, store, escapeHtml } from '../ui.js';
 import { makeDraggable, makeTarget } from '../drag.js';
-import { CONTROLS, PILLARS } from '../catalog.js';
+import { CONTROLS, PILLARS, aiTag } from '../catalog.js';
 import { PLANS, ADDONS, CHECKED, coverage, howToGet, savedPlan, savedAddons } from '../licences.js';
 
 const LANES = [
@@ -94,7 +94,7 @@ export function renderRoadmap({ chapter }) {
     const card = h(`
       <button type="button" class="ctl rm ${cov.status}" data-id="${id}" aria-pressed="false">
         <span class="ctl-pillar">${PILLARS[c.pillar].icon} ${PILLARS[c.pillar].name}</span>
-        <strong>${escapeHtml(c.name)}</strong>
+        <strong>${escapeHtml(c.name)}</strong>${aiTag(c)}
         <small>${escapeHtml(c.plain)}</small>
         <span class="lic-line">${escapeHtml(lic)}</span>
       </button>`);
