@@ -5,7 +5,7 @@ A guided, hands-on course in seven chapters that teaches zero trust and how Micr
 ## Chapters
 
 1. **The castle and the moat:** play an attacker against a perimeter network, then replay the attack against zero trust. Ends with a drag-to-sort activity and a quick check.
-2. **Three principles:** switch verify explicitly, least privilege and assume breach on and off and watch how far an attacker gets. Four missions, then sort Microsoft features into the principle they serve.
+2. **Three principles:** four questions, answered by tapping verify explicitly, least privilege or assume breach, show how far an attacker gets with each. Then free play, and a sort of Microsoft features into the principle they serve.
 3. **Six pillars:** explore identity, endpoints, applications, data, infrastructure and network, then match six real-world scenarios to the right pillar.
 4. **Signals and decisions:** a simplified Conditional Access engine. Change user, app, device, location, sign-in method and risk, and see the decision, the policies behind it and the licence each needs. Five missions to solve.
 5. **Stop the attack:** drag Microsoft controls onto the steps of two attacks (a fake sign-in page and ransomware through an unmanaged laptop) to break each chain.

@@ -1,4 +1,4 @@
-// Chapter 2: three principles, one story. Switch principles on and off and see where the attack stops.
+// Chapter 2: three principles, one story. Answer a question by picking a principle and see where the attack stops.
 import { h, rich, guide, announce, store, escapeHtml } from '../ui.js';
 import { makeSort } from './sort.js';
 import { productChip } from '../learn.js';
@@ -36,11 +36,18 @@ const STEPS = [
   }
 ];
 
+// One question at a time. A "pick" question is answered by tapping one principle; the chain shows the result.
 const MISSIONS = [
-  { text: 'Turn on just one principle that stops the attacker at the sign-in.', check: (on) => on.size === 1 && on.has('verify') },
-  { text: 'Find the one principle that lets the attacker sign in, but leaves them nothing worth taking.', check: (on) => on.size === 1 && on.has('least') },
-  { text: 'With only "Assume breach" on, how far does the attacker get?', check: (on) => on.size === 1 && on.has('breach') },
-  { text: 'Turn all three on. This is called defence in depth.', check: (on) => on.size === 3 }
+  { pick: 'verify', text: 'The attacker has Jo\'s password. Which principle stops them at the sign-in?' },
+  { pick: 'least', text: 'Which principle lets the attacker sign in, but leaves Jo\'s account with nothing big to steal?' },
+  { pick: 'breach', text: 'Which principle catches the attacker after they are already inside?' },
+  { text: 'Now switch all three on. Where is the attacker stopped?', check: (on) => on.size === 3 }
+];
+const RIGHT = [
+  'Right. Verify explicitly stopped them at the door. A stolen password alone was useless.',
+  'Right. Least privilege: the attacker got in, but Jo\'s account had nothing big to offer.',
+  'Right. Assume breach caught them late, but before the data left. Better late than never.',
+  'Defence in depth. If one layer fails, the next one is already waiting.'
 ];
 
 const SORT_ITEMS = [
@@ -63,6 +70,7 @@ export function renderPrinciples({ chapter, nextChapter }) {
       <p class="eyebrow">Chapter ${chapter.n} · ${chapter.minutes} min</p>
       <h1 class="title">${chapter.title}</h1>
       <div class="guide-slot"></div>
+      <section class="card p-quiz" aria-live="polite"></section>
       <div class="toggles" role="group" aria-label="Zero trust principles"></div>
       <div class="chain-head"><strong class="reach"></strong></div>
       <ul class="legend" aria-label="Key">
@@ -71,21 +79,16 @@ export function renderPrinciples({ chapter, nextChapter }) {
         <li><span class="sw gone"></span>Attacker never got this far</li>
       </ul>
       <ol class="chain"></ol>
-      <section class="card" style="margin-top:22px">
-        <p class="eyebrow">Missions</p>
-        <h3 style="margin:6px 0 12px">Can you make it happen?</h3>
-        <div class="missions"></div>
-      </section>
       <div class="after" style="display:grid;gap:18px;margin-top:22px"></div>
       <div class="chapter-foot"><a class="btn secondary" href="#/">All chapters</a></div>
     </article>`);
 
-  const ninja = guide("Here's one attack, start to finish. Jo in accounts gets a fake invoice.\nUse the three switches to turn the [[zero trust]] principles on and off, and watch where the attacker gets stopped.", 'sitting');
+  const ninja = guide("Here's one attack, start to finish. Jo in accounts gets a fake invoice.\nAnswer each question by tapping one of the three [[zero trust]] principles, and watch where the attacker gets stopped.", 'sitting');
   el.querySelector('.guide-slot').appendChild(ninja.el);
   const toggles = el.querySelector('.toggles');
   const chain = el.querySelector('.chain');
   const reach = el.querySelector('.reach');
-  const missionsEl = el.querySelector('.missions');
+  const quizEl = el.querySelector('.p-quiz');
   const after = el.querySelector('.after');
   const foot = el.querySelector('.chapter-foot');
 
@@ -97,17 +100,62 @@ export function renderPrinciples({ chapter, nextChapter }) {
         <span class="switch" aria-hidden="true"></span>
       </button>`);
     b.addEventListener('click', () => {
-      if (on.has(p.id)) on.delete(p.id); else on.add(p.id);
+      const m = MISSIONS[current];
+      if (m && m.pick) {
+        // Pick questions: only the tapped principle is on, like choosing an answer.
+        on.clear();
+        on.add(p.id);
+        answer(p.id);
+      } else if (on.has(p.id)) on.delete(p.id); else on.add(p.id);
       update(true);
     });
     toggles.appendChild(b);
   });
 
-  const missionEls = MISSIONS.map((m) => {
-    const me = h(`<div class="mission"><span class="tick" aria-hidden="true">✓</span><div>${escapeHtml(m.text)}</div></div>`);
-    missionsEl.appendChild(me);
-    return me;
-  });
+  let current = MISSIONS.findIndex((m, i) => !solved.has(i));
+  let feedback = '';
+
+  function answer(pid) {
+    const m = MISSIONS[current];
+    if (solved.has(current)) return;
+    if (pid === m.pick) {
+      solved.add(current);
+      store.set('principlesMissions', [...solved]);
+      ninja.say('Nice one. Look at the steps below to see exactly where the attacker was stopped.', 'laptop');
+      feedback = `<p class="pq-good">✓ ${escapeHtml(RIGHT[current])}</p>`;
+    } else {
+      const p = PRINCIPLES.find((x) => x.id === pid);
+      const stop = STEPS.findIndex((st) => st.stoppedBy === pid);
+      feedback = `<p class="pq-bad">Not quite. With only ${escapeHtml(p.name)}, the attacker gets ${stop} of 5 steps in before being blocked at step ${stop + 1}. Look at the steps below, then try another.</p>`;
+    }
+  }
+
+  function next() {
+    current = MISSIONS.findIndex((m, i) => !solved.has(i));
+    feedback = '';
+    if (current >= 0 && MISSIONS[current].pick) on.clear();
+    update(false);
+  }
+
+  function renderQuiz() {
+    toggles.classList.toggle('pick', current >= 0 && !!MISSIONS[current].pick);
+    if (current < 0) {
+      quizEl.innerHTML = '<p class="eyebrow">Free play</p><p style="margin-top:6px">All four answered. The principles are now switches: turn any mix on and off to see where the attack stops.</p>';
+      return;
+    }
+    const m = MISSIONS[current];
+    const done = solved.has(current);
+    quizEl.innerHTML = `
+      <p class="lm-num">Question ${current + 1} of ${MISSIONS.length}</p>
+      <p class="lm-task">${escapeHtml(m.text)}</p>
+      <p class="pq-how">${m.pick ? 'Tap one of the three principles below.' : 'Tap each principle below to switch it on.'}</p>
+      ${feedback}`;
+    if (done) {
+      const b = h(`<button type="button" class="btn" style="margin-top:10px">${solved.size === MISSIONS.length ? 'Finish' : 'Next question →'}</button>`);
+      b.addEventListener('click', next);
+      quizEl.appendChild(b);
+    }
+  }
 
   let finished = false;
   function finish() {
@@ -156,21 +204,14 @@ export function renderPrinciples({ chapter, nextChapter }) {
       : `The attacker got ${reached} of 5 steps in, then was blocked at step ${reached + 1}.`;
     if (changed) announce(reach.textContent);
 
-    let newly = null;
-    MISSIONS.forEach((m, i) => {
-      if (!solved.has(i) && m.check(on)) { solved.add(i); newly = i; }
-      missionEls[i].classList.toggle('done', solved.has(i));
-    });
-    if (newly !== null) {
+    const m = MISSIONS[current];
+    if (changed && m && m.check && !solved.has(current) && m.check(on)) {
+      solved.add(current);
       store.set('principlesMissions', [...solved]);
-      const lines = [
-        'Verify explicitly stopped them at the door. A stolen password alone was useless.',
-        'Least privilege: the attacker got in, but Jo\'s account had nothing big to offer.',
-        'Assume breach caught them late, but before the data left. Better late than never.',
-        'Defence in depth. If one layer fails, the next one is already waiting.'
-      ];
-      ninja.say(lines[newly], newly === 3 ? 'cheer' : 'laptop');
+      ninja.say('Three layers, one attack. That is zero trust in practice.', 'cheer');
+      feedback = `<p class="pq-good">✓ ${escapeHtml(RIGHT[current])} The attacker is stopped at step 3, and the other two layers are ready if that one ever fails.</p>`;
     }
+    renderQuiz();
     if (solved.size === MISSIONS.length) finish();
   }
 

@@ -347,6 +347,14 @@ h1.title, h2.title { font-family: var(--display); font-size: clamp(22px, 3vw, 30
 .toggle[aria-pressed='true'] { border-color: var(--orange); background: var(--orange-tint); }
 .toggle[aria-pressed='true'] .switch { background: var(--orange); }
 .toggle[aria-pressed='true'] .switch::after { transform: translateX(18px); }
+.toggles.pick .toggle { grid-template-columns: 36px 1fr; }
+.toggles.pick .switch { display: none; }
+.p-quiz { margin-top: 4px; }
+.p-quiz .lm-task { margin-top: 4px; }
+.pq-how { font-size: 14px; color: var(--muted); margin-top: 8px; }
+.pq-good, .pq-bad { margin-top: 10px; padding: 10px 12px; border-radius: var(--radius-sm); font-size: 15px; }
+.pq-good { border: 1px solid var(--good); background: var(--good-bg); }
+.pq-bad { border: 1px solid var(--bad); background: var(--bad-bg); }
 .chain-head { margin: 4px 0 10px; font-size: 15px; }
 .chain { list-style: none; display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; counter-reset: s; }
 .step {
