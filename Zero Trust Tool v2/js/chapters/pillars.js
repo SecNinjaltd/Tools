@@ -74,6 +74,7 @@ export function renderPillars({ chapter, nextChapter }) {
       </div>
       <div class="quiz-banner" hidden aria-live="polite"></div>
       <div class="pillar-detail card" aria-live="polite"></div>
+      <a class="map-link" href="#/map">See every product on the zero trust map →</a>
       <div class="row actions" style="margin-top:14px"></div>
       <div class="chapter-foot"><a class="btn secondary" href="#/">All chapters</a></div>
     </article>`);

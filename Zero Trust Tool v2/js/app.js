@@ -7,6 +7,7 @@ import { renderSignin } from './chapters/signin.js';
 import { renderMissions } from './chapters/missions.js';
 import { renderLicences } from './chapters/licences.js';
 import { renderRoadmap } from './chapters/roadmap.js';
+import { renderMap } from './map.js';
 
 const RENDERERS = {
   castle: renderCastle,
@@ -60,6 +61,9 @@ function renderRail() {
     if (c.id === active) a.setAttribute('aria-current', 'page');
     rail.appendChild(a);
   });
+  const mapLink = h('<a class="classic map-rail" href="#/map" title="Zero trust map"><span class="num">&#128506;</span><span class="label-text">Zero trust map</span></a>');
+  if (active === 'map') mapLink.setAttribute('aria-current', 'page');
+  rail.appendChild(mapLink);
   rail.appendChild(h('<a class="classic" href="../Zero%20Trust%20Tool/" title="Classic builder (v1)"><span class="num">&#9881;</span><span class="label-text">Classic builder (v1)</span></a>'));
   pill.textContent = `${done.size} of ${CHAPTERS.length} complete`;
 }
@@ -76,7 +80,7 @@ function renderHome() {
           <p class="lead">${rich('Seven short, hands-on chapters that explain what [[zero trust]] is, why the old [[perimeter]] approach fails, and how Microsoft security puts it into practice. No security background needed.')}</p>
           <div class="row">
             <a class="btn" href="#/${next.id}">${done.size ? 'Continue' : 'Start'} with chapter ${next.n}</a>
-            <a class="btn secondary" href="../Zero%20Trust%20Tool/">Jump to the classic builder</a>
+            <a class="btn secondary" href="#/map">Explore the zero trust map</a>
           </div>
         </div>
         <img src="assets/mascots/ninja-stance.webp" alt="The Security Ninja cat in a fighting stance" width="300" height="320">
@@ -122,7 +126,9 @@ function route() {
   const id = currentId();
   const chapter = CHAPTERS.find((c) => c.id === id);
   stage.innerHTML = '';
-  if (!chapter) {
+  if (id === 'map') {
+    stage.appendChild(renderMap());
+  } else if (!chapter) {
     stage.appendChild(renderHome());
   } else if (RENDERERS[chapter.id]) {
     const nextChapter = CHAPTERS.find((c) => c.n > chapter.n && c.ready);

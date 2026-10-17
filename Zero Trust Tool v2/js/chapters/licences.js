@@ -53,6 +53,7 @@ export function renderLicences({ chapter, nextChapter }) {
       <div class="addon-row"></div>
       <div class="own-summary" aria-live="polite"></div>
       <div class="own-grid"></div>
+      <a class="map-link" href="#/map">See your plan on the zero trust map →</a>
       <div class="after" style="margin-top:22px"></div>
       <p class="sources">Checked against Microsoft Learn in ${CHECKED}. Licensing changes often, so confirm with Microsoft or your partner before buying. Sources: </p>
       <div class="chapter-foot"><a class="btn secondary" href="#/">All chapters</a></div>

@@ -23,6 +23,7 @@ A guided, hands-on course in seven chapters that teaches zero trust and how Micr
 | `js/drag.js` | Pointer drag that works with touch, plus tap-to-place for keyboard and screen readers |
 | `js/catalog.js` | The pillars and the 28 controls used in chapters 5 to 7, each with its Microsoft Learn page |
 | `js/learn.js` | Microsoft Learn links for every product named in the chapters |
+| `js/map.js` | The zero trust map (`#/map`): every control placed in its zone, coloured by the saved plan, with a "Follow a sign-in" walkthrough |
 | `js/licences.js` | What each plan and add-on includes, with Microsoft Learn sources (checked October 2026) |
 | `js/chapters/*.js` | One module per chapter, plus the reusable sort activity |
 | `assets/mascots/` | Ninja, Wolfie and Shadow poses from security-ninja.com |
