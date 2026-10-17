@@ -670,5 +670,5 @@ body[data-theme='dark'] .lic-delta.up { background: #1f3d29; color: #8fe0a8; }
 .ai-tag { display: inline-flex; align-items: center; margin-left: 6px; padding: 0 6px; border-radius: 999px; font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: 0.5px; line-height: 16px; vertical-align: middle; white-space: nowrap; background: #ede4ff; color: #5b2bb5; }
 body[data-theme='dark'] .ai-tag { background: #3a2c5c; color: #cdb8ff; }
 .zt-map.ai-only .cap:not(.is-ai) { display: none; }
-.zt-map.ai-only .zone:not(.has-ai) { opacity: 0.45; }
+.zt-map.ai-only .zone:not(.has-ai):not(.zone-engine) { opacity: 0.45; }
 .zt-map.ai-only .zone:not(.has-ai) .caps::after { content: 'No AI-specific controls here'; font-size: 13px; color: var(--muted); }
