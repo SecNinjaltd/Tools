@@ -56,7 +56,7 @@ function sceneSvg() {
       <text x="64" y="62" text-anchor="middle">${n.label}</text>
       <g class="check" transform="translate(110 -8)"><circle r="12" fill="#ff681b"/><text x="0" y="5" text-anchor="middle" style="font-size:13px;fill:#1a1a1c;font-weight:800">✓</text></g>
       <g class="badge b-owned" transform="translate(18 -8)"><circle r="12" fill="#b10e1c"/><text x="0" y="5" text-anchor="middle" style="font-size:13px;fill:#fff;font-weight:800">!</text></g>
-      <g class="badge b-safe" transform="translate(18 -8)"><circle r="12" fill="#0a7d38"/><text x="0" y="5" text-anchor="middle" style="font-size:12px;fill:#fff">🛡</text></g>
+      <g class="badge b-safe" transform="translate(18 -8)"><circle r="12" fill="#1f56c4"/><text x="0" y="5" text-anchor="middle" style="font-size:12px;fill:#fff">🛡</text></g>
     </g>`).join('');
   return `
     <svg class="scene" viewBox="0 0 880 400" role="img" aria-label="A company network surrounded by a firewall, with an attacker outside">

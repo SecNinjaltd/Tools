@@ -64,6 +64,11 @@ export function renderPrinciples({ chapter, nextChapter }) {
       <div class="guide-slot"></div>
       <div class="toggles" role="group" aria-label="Zero trust principles"></div>
       <div class="chain-head"><strong class="reach"></strong></div>
+      <ul class="legend" aria-label="Key">
+        <li><span class="sw bad"></span>Attack worked</li>
+        <li><span class="sw shield"></span>🛡️ Blocked by a defence</li>
+        <li><span class="sw gone"></span>Attacker never got this far</li>
+      </ul>
       <ol class="chain"></ol>
       <section class="card" style="margin-top:22px">
         <p class="eyebrow">Missions</p>
@@ -130,22 +135,23 @@ export function renderPrinciples({ chapter, nextChapter }) {
     chain.innerHTML = '';
     STEPS.forEach((s, i) => {
       const state = stopAt === -1 || i < stopAt ? 'hit' : i === stopAt ? 'stop' : 'gone';
-      const backup = state === 'gone' && s.stoppedBy && on.has(s.stoppedBy);
-      const label = state === 'hit' ? 'Happened' : state === 'stop' ? 'Stopped here' : backup ? 'Never reached, but also covered' : 'Never reached';
       const by = s.stoppedBy ? PRINCIPLES.find((p) => p.id === s.stoppedBy) : null;
+      const banner = state === 'hit' ? '⚠️ Attack worked'
+        : state === 'stop' ? '🛡️ Blocked here'
+        : 'Not reached';
       chain.appendChild(h(`
         <li class="step ${state}">
+          <span class="s-banner">${escapeHtml(banner)}</span>
           <span class="s-icon" aria-hidden="true">${s.icon}</span>
           <span class="s-num">Step ${i + 1}</span>
           <strong>${escapeHtml(s.title)}</strong>
-          <p>${escapeHtml(state === 'stop' ? s.how : s.text)}</p>
-          <span class="s-state">${state === 'stop' ? `${by.icon} ${label} by ${by.name}` : label}</span>
+          <p>${state === 'stop' ? `<span class="how-label">${by.icon} Blocked by ${escapeHtml(by.name)}:</span> ${escapeHtml(s.how)}` : escapeHtml(s.text)}</p>
         </li>`));
     });
     const reached = stopAt === -1 ? STEPS.length : stopAt;
     reach.textContent = stopAt === -1
       ? 'The attacker got all the way through: 5 of 5 steps.'
-      : `The attacker got ${reached} of 5 steps in, then was stopped.`;
+      : `The attacker got ${reached} of 5 steps in, then was blocked at step ${reached + 1}.`;
     if (changed) announce(reach.textContent);
 
     let newly = null;

@@ -15,6 +15,8 @@
   --good-bg: #dcf5e3;
   --bad: #b10e1c;
   --bad-bg: #fdf3f4;
+  --shield: #1f56c4;
+  --shield-bg: #e8effd;
   --warn: #835b00;
   --warn-bg: #fdf6d8;
   --radius-lg: 20px;
@@ -41,6 +43,8 @@ body[data-theme='dark'] {
   --good-bg: rgba(74, 222, 128, 0.12);
   --bad: #ff6b78;
   --bad-bg: rgba(255, 107, 120, 0.12);
+  --shield: #8fb2ff;
+  --shield-bg: rgba(143, 178, 255, 0.14);
   --warn: #f5d547;
   --warn-bg: rgba(245, 213, 71, 0.12);
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
@@ -167,6 +171,7 @@ h2.title { font-family: var(--display); font-size: clamp(22px, 3vw, 30px); line-
 .feedback { border-radius: var(--radius-sm); padding: 12px 14px; font-size: 14px; border-left: 4px solid; }
 .feedback.good { background: var(--good-bg); border-color: var(--good); }
 .feedback.bad { background: var(--bad-bg); border-color: var(--bad); }
+.feedback.shield { background: var(--shield-bg); border-color: var(--shield); }
 .feedback.info { background: var(--orange-tint); border-color: var(--orange); }
 .feedback.warn { background: var(--warn-bg); border-color: var(--warn); }
 
@@ -206,7 +211,7 @@ h2.title { font-family: var(--display); font-size: clamp(22px, 3vw, 30px); line-
 .scene text.mono { font-family: var(--mono); font-size: 11px; letter-spacing: 1.5px; fill: var(--muted); }
 .scene .link { stroke: var(--line); stroke-width: 3; }
 .scene .link.hot { stroke: var(--bad); stroke-dasharray: 8 6; animation: dash 0.8s linear infinite; }
-.scene .link.blocked { stroke: var(--good); }
+.scene .link.blocked { stroke: var(--shield); }
 @keyframes dash { to { stroke-dashoffset: -28; } }
 
 .node { cursor: default; }
@@ -219,7 +224,7 @@ h2.title { font-family: var(--display); font-size: clamp(22px, 3vw, 30px); line-
 .node.target .box { stroke: var(--yellow); stroke-width: 3; }
 .node.target:hover .box, .node.target:focus .box { fill: var(--orange-tint); stroke: var(--orange); }
 .node.owned .box { fill: var(--bad-bg); stroke: var(--bad); stroke-width: 3; }
-.node.safe .box { fill: var(--good-bg); stroke: var(--good); stroke-width: 3; }
+.node.safe .box { fill: var(--shield-bg); stroke: var(--shield); stroke-width: 3; }
 .node .badge { opacity: 0; transition: opacity 0.3s; }
 .node.owned .badge.b-owned, .node.safe .badge.b-safe { opacity: 1; }
 .node .check { opacity: 0; transition: opacity 0.3s; }
@@ -345,11 +350,26 @@ h2.title { font-family: var(--display); font-size: clamp(22px, 3vw, 30px); line-
 .step p { color: var(--muted); font-size: 13px; line-height: 1.45; }
 .step .s-state { font-family: var(--mono); font-size: 11px; font-weight: 700; margin-top: 4px; }
 .step.hit { border-color: var(--bad); background: var(--bad-bg); }
-.step.hit .s-state { color: var(--bad); }
-.step.stop { border-color: var(--good); background: var(--good-bg); }
-.step.stop .s-state { color: var(--good); }
+.step.stop { border-color: var(--shield); background: var(--shield-bg); border-width: 3px; }
 .step.stop p { color: var(--ink); }
-.step.gone { opacity: 0.45; border-style: dashed; }
+.step.gone { opacity: 0.5; border-style: dashed; }
+/* Status banner at the top of each attack step, so its meaning reads first. */
+.s-banner {
+  display: inline-flex; gap: 6px; align-items: center; justify-self: start; margin-bottom: 4px;
+  font-family: var(--mono); font-size: 10.5px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase;
+  padding: 3px 8px; border-radius: 999px; background: var(--line); color: var(--muted);
+}
+.hit .s-banner, .kc-step:not(.broken) .s-banner { background: var(--bad); color: #fff; }
+.stop .s-banner, .kc-step.broken .s-banner { background: var(--shield); color: #fff; }
+body[data-theme='dark'] .hit .s-banner, body[data-theme='dark'] .kc-step:not(.broken) .s-banner,
+body[data-theme='dark'] .stop .s-banner, body[data-theme='dark'] .kc-step.broken .s-banner { color: #1a1a1c; }
+.how-label { font-weight: 700; color: var(--shield); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 0 0 10px; font-size: 13px; color: var(--muted); list-style: none; }
+.legend li { display: inline-flex; align-items: center; gap: 6px; }
+.legend .sw { width: 14px; height: 14px; border-radius: 4px; border: 2px solid; flex: none; }
+.legend .sw.bad { border-color: var(--bad); background: var(--bad-bg); }
+.legend .sw.shield { border-color: var(--shield); background: var(--shield-bg); }
+.legend .sw.gone { border-color: var(--line); border-style: dashed; }
 
 /* ---------- Chapter 3: pillars ---------- */
 .pillar-board { display: grid; gap: 10px; margin: 18px 0; }
@@ -386,8 +406,15 @@ h2.title { font-family: var(--display); font-size: clamp(22px, 3vw, 30px); line-
 .kc-slot { margin-top: 6px; border: 1.5px dashed var(--line); border-radius: var(--radius-sm); padding: 8px; font-size: 12px; color: var(--muted); text-align: center; background: var(--surface); }
 .kc-step.armed .kc-slot, .kc-step.over .kc-slot { border-color: var(--orange); background: var(--orange-tint); color: var(--ink); }
 .kc-step.over { border-color: var(--orange); }
-.kc-step.broken { border-color: var(--good); background: var(--good-bg); cursor: default; }
-.kc-step.broken .kc-slot { border-style: solid; border-color: var(--good); color: var(--good); font-weight: 700; }
+.kc-step.broken { border-color: var(--shield); background: var(--shield-bg); border-width: 3px; cursor: default; }
+.kc-step.broken p { color: var(--ink); }
+.kc-step.broken .kc-slot { border-style: solid; border-color: var(--shield); color: var(--shield); font-weight: 700; }
+.explainer ol { margin: 8px 0 0; padding-left: 20px; display: grid; gap: 8px; font-size: 14.5px; line-height: 1.5; }
+.explainer .vs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; font-size: 13.5px; }
+.explainer .vs > div { border-radius: var(--radius-sm); padding: 10px 12px; border: 1.5px solid var(--line); }
+.explainer .vs .bad { border-color: var(--bad); background: var(--bad-bg); }
+.explainer .vs .shield { border-color: var(--shield); background: var(--shield-bg); }
+@media (max-width: 760px) { .explainer .vs { grid-template-columns: 1fr; } }
 .ctl-tray { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; margin-bottom: 12px; }
 .ctl {
   touch-action: manipulation; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;

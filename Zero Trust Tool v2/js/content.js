@@ -67,7 +67,7 @@ export const GLOSSARY = {
   'phishing': 'A fake email or message that tricks someone into clicking a link, opening a file or typing their password.',
   'lateral movement': 'When an attacker who has got in moves from one computer or system to the next.',
   'mfa': 'Multi-factor authentication: proving it is you with something extra, like an app prompt or a passkey, not just a password.',
-  'passkey': 'A phishing-resistant way to sign in using your phone or laptop (face, fingerprint or PIN) instead of a password.',
+  'passkey': 'A phishing-resistant sign-in. Your device holds a private key that never leaves it, unlocked with your face, fingerprint or PIN. It signs a one-time challenge, and only for the real website address it was made for, so there is no password to steal and nothing a fake site can reuse.',
   'conditional access': 'Microsoft Entra\'s policy engine. It looks at who, what device, where and how risky, then decides to allow, ask for more, or block.',
   'compliant device': 'A laptop or phone that Microsoft Intune has checked meets your rules: encrypted, up to date, protected by antivirus.',
   'intune': 'Microsoft Intune manages and checks company devices, so access decisions can trust (or distrust) the device.',

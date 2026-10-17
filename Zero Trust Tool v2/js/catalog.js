@@ -17,7 +17,7 @@ export const CONTROLS = {
   },
   passkeys: {
     name: 'Passkeys (phishing-resistant sign-in)', pillar: 'identity', product: 'Entra authentication strength',
-    plain: 'A passkey only works on the real Microsoft sign-in page, so fake pages get nothing useful.', needs: ['entraP1']
+    plain: 'A private key locked in your device signs each sign-in, and only for the real Microsoft address, so a fake page has nothing to steal or relay.', needs: ['entraP1']
   },
   compliant: {
     name: 'Require a healthy, managed device', pillar: 'endpoints', product: 'Conditional Access + Intune',
