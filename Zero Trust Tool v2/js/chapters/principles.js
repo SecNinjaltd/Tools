@@ -1,6 +1,7 @@
 // Chapter 2: three principles, one story. Switch principles on and off and see where the attack stops.
 import { h, rich, guide, announce, store, escapeHtml } from '../ui.js';
 import { makeSort } from './sort.js';
+import { productChip } from '../learn.js';
 
 const PRINCIPLES = [
   {
@@ -23,15 +24,15 @@ const STEPS = [
   { icon: '🎣', title: 'Jo\'s password is stolen', text: 'The link opens a fake sign-in page and Jo types her password.' },
   {
     icon: '🔓', title: 'Attacker signs in as Jo', text: 'From another country, on an unknown laptop, using Jo\'s password.',
-    stoppedBy: 'verify', how: 'The sign-in needs MFA, comes from an unknown device and an unusual country. Conditional Access blocks it.'
+    stoppedBy: 'verify', tools: ['Conditional Access', 'Entra ID Protection'], how: 'The sign-in needs MFA, comes from an unknown device and an unusual country. Conditional Access blocks it.'
   },
   {
     icon: '🏦', title: 'Reaches payroll and admin tools', text: 'Jo can open payroll, and her account is a permanent admin "just in case".',
-    stoppedBy: 'least', how: 'Jo only has the apps her job needs, and nobody holds admin rights all the time. There is nothing big to steal from her account.'
+    stoppedBy: 'least', tools: ['Privileged Identity Management', 'Access reviews'], how: 'Jo only has the apps her job needs, and nobody holds admin rights all the time. There is nothing big to steal from her account.'
   },
   {
     icon: '📤', title: 'Spreads and steals data', text: 'The attacker hops to other systems and uploads customer files.',
-    stoppedBy: 'breach', how: 'Defender spots the unusual behaviour and disables or contains the account before the attacker can spread or upload anything.'
+    stoppedBy: 'breach', tools: ['Defender XDR', 'Automatic attack disruption'], how: 'Defender spots the unusual behaviour and disables or contains the account before the attacker can spread or upload anything.'
   }
 ];
 
@@ -146,6 +147,7 @@ export function renderPrinciples({ chapter, nextChapter }) {
           <span class="s-num">Step ${i + 1}</span>
           <strong>${escapeHtml(s.title)}</strong>
           <p>${state === 'stop' ? `<span class="how-label">${by.icon} Blocked by ${escapeHtml(by.name)}:</span> ${escapeHtml(s.how)}` : escapeHtml(s.text)}</p>
+          ${state === 'stop' ? `<div class="tags">${s.tools.map(productChip).join('')}</div>` : ''}
         </li>`));
     });
     const reached = stopAt === -1 ? STEPS.length : stopAt;

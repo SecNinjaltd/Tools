@@ -1,5 +1,6 @@
 // Chapter 4: signals and decisions. A simplified Conditional Access engine the learner can play with.
 import { h, rich, guide, quiz, announce, store, escapeHtml } from '../ui.js';
+import { productChip } from '../learn.js';
 
 const SIGNALS = [
   {
@@ -49,12 +50,12 @@ const SIGNALS = [
 const POLICIES = [
   {
     id: 'geo', name: 'Block countries we never work in',
-    lic: 'Entra ID P1 · named locations',
+    lic: 'Entra ID P1 · named locations', learn: 'Named locations',
     test: (s) => (s.location === 'abroad' ? { block: 'This sign-in comes from a country your business never works in.' } : null)
   },
   {
     id: 'risk', name: 'React to risky sign-ins',
-    lic: 'Entra ID P2 · ID Protection',
+    lic: 'Entra ID P2 · ID Protection', learn: 'Entra ID Protection',
     test: (s) => {
       if (s.risk === 'high') return { block: 'Microsoft rates this sign-in as high risk, for example it comes from an address known to be used by attackers. This policy blocks it; many organisations ask for strong MFA instead, so the real user can prove it is them.' };
       if (s.risk === 'medium') return { mfa: true, note: 'Medium risk: ask for MFA to prove it really is them.' };
@@ -63,27 +64,27 @@ const POLICIES = [
   },
   {
     id: 'mfa', name: 'Everyone uses MFA',
-    lic: 'Entra ID P1 · Conditional Access',
+    lic: 'Entra ID P1 · Conditional Access', learn: 'Conditional Access',
     test: () => ({ mfa: true, note: 'A password alone is never enough.' })
   },
   {
     id: 'adminStrength', name: 'Admins need a phishing-resistant sign-in',
-    lic: 'Entra ID P1 · authentication strength',
+    lic: 'Entra ID P1 · authentication strength', learn: 'Authentication strengths',
     test: (s) => (s.user === 'priya' || s.app === 'admin' ? { passkey: true, note: 'Admin accounts are the biggest prize, so they need a phishing-resistant method, such as a passkey or Windows Hello for Business.' } : null)
   },
   {
     id: 'device', name: 'Sensitive apps need a healthy company device',
-    lic: 'Entra ID P1 + Intune',
+    lic: 'Entra ID P1 + Intune', learn: 'Intune device compliance',
     test: (s) => (s.app === 'finance' || s.app === 'admin' ? { compliant: true, note: 'Finance and admin tools only open on devices Intune has checked.' } : null)
   },
   {
     id: 'byod', name: 'Personal devices get web-only email',
-    lic: 'Entra ID P1 · session controls',
+    lic: 'Entra ID P1 · session controls', learn: 'Session controls',
     test: (s) => (s.app === 'email' && s.device === 'personal' ? { limited: true, note: 'Email opens in the browser, but attachments can\'t be downloaded to a device you don\'t manage.' } : null)
   },
   {
     id: 'roles', name: 'Only admins get the admin portal',
-    lic: 'Entra roles · least privilege',
+    lic: 'Entra roles · least privilege', learn: 'Entra roles',
     test: (s) => (s.app === 'admin' && s.user !== 'priya' ? { block: 'Sam has no admin role. Least privilege means the door isn\'t there at all.' } : null)
   }
 ];
@@ -260,7 +261,7 @@ export function renderSignin({ chapter, nextChapter }) {
       policiesEl.appendChild(h(`
         <div class="policy ${r ? 'hit' : 'miss'}">
           <span class="dot" aria-hidden="true">${r ? (p.id === d.decisive ? '★' : '✓') : '–'}</span>
-          <div><strong>${escapeHtml(p.name)}</strong> <small>${status}${detail && p.id !== d.decisive ? `: ${escapeHtml(detail)}` : ''}</small><span class="lic">${escapeHtml(p.lic)}</span></div>
+          <div><strong>${escapeHtml(p.name)}</strong> <small>${status}${detail && p.id !== d.decisive ? `: ${escapeHtml(detail)}` : ''}</small><span class="tags policy-tags"><span class="lic">${escapeHtml(p.lic)}</span>${productChip(p.learn)}</span></div>
         </div>`));
     });
 

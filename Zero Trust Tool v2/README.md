@@ -9,7 +9,7 @@ A guided, hands-on course in seven chapters that teaches zero trust and how Micr
 3. **Six pillars:** explore identity, endpoints, applications, data, infrastructure and network, then match six real-world scenarios to the right pillar.
 4. **Signals and decisions:** a simplified Conditional Access engine. Change user, app, device, location, sign-in method and risk, and see the decision, the policies behind it and the licence each needs. Five missions to solve.
 5. **Stop the attack:** drag Microsoft controls onto the steps of two attacks (a fake sign-in page and ransomware through an unmanaged laptop) to break each chain.
-6. **What you already own:** Wolfie checks a Microsoft 365 plan (Business Premium, E3, E5) plus add-ons and shows which of 18 zero trust controls are included, need an add-on, or are pay as you go.
+6. **What you already own:** Wolfie checks a Microsoft 365 plan (Business Basic, Standard or Premium, F3, E3, E5 or E7) plus add-ons and shows which of 28 zero trust controls are included, need an add-on, or are pay as you go, each linked to Microsoft Learn.
 7. **Build your roadmap:** drag controls into Now, Next and Later, see pillar coverage and what licences you'd need to add, and print a one-page plan.
 
 ## Structure
@@ -21,7 +21,8 @@ A guided, hands-on course in seven chapters that teaches zero trust and how Micr
 | `js/content.js` | Chapter list and glossary text |
 | `js/ui.js` | Progress store, Ninja guide, glossary popovers, quiz |
 | `js/drag.js` | Pointer drag that works with touch, plus tap-to-place for keyboard and screen readers |
-| `js/catalog.js` | The six pillars and the 18 controls used in chapters 5 to 7 |
+| `js/catalog.js` | The pillars and the 28 controls used in chapters 5 to 7, each with its Microsoft Learn page |
+| `js/learn.js` | Microsoft Learn links for every product named in the chapters |
 | `js/licences.js` | What each plan and add-on includes, with Microsoft Learn sources (checked October 2026) |
 | `js/chapters/*.js` | One module per chapter, plus the reusable sort activity |
 | `assets/mascots/` | Ninja, Wolfie and Shadow poses from security-ninja.com |

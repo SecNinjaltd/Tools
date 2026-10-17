@@ -1,6 +1,7 @@
 // Chapter 1: the castle and the moat.
 // The learner plays the attacker twice: once against perimeter trust, once against zero trust.
-import { h, rich, guide, quiz, announce, store } from '../ui.js';
+import { escapeHtml, h, rich, guide, quiz, announce, store } from '../ui.js';
+import { productChip } from '../learn.js';
 import { makeSort } from './sort.js';
 
 const NODES = [
@@ -26,11 +27,11 @@ const CASTLE_STORY = {
 };
 
 const ZT_STORY = {
-  email: { text: 'Blocked. Email needs [[mfa]] on every sign-in. You have Alex\'s password, but not Alex\'s phone.', tag: 'Verify explicitly · Conditional Access + MFA' },
-  files: { text: 'Blocked. The file server only trusts [[compliant device|healthy devices]]. Defender for Endpoint spotted the malware and isolated the laptop.', tag: 'Assume breach · Defender for Endpoint + Intune' },
-  finance: { text: "Blocked. Alex works in marketing and was never given finance access. Less access means less to steal.", tag: 'Least privilege · Entra access reviews' },
-  admin: { text: 'Blocked. Nobody holds admin rights all the time. They are switched on for an hour, with approval, when needed.', tag: 'Least privilege · Entra Privileged Identity Management' },
-  data: { text: 'Blocked. Customer data is labelled as confidential, and data loss prevention stops it being uploaded to unknown sites.', tag: 'Assume breach · Microsoft Purview DLP' }
+  email: { text: 'Blocked. Email needs [[mfa]] on every sign-in. You have Alex\'s password, but not Alex\'s phone.', principle: 'Verify explicitly', tools: ['Conditional Access', 'Authentication strengths'] },
+  files: { text: 'Blocked. The file server only trusts [[compliant device|healthy devices]]. Defender for Endpoint spotted the malware and isolated the laptop.', principle: 'Assume breach', tools: ['Defender for Endpoint', 'Intune device compliance'] },
+  finance: { text: "Blocked. Alex works in marketing and was never given finance access. Less access means less to steal.", principle: 'Least privilege access', tools: ['Access reviews'] },
+  admin: { text: 'Blocked. Nobody holds admin rights all the time. They are switched on for an hour, with approval, when needed.', principle: 'Least privilege access', tools: ['Privileged Identity Management'] },
+  data: { text: 'Blocked. Customer data is labelled as confidential, and data loss prevention stops it being uploaded to unknown sites.', principle: 'Assume breach', tools: ['Purview sensitivity labels', 'Purview data loss prevention'] }
 };
 
 const SORT_ITEMS = [
@@ -38,7 +39,7 @@ const SORT_ITEMS = [
   { text: 'One strong firewall protects everything', bucket: 'castle', why: 'Relying on one wall is castle thinking. Zero trust puts checks at every door, not just the gate.' },
   { text: 'Admins keep full rights all the time', bucket: 'castle', why: 'Permanent admin rights are a castle habit. Zero trust gives admin access just in time, then takes it away.' },
   { text: 'Check every request, every time', bucket: 'zt', why: 'This is "verify explicitly", the first zero trust principle.' },
-  { text: 'Give only the access people need', bucket: 'zt', why: 'This is "least privilege", the second zero trust principle.' },
+  { text: 'Give only the access people need', bucket: 'zt', why: 'This is "least privilege access", the second zero trust principle.' },
   { text: 'Plan as if an attacker is already in', bucket: 'zt', why: 'This is "assume breach", the third zero trust principle.' }
 ];
 
@@ -230,7 +231,7 @@ export function renderCastle({ chapter, nextChapter }) {
       g.classList.add('safe');
       linkBetween(from, id)?.classList.add('blocked');
       const s = ZT_STORY[id];
-      story.innerHTML = `<div class="feedback good">${rich(s.text)}<div style="margin-top:6px;font-family:var(--mono);font-size:11px;letter-spacing:.5px;color:var(--muted)">${s.tag}</div></div>`;
+      story.innerHTML = `<div class="feedback shield">${rich(s.text)}<div class="tool-row"><span class="tool-label">${escapeHtml(s.principle)} · Microsoft tools:</span> ${s.tools.map(productChip).join(' ')}</div></div>`;
       announce(s.text.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_m, k, shown) => shown || k));
       refreshTargets();
       if (blocked.size >= 3) {

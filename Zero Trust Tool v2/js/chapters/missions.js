@@ -1,5 +1,6 @@
 // Chapter 5: stop the attack. Drag Microsoft controls onto the attack step they break.
 import { h, rich, guide, quiz, announce, store, escapeHtml } from '../ui.js';
+import { learnLink } from '../learn.js';
 import { makeDraggable, makeTarget } from '../drag.js';
 import { CONTROLS, PILLARS } from '../catalog.js';
 
@@ -19,14 +20,14 @@ const SCENARIOS = [
       },
       {
         title: 'The attacker replays the stolen session', text: 'From their own laptop, the attacker opens Jo\'s mailbox.',
-        accepts: ['compliant', 'risk'], win: 'Microsoft only issues a session to a managed, healthy device, so the attacker\'s proxy never gets a usable one. And if a session is stolen, ID Protection flags it as risky and a risk policy makes Jo sign in again.'
+        accepts: ['compliant', 'risk', 'tokenprotection'], win: 'Microsoft only issues a session to a managed, healthy device, so the attacker\'s proxy never gets a usable one. Token protection ties sessions to Jo\'s own Windows device, and if a session is stolen anyway, ID Protection flags it as risky and makes Jo sign in again.'
       },
       {
         title: 'Invoice fraud from Jo\'s mailbox', text: 'The attacker hides replies with an inbox rule and emails customers new bank details.',
         accepts: ['xdr'], win: 'Defender XDR links the suspicious sign-in, the inbox rule and the emails, and disables Jo\'s account automatically.'
       }
     ],
-    tray: ['safelinks', 'passkeys', 'compliant', 'risk', 'xdr', 'labels', 'cspm', 'private']
+    tray: ['safelinks', 'passkeys', 'compliant', 'risk', 'tokenprotection', 'xdr', 'labels', 'cspm', 'private']
   },
   {
     id: 'ransom',
@@ -43,14 +44,14 @@ const SCENARIOS = [
       },
       {
         title: 'It spreads using an admin account', text: 'The malware finds an admin account that is always on and uses it everywhere.',
-        accepts: ['pim'], win: 'There is no always-on admin account to steal. Admin rights only exist briefly, with approval.'
+        accepts: ['pim', 'laps', 'mdi'], win: 'There is no always-on admin account to steal: admin rights only exist briefly, with approval, and every device has its own local admin password. Defender for Identity also spots one account being used across many machines, so it can be shut down.'
       },
       {
         title: 'Files are encrypted', text: 'The ransomware starts encrypting shared folders.',
         accepts: ['asr', 'xdr'], win: 'Ransomware protection blocks the encryption, and automatic attack disruption contains the attack.'
       }
     ],
-    tray: ['private', 'compliant', 'edr', 'pim', 'asr', 'xdr', 'dlp', 'safelinks']
+    tray: ['private', 'compliant', 'edr', 'pim', 'laps', 'mdi', 'asr', 'xdr', 'dlp', 'safelinks']
   }
 ];
 
@@ -121,7 +122,7 @@ function renderScenario(s, { onWin, ninja }) {
       li.querySelector('.s-banner').textContent = '🛡️ Blocked';
       li.querySelector('p').innerHTML = `<span class="how-label">How it was blocked:</span> ${escapeHtml(st.win)}`;
       li.querySelector('.kc-slot').innerHTML = `<span class="placed">🛡️ ${escapeHtml(c.name)}</span>`;
-      fb.innerHTML = `<div class="feedback shield"><strong>Step ${i + 1} blocked by ${escapeHtml(c.name)}.</strong> ${rich(st.win)}</div>`;
+      fb.innerHTML = `<div class="feedback shield"><strong>Step ${i + 1} blocked by ${escapeHtml(c.name)}.</strong> ${rich(st.win)}<div class="tool-row"><span class="tool-label">Microsoft tool:</span> ${escapeHtml(c.product)} · ${learnLink(c.learn)}</div></div>`;
       announce(`Step ${i + 1} blocked. ${st.win}`);
       broken += 1;
       if (broken === s.steps.length) {

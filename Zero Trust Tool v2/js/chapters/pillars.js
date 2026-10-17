@@ -1,5 +1,6 @@
 // Chapter 3: meet the six pillars. Explore each pillar, then click the right pillar for each scenario.
 import { h, rich, guide, announce, store, escapeHtml } from '../ui.js';
+import { productChip } from '../learn.js';
 
 const PILLARS = [
   {
@@ -7,21 +8,21 @@ const PILLARS = [
     what: 'The people, service accounts and apps that sign in.',
     wrong: 'Passwords get stolen or guessed, and admin accounts have far more power than anyone needs day to day.',
     example: 'Most attacks start with someone signing in as a real employee using a stolen password.',
-    microsoft: ['Microsoft Entra ID', 'Conditional Access', 'Entra ID Protection', 'Privileged Identity Management']
+    microsoft: ['Microsoft Entra ID', 'Conditional Access', 'Entra ID Protection', 'Privileged Identity Management', 'Defender for Identity']
   },
   {
     id: 'endpoints', icon: '💻', name: 'Endpoints',
     what: 'Laptops, phones, tablets and servers that people use to get to their work.',
     wrong: 'Devices miss updates, run without protection, or are personal machines nobody manages.',
     example: 'An old laptop with no updates opens a malicious attachment and gives the attacker a foothold.',
-    microsoft: ['Microsoft Intune', 'Defender for Endpoint', 'Defender for Business']
+    microsoft: ['Microsoft Intune', 'Defender for Endpoint', 'Defender for Business', 'Endpoint Privilege Management', 'Defender Vulnerability Management']
   },
   {
     id: 'apps', icon: '☁️', name: 'Applications',
     what: 'The cloud services and in-house apps where work happens, from Outlook to the finance system.',
     wrong: 'Staff use unapproved apps, risky apps are granted access to company data, and nobody watches the sessions.',
     example: 'A free file-sharing site becomes the place where contracts quietly leak.',
-    microsoft: ['Defender for Cloud Apps', 'Defender for Office 365', 'Conditional Access app control']
+    microsoft: ['Defender for Cloud Apps', 'Conditional Access app control', 'Defender for Office 365', 'Attack simulation training']
   },
   {
     id: 'data', icon: '📄', name: 'Data',
@@ -67,9 +68,9 @@ export function renderPillars({ chapter, nextChapter }) {
       <h1 class="title">${chapter.title}</h1>
       <div class="guide-slot"></div>
       <div class="pillar-board">
-        <div class="pillar-band band-policy">⚖️ <strong>Policy engine</strong> · Conditional Access checks every sign-in</div>
+        <div class="pillar-band band-policy">⚖️ <strong>Policy engine</strong> · ${productChip('Conditional Access')} checks every sign-in</div>
         <div class="pillar-grid"></div>
-        <div class="pillar-band band-visibility">📡 <strong>Security operations (SecOps)</strong> · Defender XDR, Microsoft Sentinel and Security Copilot watch all six</div>
+        <div class="pillar-band band-visibility">📡 <strong>Security operations (SecOps)</strong> · watching all six: <span class="tags band-tags">${['Defender XDR', 'Microsoft Sentinel', 'Security Copilot', 'Security Exposure Management'].map(productChip).join('')}</span></div>
       </div>
       <div class="quiz-banner" hidden aria-live="polite"></div>
       <div class="pillar-detail card" aria-live="polite"></div>
@@ -104,7 +105,7 @@ export function renderPillars({ chapter, nextChapter }) {
         <div><h4>What it is</h4><p>${escapeHtml(p.what)}</p></div>
         <div><h4>What goes wrong</h4><p>${escapeHtml(p.wrong)}</p></div>
         <div><h4>Real-world example</h4><p>${escapeHtml(p.example)}</p></div>
-        <div><h4>Microsoft tools</h4><p class="tags">${p.microsoft.map((m) => `<span class="tag-chip">${escapeHtml(m)}</span>`).join('')}</p></div>
+        <div><h4>Microsoft tools</h4><p class="tags">${p.microsoft.map(productChip).join('')}</p><p class="pd-hint">Each opens its Microsoft Learn page.</p></div>
       </div>`;
     announce(`${p.name}. ${p.what}`);
     if (seen.size === PILLARS.length && !actions.childElementCount) {

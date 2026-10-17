@@ -2,11 +2,12 @@
 import { h, guide, quiz, announce, store, escapeHtml } from '../ui.js';
 import { CONTROLS, PILLARS } from '../catalog.js';
 import { PLANS, ADDONS, SOURCES, CHECKED, coverage, howToGet, savedPlan, savedAddons } from '../licences.js';
+import { learnLink } from '../learn.js';
 
 const MISSIONS = [
   {
-    text: 'Find the plan that includes just-in-time admin (PIM) with no add-on.',
-    check: (s) => s.plan === 'e5' && coverage('pim', 'e5', []).status === 'included'
+    text: 'Find a plan that includes just-in-time admin (PIM) with no add-on.',
+    check: (s) => coverage('pim', s.plan, []).status === 'included'
   },
   {
     text: 'You run Business Premium. Switch on an add-on that unlocks risk-based sign-in policies.',
@@ -15,6 +16,14 @@ const MISSIONS = [
   {
     text: 'Find an add-on that lets you replace the VPN. (Entra Private Access is also sold on its own.)',
     check: (s) => coverage('private', s.plan, s.addons).status === 'addon'
+  },
+  {
+    text: 'You run E3. Switch on the add-on that spots risky data handling by insiders.',
+    check: (s) => s.plan === 'e3' && coverage('insiderrisk', 'e3', s.addons).status === 'addon'
+  },
+  {
+    text: 'Compare the three Business plans, then pick the one with the most controls and no add-ons.',
+    check: (s) => s.plan === 'bp' && !s.addons.length && s.visited.has('basic') && s.visited.has('standard')
   }
 ];
 
@@ -27,7 +36,7 @@ const STATUS = {
 
 export function renderLicences({ chapter, nextChapter }) {
   const plan = savedPlan(store);
-  const state = { plan, addons: savedAddons(store, plan) };
+  const state = { plan, addons: savedAddons(store, plan), visited: new Set([plan]) };
   const solved = new Set(store.get('licenceMissions', []));
 
   const el = h(`
@@ -61,14 +70,21 @@ export function renderLicences({ chapter, nextChapter }) {
   const sources = el.querySelector('.sources');
   sources.insertAdjacentHTML('beforeend', SOURCES.map(([t, u]) => `<a href="${u}" target="_blank" rel="noopener">${escapeHtml(t)}</a>`).join(' · '));
 
+  const families = [...new Set(Object.values(PLANS).map((p) => p.family))];
+  const groups = Object.fromEntries(families.map((f) => {
+    const g = h(`<div class="plan-family"><span class="plan-family-label">${escapeHtml(f)}</span><div class="plan-row"></div></div>`);
+    picker.appendChild(g);
+    return [f, g.querySelector('.plan-row')];
+  }));
   Object.entries(PLANS).forEach(([id, p]) => {
     const b = h(`<button type="button" class="plan" data-plan="${id}"><strong>${escapeHtml(p.short)}</strong><small>${escapeHtml(p.who)}</small></button>`);
     b.addEventListener('click', () => {
       state.plan = id;
+      state.visited.add(id);
       state.addons = state.addons.filter((a) => PLANS[id].addons.includes(a));
       update(true);
     });
-    picker.appendChild(b);
+    groups[p.family].appendChild(b);
   });
 
   const missionEls = MISSIONS.map((m) => {
@@ -105,6 +121,7 @@ export function renderLicences({ chapter, nextChapter }) {
     picker.querySelectorAll('.plan').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.plan === state.plan)));
 
     addonRow.innerHTML = '<span class="addon-label">Add-ons:</span>';
+    if (!PLANS[state.plan].addons.length) addonRow.insertAdjacentHTML('beforeend', '<span class="addon-none">None needed here: this plan already includes everything in this list that can be added.</span>');
     PLANS[state.plan].addons.forEach((a) => {
       const on = state.addons.includes(a);
       const b = h(`<button type="button" class="opt" aria-pressed="${on}">${on ? '✓ ' : '+ '}${escapeHtml(ADDONS[a].name)}</button>`);
@@ -132,9 +149,10 @@ export function renderLicences({ chapter, nextChapter }) {
         if (cov.status === 'addon') note = `Via ${cov.via.join(', ')}`;
         if (cov.status === 'missing') note = howToGet(id, state.plan);
         if (cov.status === 'payg') note = c.paygNote || '';
+        const extra = c.note && cov.status !== 'included' ? c.note : '';
         group.appendChild(h(`
           <div class="own ${st.cls}">
-            <div><strong>${escapeHtml(c.name)}</strong><small>${escapeHtml(c.product)}</small>${note ? `<small class="own-note">${escapeHtml(note)}</small>` : ''}</div>
+            <div><strong>${escapeHtml(c.name)}</strong><small>${escapeHtml(c.product)}</small>${note ? `<small class="own-note">${escapeHtml(note)}</small>` : ''}${extra ? `<small class="own-extra">${escapeHtml(extra)}</small>` : ''}<small>${learnLink(c.learn, 'Microsoft Learn')}</small></div>
             <span class="own-badge">${st.label}</span>
           </div>`));
       });
