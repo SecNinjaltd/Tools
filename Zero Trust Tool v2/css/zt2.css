@@ -234,12 +234,13 @@ h2.title { font-family: var(--display); font-size: clamp(22px, 3vw, 30px); line-
 .sort { display: grid; gap: 14px; }
 .tray { display: flex; flex-wrap: wrap; gap: 8px; min-height: 52px; padding: 10px; border: 1.5px dashed var(--line); border-radius: var(--radius); }
 .chip {
-  touch-action: none; user-select: none;
+  touch-action: manipulation; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
   background: var(--surface); border: 1.5px solid var(--line); border-radius: 999px;
   padding: 8px 14px; font-size: 14px; font-weight: 600; cursor: grab;
 }
 .chip[aria-pressed='true'] { border-color: var(--orange); background: var(--orange-tint); }
 .chip.dragging { opacity: 0.4; }
+.chip.lifted, .ctl.lifted { transform: scale(1.04); box-shadow: var(--shadow); border-color: var(--orange); transition: transform 0.12s; }
 .ghost { position: fixed !important; z-index: 100; pointer-events: none; box-shadow: var(--shadow); cursor: grabbing; margin: 0; }
 .chip.right { border-color: var(--good); background: var(--good-bg); cursor: default; }
 .chip.shake { animation: shake 0.4s; border-color: var(--bad); }
@@ -389,7 +390,8 @@ h2.title { font-family: var(--display); font-size: clamp(22px, 3vw, 30px); line-
 .kc-step.broken .kc-slot { border-style: solid; border-color: var(--good); color: var(--good); font-weight: 700; }
 .ctl-tray { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; margin-bottom: 12px; }
 .ctl {
-  touch-action: none; user-select: none; text-align: left; display: grid; gap: 2px; cursor: grab;
+  touch-action: manipulation; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+  text-align: left; display: grid; gap: 2px; cursor: grab;
   background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--radius-sm); padding: 10px 12px; font-size: 14px;
 }
 .ctl small { color: var(--muted); font-size: 12px; line-height: 1.35; }
