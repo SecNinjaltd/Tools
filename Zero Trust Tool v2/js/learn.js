@@ -14,7 +14,7 @@ export const PRODUCTS = {
   'Entra roles': 'https://learn.microsoft.com/entra/identity/role-based-access-control/permissions-reference',
   'Defender for Identity': 'https://learn.microsoft.com/defender-for-identity/what-is',
   'Microsoft Intune': 'https://learn.microsoft.com/intune/fundamentals/what-is-intune',
-  'Intune device compliance': 'https://learn.microsoft.com/intune/protect/device-compliance-get-started',
+  'Intune device compliance': 'https://learn.microsoft.com/intune/device-security/compliance/overview',
   'Endpoint Privilege Management': 'https://learn.microsoft.com/intune/epm/overview',
   'Windows LAPS': 'https://learn.microsoft.com/entra/identity/devices/howto-manage-local-admin-passwords',
   'Defender for Endpoint': 'https://learn.microsoft.com/defender-endpoint/microsoft-defender-endpoint',
