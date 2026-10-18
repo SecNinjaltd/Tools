@@ -64,7 +64,6 @@ function renderRail() {
   const mapLink = h('<a class="classic map-rail" href="#/map" title="Zero trust map"><span class="num">&#128506;</span><span class="label-text">Zero trust map</span></a>');
   if (active === 'map') mapLink.setAttribute('aria-current', 'page');
   rail.appendChild(mapLink);
-  rail.appendChild(h('<a class="classic" href="../Zero%20Trust%20Tool/" title="Classic builder (v1)"><span class="num">&#9881;</span><span class="label-text">Classic builder (v1)</span></a>'));
   pill.textContent = `${done.size} of ${CHAPTERS.length} complete`;
 }
 
