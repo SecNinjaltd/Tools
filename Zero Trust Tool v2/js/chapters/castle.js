@@ -27,11 +27,16 @@ const CASTLE_STORY = {
 };
 
 const ZT_STORY = {
-  email: { text: 'Blocked. Email needs [[mfa]] on every sign-in. You have Alex\'s password, but not Alex\'s phone.', principle: 'Verify explicitly', tools: ['Conditional Access', 'Authentication strengths'] },
-  files: { text: 'Blocked. The file server only trusts [[compliant device|healthy devices]]. Defender for Endpoint spotted the malware and isolated the laptop.', principle: 'Assume breach', tools: ['Defender for Endpoint', 'Intune device compliance'] },
-  finance: { text: "Blocked. Alex works in marketing and was never given finance access. Less access means less to steal.", principle: 'Least privilege access', tools: ['Access reviews'] },
-  admin: { text: 'Blocked. Nobody holds admin rights all the time. They are switched on for an hour, with approval, when needed.', principle: 'Least privilege access', tools: ['Privileged Identity Management'] },
-  data: { text: 'Blocked. Customer data is labelled as confidential, and data loss prevention stops it being uploaded to unknown sites.', principle: 'Assume breach', tools: ['Purview sensitivity labels', 'Purview data loss prevention'] }
+  email: { text: 'Blocked. Email needs [[mfa]] on every sign-in. You have Alex\'s password, but not Alex\'s phone.', principle: 'Verify explicitly', tools: ['Conditional Access', 'Authentication strengths'],
+    checks: [['👤 Password', 'correct', true], ['📱 MFA', 'not approved', false]] },
+  files: { text: 'Blocked. The file server only trusts [[compliant device|healthy devices]]. Defender for Endpoint spotted the malware and isolated the laptop.', principle: 'Assume breach', tools: ['Defender for Endpoint', 'Intune device compliance'],
+    checks: [['👤 User', 'Alex', true], ['💻 Device health', 'malware found', false]] },
+  finance: { text: "Blocked. Alex works in marketing and was never given finance access. Less access means less to steal.", principle: 'Least privilege access', tools: ['Access reviews'],
+    checks: [['👤 User', 'Alex', true], ['🗝️ Access', 'not assigned to Alex', false]] },
+  admin: { text: 'Blocked. Nobody holds admin rights all the time. They are switched on for an hour, with approval, when needed.', principle: 'Least privilege access', tools: ['Privileged Identity Management'],
+    checks: [['👤 User', 'Alex', true], ['🔑 Admin role', 'not active, needs approval', false]] },
+  data: { text: 'Blocked. Customer data is labelled as confidential, and data loss prevention stops it being uploaded to unknown sites.', principle: 'Assume breach', tools: ['Purview sensitivity labels', 'Purview data loss prevention'],
+    checks: [['📄 Label', 'Confidential', true], ['📤 Upload', 'to unknown site', false]] }
 };
 
 const SORT_ITEMS = [
@@ -42,6 +47,10 @@ const SORT_ITEMS = [
   { text: 'Give only the access people need', bucket: 'zt', why: 'This is "least privilege access", the second zero trust principle.' },
   { text: 'Plan as if an attacker is already in', bucket: 'zt', why: 'This is "assume breach", the third zero trust principle.' }
 ];
+
+// In zero trust there are no trusted links between systems: every request goes through the checks in the middle.
+const ENGINE = { x: 480, y: 208 };
+const centre = (id) => { const n = NODES.find((x) => x.id === id); return { x: n.x, y: n.y + 38 }; };
 
 function sceneSvg() {
   const byId = Object.fromEntries(NODES.map((n) => [n.id, n]));
@@ -73,6 +82,13 @@ function sceneSvg() {
       <text class="mono" x="20" y="60">INTERNET</text>
       <line class="link" data-link="internet-laptop" x1="88" y1="150" x2="186" y2="106"/>
       ${links}
+      ${NODES.map((n) => `<line class="spoke" data-spoke="${n.id}" x1="${n.x}" y1="${n.y + 38}" x2="${ENGINE.x}" y2="${ENGINE.y}"/>`).join('')}
+      <g class="engine" transform="translate(${ENGINE.x} ${ENGINE.y})">
+        <rect x="-112" y="-27" width="224" height="54" rx="27"/>
+        <text x="0" y="-3" text-anchor="middle" class="eng-title">🛡️ Check every request</text>
+        <text x="0" y="15" text-anchor="middle" class="small">Entra · Intune · Defender · Purview</text>
+      </g>
+      <g class="packets"></g>
       <g class="attacker" transform="translate(56 160)">
         <circle r="30" fill="#1a1a1c"/>
         <text x="0" y="9" text-anchor="middle" style="font-size:26px">🕵️</text>
@@ -110,6 +126,37 @@ export function renderCastle({ chapter, nextChapter }) {
   let owned = new Set();
   let blocked = new Set();
   let clicks = 0;
+  let busy = false;
+  let castleReached = new Set(['laptop']);
+
+  // Move a small request dot along a path of points; resolves when it arrives.
+  function fly(points, cls, ms = 420) {
+    const layer = svg.querySelector('.packets');
+    const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    dot.setAttribute('r', '9');
+    dot.setAttribute('class', `packet ${cls}`);
+    layer.appendChild(dot);
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    return new Promise((resolve) => {
+      let seg = 0;
+      let t0 = null;
+      const step = (t) => {
+        if (t0 === null) t0 = t;
+        const k = reduce ? 1 : Math.min(1, (t - t0) / ms);
+        const a = points[seg];
+        const b = points[seg + 1];
+        dot.setAttribute('cx', a.x + (b.x - a.x) * k);
+        dot.setAttribute('cy', a.y + (b.y - a.y) * k);
+        if (k < 1) return requestAnimationFrame(step);
+        seg += 1;
+        t0 = null;
+        if (seg < points.length - 1) return requestAnimationFrame(step);
+        resolve(dot);
+      };
+      requestAnimationFrame(step);
+    });
+  }
+  const wait = (ms) => new Promise((r) => setTimeout(r, matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : ms));
 
   const node = (id) => svg.querySelector(`[data-node="${id}"]`);
   const setStep = (i) => dots.forEach((d, n) => d.classList.toggle('on', n <= i));
@@ -145,7 +192,9 @@ export function renderCastle({ chapter, nextChapter }) {
     blocked = new Set();
     clicks = 0;
     svg.querySelectorAll('.node').forEach((g) => g.classList.remove('owned', 'safe', 'target'));
-    svg.querySelectorAll('.link').forEach((l) => l.classList.remove('hot', 'blocked'));
+    svg.querySelectorAll('.link, .spoke').forEach((l) => l.classList.remove('hot', 'blocked', 'live'));
+    svg.querySelector('.packets').innerHTML = '';
+    svg.querySelector('.engine').classList.remove('deny');
   }
 
   function phish() {
@@ -178,6 +227,7 @@ export function renderCastle({ chapter, nextChapter }) {
 
   function castleDone() {
     mode = 'castle-done';
+    castleReached = new Set(owned);
     refreshTargets();
     setStep(1);
     ninja.say("That's called [[lateral movement]]. One click on one email, and the whole business is gone.\nThe firewall never saw a thing, because it only watches the edge. Inside, everything trusted everything.", 'arms');
@@ -190,7 +240,7 @@ export function renderCastle({ chapter, nextChapter }) {
     setStep(2);
     svg.classList.add('zt-on');
     svg.querySelector('.wall-label').textContent = 'ZERO TRUST: EVERY REQUEST IS CHECKED';
-    ninja.say("Same company, same attacker, same email. This time every system checks every request, shown by the orange ticks.\nZero trust doesn't promise nobody will ever click a bad link. It makes sure one click can't take everything.", 'laptop');
+    ninja.say("Same company, same attacker, same email. Notice the trusted links between systems have gone. Every request now goes through the checks in the middle: who you are, which device, what you're allowed, what's happening to the data.\nZero trust doesn't promise nobody will ever click a bad link. It makes sure one click can't take everything.", 'laptop');
     story.innerHTML = '';
     actions.replaceChildren(button('Send the phishing email again', () => {
       mode = 'zt-play';
@@ -206,38 +256,75 @@ export function renderCastle({ chapter, nextChapter }) {
     mode = 'zt-done';
     refreshTargets();
     setStep(3);
-    ninja.say("Same attack, very different ending: one laptop lost instead of the whole business.\nThat's the idea behind [[zero trust]]: never trust, always verify. Let's lock it in.", 'cheer');
+    ninja.say("Same attack, very different ending. Security people call this the blast radius: how much one compromised device can reach.\nThat's the idea behind [[zero trust]]: never trust, always verify, and keep the blast radius small. Let's lock it in.", 'cheer');
     actions.replaceChildren();
+    story.innerHTML = blastRadius();
     showActivities();
   }
 
-  function onNodeActivate(id) {
+  async function onNodeActivate(id) {
     const g = node(id);
-    if (!g.classList.contains('target')) return;
+    if (busy || !g.classList.contains('target')) return;
+    busy = true;
     clicks += 1;
     const from = [...owned].find((o) => neighbours(o).includes(id)) || 'laptop';
     if (mode === 'castle-play') {
+      // No checks inside the wall: the request goes straight along the trusted link.
+      const dot = await fly([centre(from), centre(id)], 'bad');
+      dot.remove();
       owned.add(id);
       g.classList.add('owned');
       linkBetween(from, id)?.classList.add('hot');
-      story.innerHTML = `<div class="feedback bad">${rich(CASTLE_STORY[id])}</div>`;
+      story.innerHTML = `<div class="feedback bad"><div class="req-line">Request from ${escapeHtml(NODES.find((n) => n.id === from).label)} → ${escapeHtml(NODES.find((n) => n.id === id).label)}: <strong>nothing checked</strong>, it's inside the network.</div>${rich(CASTLE_STORY[id])}</div>`;
       announce(CASTLE_STORY[id]);
+      busy = false;
       refreshTargets();
       if (owned.has('data') || owned.size >= NODES.length || clicks >= 4) {
         setTimeout(castleDone, 300);
       }
     } else if (mode === 'zt-play') {
+      // Every request goes to the checks first, and is turned away there.
+      const s = ZT_STORY[id];
+      svg.querySelector('[data-spoke="laptop"]').classList.add('live');
+      svg.querySelector(`[data-spoke="${id}"]`).classList.add('live');
+      const dot = await fly([centre('laptop'), { x: ENGINE.x - 70, y: ENGINE.y - 28 }], 'req');
+      const rows = s.checks.map(([k, v, ok]) => `<li class="${ok ? 'ok' : 'no'}"><span>${k}</span><strong>${ok ? '✓' : '✗'} ${escapeHtml(v)}</strong></li>`).join('');
+      story.innerHTML = `<div class="feedback info"><div class="req-line">Request from Alex's laptop → ${escapeHtml(NODES.find((n) => n.id === id).label)}: <strong>checking…</strong></div><ul class="req-checks">${rows}</ul></div>`;
+      const items = [...story.querySelectorAll('.req-checks li')];
+      for (const li of items) { await wait(320); li.classList.add('shown'); }
+      await wait(250);
+      svg.querySelector('.engine').classList.add('deny');
+      dot.classList.add('denied');
+      await wait(450);
+      dot.remove();
+      svg.querySelector('.engine').classList.remove('deny');
       blocked.add(id);
       g.classList.add('safe');
-      linkBetween(from, id)?.classList.add('blocked');
-      const s = ZT_STORY[id];
-      story.innerHTML = `<div class="feedback shield">${rich(s.text)}<div class="tool-row"><span class="tool-label">${escapeHtml(s.principle)} · Microsoft tools:</span> ${s.tools.map(productChip).join(' ')}</div></div>`;
+      svg.querySelector(`[data-spoke="${id}"]`).classList.add('blocked');
+      story.innerHTML = `<div class="feedback shield"><div class="req-line">Request from Alex's laptop → ${escapeHtml(NODES.find((n) => n.id === id).label)}: <strong>denied</strong></div><ul class="req-checks">${rows.replace(/<li class="/g, '<li class="shown ')}</ul>${rich(s.text)}<div class="tool-row"><span class="tool-label">${escapeHtml(s.principle)} · Microsoft tools:</span> ${s.tools.map(productChip).join(' ')}</div></div>`;
       announce(s.text.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_m, k, shown) => shown || k));
+      busy = false;
       refreshTargets();
       if (blocked.size >= 3) {
-        actions.replaceChildren(button('See what changed', ztDone));
+        actions.replaceChildren(button('Compare the damage', ztDone));
       }
     }
+  }
+
+  // Blast radius: how many of the six systems the attacker reached in each version.
+  function blastRadius() {
+    const total = NODES.length;
+    const castleN = castleReached.size;
+    const cells = (hit) => NODES.map((x) => `<span class="br-cell ${hit.has(x.id) ? 'hit' : ''}" title="${escapeHtml(x.label)}">${x.icon}</span>`).join('');
+    return `
+      <div class="card blast">
+        <p class="eyebrow">Blast radius</p>
+        <h3 style="margin:4px 0 4px">How much one compromised laptop could reach</h3>
+        <p class="br-note">Same phishing email, same attacker, both times.</p>
+        <div class="br-row"><span class="br-label">🏰 Castle and moat</span><span class="br-cells">${cells(castleReached)}</span><strong class="br-n">${castleN} of ${total}</strong></div>
+        <div class="br-row"><span class="br-label">🛡️ Zero trust</span><span class="br-cells">${cells(new Set(['laptop']))}</span><strong class="br-n">1 of ${total}</strong></div>
+        <p class="br-note">In zero trust the laptop was still lost, but every request it made was checked and refused. The damage stopped at one device.</p>
+      </div>`;
   }
 
   svg.addEventListener('click', (e) => {
