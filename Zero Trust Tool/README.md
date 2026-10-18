@@ -1,6 +1,6 @@
-# Zero Trust Academy (v2 prototype)
+# Zero Trust Academy
 
-A guided, hands-on course in seven chapters that teaches zero trust and how Microsoft security delivers it. It replaces the dashboard-first approach of the classic builder (`../Zero Trust Tool/`), which stays live.
+A guided, hands-on course in seven chapters that teaches zero trust and how Microsoft security delivers it. It replaced the original Zero Trust architecture builder, which is still in git history.
 
 ## Chapters
 
