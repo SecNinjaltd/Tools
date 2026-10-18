@@ -103,7 +103,7 @@ export function renderCastle({ chapter, nextChapter }) {
     <article>
       <p class="eyebrow">Chapter ${chapter.n} · ${chapter.minutes} min</p>
       <h1 class="title">${chapter.title}</h1>
-      <ol class="step-dots" aria-label="Chapter stages"><li>1 · Castle attack</li><li>2 · Zero trust replay</li><li>3 · Compare and check</li></ol>
+      <ol class="step-dots" aria-label="Chapter stages"><li><button type="button" data-stage="0">1 · Castle attack</button></li><li><button type="button" data-stage="1">2 · Zero trust replay</button></li><li><button type="button" data-stage="2" disabled>3 · Compare and check</button></li></ol>
       <div class="guide-slot"></div>
       <div class="c1-stage">
         <div class="c1-scene"><div class="scene-wrap">${sceneSvg()}</div>
@@ -131,6 +131,7 @@ export function renderCastle({ chapter, nextChapter }) {
   let blocked = new Set();
   let clicks = 0;
   let busy = false;
+  let flow = 0;
   let castleReached = new Set(['laptop']);
 
   // Move a small request dot along a path of points; resolves when it arrives.
@@ -200,6 +201,7 @@ export function renderCastle({ chapter, nextChapter }) {
     svg.querySelectorAll('.link, .spoke').forEach((l) => l.classList.remove('hot', 'blocked', 'live', 'scan'));
     svg.querySelector('.packets').innerHTML = '';
     stopBeacon();
+    flow += 1;
     svg.querySelector('.engine').classList.remove('deny');
   }
 
@@ -241,6 +243,8 @@ export function renderCastle({ chapter, nextChapter }) {
 
   async function phishFlow(zt, then) {
     busy = true;
+    const myFlow = flow;
+    const alive = () => myFlow === flow;
     actions.replaceChildren();
     const atk = svg.querySelector('.attacker');
 
@@ -251,16 +255,19 @@ export function renderCastle({ chapter, nextChapter }) {
       : '<strong>The attacker does their homework.</strong> Alex\'s LinkedIn says "Marketing Executive at Fabrikam". The attacker registers <code>fabrikam-invoices.co</code>, a lookalike of the real domain, and writes an invoice email that sounds like the accounts team.', 'info');
     ninja.say(zt ? 'Same attack, step by step. This time, look for the checks along the way.' : "Before we play, here's how a real attacker gets in. Step through their playbook.", 'stance');
     await new Promise((r) => nextBtn('Deliver the email', r));
+    if (!alive()) return;
     atk.classList.remove('pulse');
 
     // 2. Deliver
     playbook(1, '📧 The email travels from the attacker\'s server to Fabrikam\'s email server, then to Alex\'s inbox…', 'info');
     let dot = await fly([ATTACKER, FIREWALL, centre('email'), centre('laptop')], 'mail', 560);
+    if (!alive()) return;
     dot.remove();
     playbook(1, zt
       ? '<strong>Delivered, after a scan.</strong> Defender for Office 365 checked the sender, the links and the attachments. The domain is a day old with no bad history, so it passes. Brand-new attacks often do.'
       : '<strong>Delivered.</strong> The firewall let it in, because email has to be allowed in for the business to work. Nothing checked who really sent it.', zt ? 'info' : 'bad', zt ? ['Defender for Office 365'] : []);
     await new Promise((r) => nextBtn('Open it as Alex', r));
+    if (!alive()) return;
 
     // 3. Click (the learner does this)
     playbook(2, 'Alex opens the email. You\'re Alex now.', 'info');
@@ -273,58 +280,77 @@ export function renderCastle({ chapter, nextChapter }) {
       </div>`);
     busy = false;
     await new Promise((r) => story.querySelector('.pm-link').addEventListener('click', r, { once: true }));
+    if (!alive()) return;
     busy = true;
     dot = await fly([centre('laptop'), FIREWALL, ATTACKER], 'req', 420);
+    if (!alive()) return;
     dot.remove();
     playbook(2, zt
       ? '<strong>Clicked.</strong> Safe Links re-checked the address at the moment of the click. It\'s still a brand-new site with no bad history, so the page opens. The page asks Alex to install an "invoice viewer".'
       : '<strong>Clicked.</strong> The link opens a page that looks like an invoice portal and asks Alex to install an "invoice viewer". Alex does, because the invoice is "urgent".', zt ? 'info' : 'bad', zt ? ['Defender for Office 365'] : []);
     await new Promise((r) => nextBtn('Install the malware', r));
+    if (!alive()) return;
 
     // 4. Install
     playbook(3, '⚙️ The "invoice viewer" downloads from the attacker\'s site…', 'bad');
     dot = await fly([ATTACKER, FIREWALL, centre('laptop')], 'bad', 480);
+    if (!alive()) return;
     dot.remove();
     phish();
     playbook(3, zt
       ? '<strong>Installed.</strong> Defender for Endpoint records what the program does and marks the laptop as <em>at risk</em>. The attacker still has a foothold, which is exactly why zero trust assumes breach. That at-risk mark will matter in a moment.'
       : '<strong>Installed.</strong> The firewall saw an ordinary HTTPS download that started from inside the wall, so it allowed it. The program quietly runs every time Alex logs in.', 'bad', zt ? ['Defender for Endpoint'] : []);
     await new Promise((r) => nextBtn('Call home', r));
+    if (!alive()) return;
 
     // 5. Call home (command and control)
     playbook(4, '<strong>The malware calls home.</strong> Every few seconds it sends a small HTTPS request to the attacker\'s server asking "any orders?". To a firewall this looks like normal web browsing, so the attacker can now control the laptop remotely. This is called <em>command and control</em>.', 'bad');
     const ping = () => fly([centre('laptop'), FIREWALL, ATTACKER], 'beacon', 700).then((d) => d.remove());
     await ping();
+    if (!alive()) return;
     stopBeacon();
     beacon = setInterval(() => { if (svg.isConnected) ping(); else stopBeacon(); }, 1800);
     await new Promise((r) => nextBtn('Steal credentials', r));
+    if (!alive()) return;
 
     // 6. Steal
     playbook(5, '🔑 The attacker tells the malware to collect what Alex has saved…', 'bad');
     dot = await fly([centre('laptop'), FIREWALL, ATTACKER], 'loot', 650);
+    if (!alive()) return;
     dot.remove();
     playbook(5, zt
       ? '<strong>Alex\'s password and sign-in token are copied out.</strong> But the password alone won\'t pass MFA, and with token protection the token only works on Alex\'s own laptop, which is now marked at risk. The stolen keys don\'t open anything.'
       : '<strong>Alex\'s password and sign-in token are copied out.</strong> Saved browser passwords and the token that keeps Alex signed in to email are now the attacker\'s, so they can sign in as Alex from anywhere.', 'bad', zt ? ['Conditional Access', 'Token protection'] : []);
     await new Promise((r) => nextBtn('Scan the network', r));
+    if (!alive()) return;
 
     // 7. Scan
     if (zt) {
       playbook(6, '🗺️ The malware looks for other systems it can reach…', 'bad');
       for (const n of NODES) { if (n.id !== 'laptop') { svg.querySelector(`[data-spoke="${n.id}"]`).classList.add('live'); await wait(120); } }
       await wait(700);
+      if (!alive()) return;
       svg.querySelectorAll('.spoke.live').forEach((l) => l.classList.remove('live'));
       playbook(6, '<strong>The scan finds no trusted connections.</strong> Every system only answers requests that pass the checks in the middle. Time to see whether the attacker can get past them.', 'info');
     } else {
       playbook(6, '🗺️ The malware scans the network for other systems…', 'bad');
       for (const [a, b] of LINKS) { linkBetween(a, b)?.classList.add('scan'); await wait(160); }
       await wait(600);
+      if (!alive()) return;
       svg.querySelectorAll('.link.scan').forEach((l) => l.classList.remove('scan'));
       playbook(6, '<strong>Every system answers.</strong> Inside the wall nothing asks who you are or whether your laptop is healthy, so the attacker can see the email, file server, finance app, admin account and customer data.', 'bad');
     }
     busy = false;
     then();
   }
+
+  // The stage labels double as shortcuts: jump to the castle attack or straight to the zero trust replay.
+  el.querySelectorAll('.step-dots button').forEach((b) => b.addEventListener('click', () => {
+    busy = false;
+    if (b.dataset.stage === '0') intro();
+    if (b.dataset.stage === '1') { if (castleReached.size < 2) castleReached = new Set(NODES.map((n) => n.id)); ztIntro(); }
+    el.querySelector('.c1-stage').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }));
 
   function intro() {
     mode = 'castle';
