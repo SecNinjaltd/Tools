@@ -205,6 +205,11 @@ h1.title, h2.title { font-family: var(--display); font-size: clamp(22px, 3vw, 30
 .chapter-card .tag.done { background: var(--good-bg); color: var(--good); }
 
 /* ---------- Chapter 1: castle ---------- */
+.c1-stage { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
+.c1-stage > * { min-width: 0; }
+@media (min-width: 701px) { .c1-scene { position: sticky; top: 66px; z-index: 5; background: var(--paper); padding-top: 6px; } .c1-scene .scene-wrap { margin: 0; } }
+@media (min-width: 1280px) { .c1-stage { grid-template-columns: minmax(0, 1.7fr) minmax(300px, 1fr); align-items: start; } .c1-scene { top: 80px; } }
+.c1-panel { min-width: 0; }
 .scene-wrap { margin: 18px 0; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .scene-hint { display: none; font-size: 12px; color: var(--muted); margin-top: 6px; }
 .scene {
@@ -254,6 +259,17 @@ h1.title, h2.title { font-family: var(--display); font-size: clamp(22px, 3vw, 30
 .scene .packet { stroke: var(--surface); stroke-width: 3; }
 .scene .packet.bad { fill: var(--bad); }
 .scene .packet.mail { fill: #4aa3df; }
+.scene .packet.beacon { fill: #835b00; r: 6; }
+.scene .packet.loot { fill: #f4d538; stroke: #1a1a1c; }
+.attacker.pulse circle { animation: atkpulse 1s ease-in-out infinite; }
+@keyframes atkpulse { 50% { stroke: var(--bad); stroke-width: 8; } }
+.playbook { display: grid; gap: 10px; }
+.pb-steps { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; }
+.pb-steps li { padding: 4px 10px; border-radius: 999px; border: 1.5px solid var(--line); background: var(--surface); font-size: 12.5px; color: var(--muted); }
+.pb-steps li.on { border-color: var(--bad); color: var(--ink); font-weight: 700; background: var(--bad-bg); }
+.pb-steps li.done { color: var(--ink); }
+.pb-steps li.done::after { content: ' ✓'; color: var(--bad); }
+.playbook code { font-family: var(--mono); font-size: 13px; }
 .scene .link.scan { stroke: var(--bad); stroke-width: 4; opacity: 0.8; }
 .phish-mail { border: 1.5px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: 14px 16px; box-shadow: 0 6px 20px rgba(0,0,0,0.08); font-size: 15px; max-width: 560px; }
 .pm-meta { font-size: 13px; color: var(--muted); border-bottom: 1px solid var(--line); padding-bottom: 8px; margin-bottom: 8px; line-height: 1.6; }

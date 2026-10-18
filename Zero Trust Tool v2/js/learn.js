@@ -23,6 +23,7 @@ export const PRODUCTS = {
   'Defender for Cloud Apps': 'https://learn.microsoft.com/defender-cloud-apps/what-is-defender-for-cloud-apps',
   'Conditional Access app control': 'https://learn.microsoft.com/defender-cloud-apps/proxy-intro-aad',
   'Defender for Office 365': 'https://learn.microsoft.com/defender-office-365/mdo-about',
+  'Token protection': 'https://learn.microsoft.com/entra/identity/conditional-access/concept-token-protection',
   'Attack simulation training': 'https://learn.microsoft.com/defender-office-365/attack-simulation-training-get-started',
   'Purview sensitivity labels': 'https://learn.microsoft.com/purview/sensitivity-labels',
   'Purview data loss prevention': 'https://learn.microsoft.com/purview/dlp-learn-about-dlp',

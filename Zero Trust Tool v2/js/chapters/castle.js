@@ -105,10 +105,14 @@ export function renderCastle({ chapter, nextChapter }) {
       <h1 class="title">${chapter.title}</h1>
       <div class="step-dots" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
       <div class="guide-slot"></div>
-      <div class="scene-wrap">${sceneSvg()}</div>
-      <p class="scene-hint">Swipe sideways to see the whole network.</p>
-      <div class="story" aria-live="polite"></div>
-      <div class="row actions" style="margin-top:14px"></div>
+      <div class="c1-stage">
+        <div class="c1-scene"><div class="scene-wrap">${sceneSvg()}</div>
+        <p class="scene-hint">Swipe sideways to see the whole network.</p></div>
+        <div class="c1-panel">
+          <div class="story" aria-live="polite"></div>
+          <div class="row actions" style="margin-top:14px"></div>
+        </div>
+      </div>
       <div class="after" style="display:grid;gap:18px;margin-top:22px"></div>
       <div class="chapter-foot"></div>
     </article>`);
@@ -194,6 +198,7 @@ export function renderCastle({ chapter, nextChapter }) {
     svg.querySelectorAll('.node').forEach((g) => g.classList.remove('owned', 'safe', 'target'));
     svg.querySelectorAll('.link, .spoke').forEach((l) => l.classList.remove('hot', 'blocked', 'live', 'scan'));
     svg.querySelector('.packets').innerHTML = '';
+    stopBeacon();
     svg.querySelector('.engine').classList.remove('deny');
   }
 
@@ -203,57 +208,121 @@ export function renderCastle({ chapter, nextChapter }) {
     node('laptop').classList.add('owned');
   }
 
-  // The phishing email arrives, the learner clicks the link as Alex, and the malware lands and looks around.
+  // The attacker's playbook, one stage at a time: what they do, how it looks on the network,
+  // and (in the zero trust replay) what checked it and why the attack carried on anyway.
   const ATTACKER = { x: 56, y: 160 };
   const FIREWALL = { x: 150, y: 111 };
+  const STAGES = [
+    { icon: '🔎', label: 'Research' },
+    { icon: '📧', label: 'Deliver' },
+    { icon: '🖱️', label: 'Click' },
+    { icon: '⚙️', label: 'Install' },
+    { icon: '📡', label: 'Call home' },
+    { icon: '🔑', label: 'Steal' },
+    { icon: '🗺️', label: 'Scan' }
+  ];
+  let beacon = null;
+  function stopBeacon() { if (beacon) clearInterval(beacon); beacon = null; }
+
+  function playbook(i, html, cls = 'bad', tools = []) {
+    const chips = STAGES.map((st, n) => `<li class="${n < i ? 'done' : n === i ? 'on' : ''}"><span aria-hidden="true">${st.icon}</span> ${st.label}</li>`).join('');
+    story.innerHTML = `
+      <div class="playbook">
+        <p class="eyebrow">The attacker's playbook · step ${i + 1} of ${STAGES.length}</p>
+        <ol class="pb-steps" aria-hidden="true">${chips}</ol>
+        <div class="feedback ${cls}">${html}${tools.length ? `<div class="tool-row"><span class="tool-label">Microsoft tools:</span> ${tools.map(productChip).join(' ')}</div>` : ''}</div>
+      </div>`;
+  }
+
+  function nextBtn(label, fn) {
+    actions.replaceChildren(button(`Next: ${label} →`, async () => { actions.replaceChildren(); await fn(); }));
+  }
+
   async function phishFlow(zt, then) {
     busy = true;
     actions.replaceChildren();
-    story.innerHTML = '<div class="feedback info"><div class="req-line">📧 An email is on its way to Alex…</div></div>';
-    let dot = await fly([ATTACKER, FIREWALL, centre('email'), centre('laptop')], 'mail', 520);
+    const atk = svg.querySelector('.attacker');
+
+    // 1. Research
+    atk.classList.add('pulse');
+    playbook(0, zt
+      ? '<strong>Same attacker, same plan.</strong> Alex\'s job title is still on LinkedIn and the lookalike domain still works. Zero trust can\'t stop someone doing their homework, so watch what happens at each step this time.'
+      : '<strong>The attacker does their homework.</strong> Alex\'s LinkedIn says "Marketing Executive at Fabrikam". The attacker registers <code>fabrikam-invoices.co</code>, a lookalike of the real domain, and writes an invoice email that sounds like the accounts team.', 'info');
+    ninja.say(zt ? 'Same attack, step by step. This time, look for the checks along the way.' : "Before we play, here's how a real attacker gets in. Step through their playbook.", 'stance');
+    await new Promise((r) => nextBtn('Deliver the email', r));
+    atk.classList.remove('pulse');
+
+    // 2. Deliver
+    playbook(1, '📧 The email travels from the attacker\'s server to Fabrikam\'s email server, then to Alex\'s inbox…', 'info');
+    let dot = await fly([ATTACKER, FIREWALL, centre('email'), centre('laptop')], 'mail', 560);
     dot.remove();
-    busy = false;
-    story.innerHTML = `
+    playbook(1, zt
+      ? '<strong>Delivered, after a scan.</strong> Defender for Office 365 checked the sender, the links and the attachments. The domain is a day old with no bad history, so it passes. Brand-new attacks often do.'
+      : '<strong>Delivered.</strong> The firewall let it in, because email has to be allowed in for the business to work. Nothing checked who really sent it.', zt ? 'info' : 'bad', zt ? ['Defender for Office 365'] : []);
+    await new Promise((r) => nextBtn('Open it as Alex', r));
+
+    // 3. Click (the learner does this)
+    playbook(2, 'Alex opens the email. You\'re Alex now.', 'info');
+    story.querySelector('.playbook').insertAdjacentHTML('beforeend', `
       <div class="phish-mail">
         <p class="pm-meta"><strong>From:</strong> Accounts Team &lt;accounts@fabrikam-invoices.co&gt;<br><strong>To:</strong> Alex<br><strong>Subject:</strong> Unpaid invoice INV-2291: action needed today</p>
         <p>Hi Alex, our records show invoice INV-2291 is overdue. Please review it today to avoid a late fee.</p>
         <button type="button" class="pm-link">View invoice</button>
-        <p class="pm-tip">You're Alex now. It looks real enough. Click the link.</p>
-      </div>`;
-    ninja.say(zt ? 'Same email as before. Click the link again as Alex.' : "The email got through the firewall, because email is allowed in. You're Alex now: click the link.", 'crouch');
-    story.querySelector('.pm-link').addEventListener('click', async () => {
-      busy = true;
-      if (zt) {
-        story.innerHTML = '<div class="feedback info"><div class="req-line">🔗 Link clicked: checking…</div><ul class="req-checks"><li class="ok"><span>🔗 Safe Links</span><strong>✓ brand-new site, not known as bad yet</strong></li></ul></div>';
-        await wait(150);
-        story.querySelector('.req-checks li').classList.add('shown');
-        await wait(1100);
-      }
-      story.innerHTML = '<div class="feedback bad"><div class="req-line">🔗 Link clicked: the page downloads a fake "invoice viewer"…</div></div>';
-      dot = await fly([centre('laptop'), FIREWALL, ATTACKER], 'req', 380);
-      dot.remove();
-      dot = await fly([ATTACKER, FIREWALL, centre('laptop')], 'bad', 420);
-      dot.remove();
-      phish();
-      await wait(250);
-      if (zt) {
-        story.innerHTML = '<div class="feedback bad">The laptop is infected, and the attacker is controlling it over the internet. No filter catches everything, which is why zero trust assumes this will happen.<div class="req-line" style="margin-top:6px">The malware looks for other systems to reach…</div></div>';
-        await wait(400);
-        for (const n of NODES) { if (n.id !== 'laptop') svg.querySelector(`[data-spoke="${n.id}"]`).classList.add('live'); }
-        await wait(900);
-        svg.querySelectorAll('.spoke.live').forEach((l) => l.classList.remove('live'));
-        story.innerHTML = '<div class="feedback info">The malware looked around and found <strong>no trusted connections</strong>. Every system only answers requests that pass the checks in the middle.</div>';
-      } else {
-        story.innerHTML = '<div class="feedback bad">The firewall let the download in: it was ordinary web traffic started from inside the wall. The laptop is infected, and the attacker is controlling it over the internet.<div class="req-line" style="margin-top:6px">The malware scans the network…</div></div>';
-        await wait(400);
-        for (const [a, b] of LINKS) { linkBetween(a, b)?.classList.add('scan'); await wait(140); }
-        await wait(500);
-        svg.querySelectorAll('.link.scan').forEach((l) => l.classList.remove('scan'));
-        story.innerHTML = '<div class="feedback bad">The scan found <strong>every system answering</strong>. Inside the wall, nothing asks who you are or whether your laptop is healthy.</div>';
-      }
-      busy = false;
-      then();
-    }, { once: true });
+        <p class="pm-tip">It looks real, it's urgent, and it mentions money. Click the link.</p>
+      </div>`);
+    busy = false;
+    await new Promise((r) => story.querySelector('.pm-link').addEventListener('click', r, { once: true }));
+    busy = true;
+    dot = await fly([centre('laptop'), FIREWALL, ATTACKER], 'req', 420);
+    dot.remove();
+    playbook(2, zt
+      ? '<strong>Clicked.</strong> Safe Links re-checked the address at the moment of the click. It\'s still a brand-new site with no bad history, so the page opens. The page asks Alex to install an "invoice viewer".'
+      : '<strong>Clicked.</strong> The link opens a page that looks like an invoice portal and asks Alex to install an "invoice viewer". Alex does, because the invoice is "urgent".', zt ? 'info' : 'bad', zt ? ['Defender for Office 365'] : []);
+    await new Promise((r) => nextBtn('Install the malware', r));
+
+    // 4. Install
+    playbook(3, '⚙️ The "invoice viewer" downloads from the attacker\'s site…', 'bad');
+    dot = await fly([ATTACKER, FIREWALL, centre('laptop')], 'bad', 480);
+    dot.remove();
+    phish();
+    playbook(3, zt
+      ? '<strong>Installed.</strong> Defender for Endpoint records what the program does and marks the laptop as <em>at risk</em>. The attacker still has a foothold, which is exactly why zero trust assumes breach. That at-risk mark will matter in a moment.'
+      : '<strong>Installed.</strong> The firewall saw an ordinary HTTPS download that started from inside the wall, so it allowed it. The program quietly runs every time Alex logs in.', 'bad', zt ? ['Defender for Endpoint'] : []);
+    await new Promise((r) => nextBtn('Call home', r));
+
+    // 5. Call home (command and control)
+    playbook(4, '<strong>The malware calls home.</strong> Every few seconds it sends a small HTTPS request to the attacker\'s server asking "any orders?". To a firewall this looks like normal web browsing, so the attacker can now control the laptop remotely. This is called <em>command and control</em>.', 'bad');
+    const ping = () => fly([centre('laptop'), FIREWALL, ATTACKER], 'beacon', 700).then((d) => d.remove());
+    await ping();
+    stopBeacon();
+    beacon = setInterval(() => { if (svg.isConnected) ping(); else stopBeacon(); }, 1800);
+    await new Promise((r) => nextBtn('Steal credentials', r));
+
+    // 6. Steal
+    playbook(5, '🔑 The attacker tells the malware to collect what Alex has saved…', 'bad');
+    dot = await fly([centre('laptop'), FIREWALL, ATTACKER], 'loot', 650);
+    dot.remove();
+    playbook(5, zt
+      ? '<strong>Alex\'s password and sign-in token are copied out.</strong> But the password alone won\'t pass MFA, and with token protection the token only works on Alex\'s own laptop, which is now marked at risk. The stolen keys don\'t open anything.'
+      : '<strong>Alex\'s password and sign-in token are copied out.</strong> Saved browser passwords and the token that keeps Alex signed in to email are now the attacker\'s, so they can sign in as Alex from anywhere.', 'bad', zt ? ['Conditional Access', 'Token protection'] : []);
+    await new Promise((r) => nextBtn('Scan the network', r));
+
+    // 7. Scan
+    if (zt) {
+      playbook(6, '🗺️ The malware looks for other systems it can reach…', 'bad');
+      for (const n of NODES) { if (n.id !== 'laptop') { svg.querySelector(`[data-spoke="${n.id}"]`).classList.add('live'); await wait(120); } }
+      await wait(700);
+      svg.querySelectorAll('.spoke.live').forEach((l) => l.classList.remove('live'));
+      playbook(6, '<strong>The scan finds no trusted connections.</strong> Every system only answers requests that pass the checks in the middle. Time to see whether the attacker can get past them.', 'info');
+    } else {
+      playbook(6, '🗺️ The malware scans the network for other systems…', 'bad');
+      for (const [a, b] of LINKS) { linkBetween(a, b)?.classList.add('scan'); await wait(160); }
+      await wait(600);
+      svg.querySelectorAll('.link.scan').forEach((l) => l.classList.remove('scan'));
+      playbook(6, '<strong>Every system answers.</strong> Inside the wall nothing asks who you are or whether your laptop is healthy, so the attacker can see the email, file server, finance app, admin account and customer data.', 'bad');
+    }
+    busy = false;
+    then();
   }
 
   function intro() {
