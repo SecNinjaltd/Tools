@@ -103,7 +103,7 @@ export function renderCastle({ chapter, nextChapter }) {
     <article>
       <p class="eyebrow">Chapter ${chapter.n} · ${chapter.minutes} min</p>
       <h1 class="title">${chapter.title}</h1>
-      <div class="step-dots" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+      <ol class="step-dots" aria-label="Chapter stages"><li>1 · Castle attack</li><li>2 · Zero trust replay</li><li>3 · Compare and check</li></ol>
       <div class="guide-slot"></div>
       <div class="c1-stage">
         <div class="c1-scene"><div class="scene-wrap">${sceneSvg()}</div>
@@ -124,7 +124,7 @@ export function renderCastle({ chapter, nextChapter }) {
   const actions = el.querySelector('.actions');
   const after = el.querySelector('.after');
   const foot = el.querySelector('.chapter-foot');
-  const dots = [...el.querySelectorAll('.step-dots span')];
+  const dots = [...el.querySelectorAll('.step-dots li')];
 
   let mode = 'castle';
   let owned = new Set();
@@ -163,7 +163,8 @@ export function renderCastle({ chapter, nextChapter }) {
   const wait = (ms) => new Promise((r) => setTimeout(r, matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : ms));
 
   const node = (id) => svg.querySelector(`[data-node="${id}"]`);
-  const setStep = (i) => dots.forEach((d, n) => d.classList.toggle('on', n <= i));
+  // Four internal steps map onto three labelled stages.
+  const setStep = (i) => { const stage = [0, 0, 1, 2][i]; dots.forEach((d, n) => { d.classList.toggle('on', n === stage); d.classList.toggle('done', n < stage); }); };
 
   function button(label, onClick, secondary = false) {
     const b = h(`<button type="button" class="btn ${secondary ? 'secondary' : ''}">${label}</button>`);

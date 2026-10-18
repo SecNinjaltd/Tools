@@ -295,9 +295,11 @@ body[data-theme='dark'] .pm-link { color: #8fb2ff; }
 .br-n { font-family: var(--mono); font-size: 14px; text-align: right; }
 @media (max-width: 600px) { .br-row { grid-template-columns: 1fr auto; } .br-cells { grid-column: 1 / -1; order: 3; } .br-cell { width: 34px; height: 34px; } }
 
-.step-dots { display: flex; gap: 6px; margin: 4px 0 14px; }
-.step-dots span { width: 26px; height: 6px; border-radius: 3px; background: var(--line); }
-.step-dots span.on { background: var(--orange); }
+.step-dots { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 14px; }
+.step-dots li { font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.5px; padding: 4px 10px; border-radius: 999px; border: 1.5px solid var(--line); color: var(--muted); }
+.step-dots li.on { border-color: var(--orange); background: var(--orange-tint); color: var(--ink); font-weight: 700; }
+.step-dots li.done { color: var(--ink); }
+.step-dots li.done::after { content: ' ✓'; color: var(--orange-text); }
 
 /* Sort (drag) activity */
 .sort { display: grid; gap: 14px; }
