@@ -3,6 +3,7 @@ import { h, rich, guide, quiz, announce, store, escapeHtml } from '../ui.js';
 import { learnLink } from '../learn.js';
 import { makeDraggable, makeTarget } from '../drag.js';
 import { CONTROLS, PILLARS } from '../catalog.js';
+import { renderAnatomy } from './anatomy.js';
 
 const SCENARIOS = [
   {
@@ -184,12 +185,14 @@ export function renderMissions({ chapter, nextChapter }) {
       <p class="eyebrow">Chapter ${chapter.n} · ${chapter.minutes} min</p>
       <h1 class="title">${chapter.title}</h1>
       <div class="guide-slot"></div>
+      <div class="anatomy-slot" style="margin-bottom:22px"></div>
       <div class="boards" style="display:grid;gap:22px"></div>
       <div class="after" style="display:grid;gap:18px;margin-top:22px"></div>
       <div class="chapter-foot"><a class="btn secondary" href="#/">All chapters</a></div>
     </article>`);
-  const ninja = guide("Every real attack is a chain of steps. Break any link and the attack fails.\nYou have a tray of Microsoft controls. Drag each one onto the step it stops. Some controls are decoys: useful, but not for this attack.", 'crouch');
+  const ninja = guide("Every real attack is a chain of steps. Break any link and the attack fails.\nFirst, step through how a phishing attack really unfolds. Then it's your turn: you have a tray of Microsoft controls. Drag each one onto the step it stops. Some controls are decoys: useful, but not for this attack.", 'crouch');
   el.querySelector('.guide-slot').appendChild(ninja.el);
+  el.querySelector('.anatomy-slot').appendChild(renderAnatomy());
   const boards = el.querySelector('.boards');
   const after = el.querySelector('.after');
   const foot = el.querySelector('.chapter-foot');

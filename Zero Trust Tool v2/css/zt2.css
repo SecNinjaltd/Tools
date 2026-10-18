@@ -805,3 +805,36 @@ body[data-theme='dark'] .lm-why { background: #1f3326; }
 body[data-theme='dark'] .lm-bar.solved { background: #1f3326; }
 @media (max-width: 700px) { .lm-bar:not([hidden]) { top: 80px; font-size: 14px; padding: 10px 12px; } }
 .lm-actions .hint-btn, .lm-bar .hint-btn, .lm-off .hint-btn { border: 0; background: none; color: var(--orange-text); font-size: 14px; font-weight: 700; padding: 6px 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+
+/* ---------- Chapter 5: how a phishing attack unfolds ---------- */
+.an-intro { color: var(--muted); font-size: 14px; margin-bottom: 12px; }
+.an-steps button { all: unset; cursor: pointer; }
+.an-steps button:focus-visible { outline: 3px solid var(--orange); outline-offset: 4px; border-radius: 999px; }
+.an-scene { margin: 12px 0; overflow-x: auto; }
+.an-svg { width: 100%; min-width: 560px; height: auto; display: block; background: var(--surface-soft); border: 1px solid var(--line); border-radius: var(--radius); }
+.an-line { stroke: var(--line); stroke-width: 3; stroke-dasharray: 6 6; }
+.an-node rect { fill: var(--surface); stroke: var(--line); stroke-width: 2; transition: fill 0.3s, stroke 0.3s; }
+.an-node text { fill: var(--ink); font-family: 'Plus Jakarta Sans', sans-serif; }
+.an-ico { font-size: 22px; }
+.an-lbl { font-size: 12.5px; }
+.an-node.hit rect { fill: var(--bad-bg); stroke: var(--bad); stroke-width: 3; }
+.an-node.scanning rect { stroke: var(--orange); stroke-width: 4; animation: scanbox 0.7s ease-in-out infinite alternate; }
+.an-node.pulse rect { animation: anpulse 1s ease-in-out infinite; }
+@keyframes anpulse { 50% { stroke: var(--bad); stroke-width: 5; } }
+.an-svg .packet { stroke: var(--surface); stroke-width: 3; }
+.an-svg .packet.bad { fill: var(--bad); }
+.an-svg .packet.req { fill: var(--orange); }
+.an-svg .packet.mail { fill: #4aa3df; }
+.an-svg .packet.beacon { fill: #835b00; }
+.an-svg .packet.loot { fill: #f4d538; stroke: #1a1a1c; }
+.an-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.an-cols .feedback { font-size: 14.5px; }
+.an-h { font-weight: 800; margin-bottom: 6px; font-size: 14px; }
+.an-cols code { font-family: var(--mono); font-size: 13px; }
+.an-nav { margin-top: 12px; gap: 10px; align-items: center; }
+.an-done { font-weight: 700; font-size: 15px; }
+@media (max-width: 760px) { .an-cols { grid-template-columns: 1fr; } }
+.an-cols .req-checks { display: grid; gap: 6px; margin: 0 0 10px; }
+.an-cols .req-checks li { display: block; border-radius: 10px; font-size: 13px; }
+.an-cols .req-checks li span { display: block; font-weight: 700; }
+.an-cols .req-checks li strong { font-weight: 500; }
