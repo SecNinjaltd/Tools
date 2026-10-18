@@ -237,6 +237,8 @@ h1.title, h2.title { font-family: var(--display); font-size: clamp(22px, 3vw, 30
 .node.target .box { stroke: var(--yellow); stroke-width: 3; }
 .node.target:hover .box, .node.target:focus .box { fill: var(--orange-tint); stroke: var(--orange); }
 .node.owned .box { fill: var(--bad-bg); stroke: var(--bad); stroke-width: 3; }
+.node.scanning .box { stroke: var(--orange); stroke-width: 4; animation: scanbox 0.7s ease-in-out infinite alternate; }
+@keyframes scanbox { to { fill: var(--orange-tint); } }
 .node.safe .box { fill: var(--shield-bg); stroke: var(--shield); stroke-width: 3; }
 .node .badge { opacity: 0; transition: opacity 0.3s; }
 .node.owned .badge.b-owned, .node.safe .badge.b-safe { opacity: 1; }
