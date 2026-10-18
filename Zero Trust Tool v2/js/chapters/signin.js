@@ -122,7 +122,7 @@ function evaluate(s) {
 const MISSIONS = [
   {
     text: 'Get Sam into email from home, the normal way.',
-    hint: 'Sam needs more than a password. Try the Authenticator app on the company laptop.',
+    hint: 'Set From to Home, UK. Then give Sam more than a password: try the Authenticator app on the healthy company laptop.',
     check: (s, d) => s.user === 'sam' && s.app === 'email' && s.location === 'home' && d.verdict === 'allow'
   },
   {
