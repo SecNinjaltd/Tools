@@ -253,6 +253,14 @@ h1.title, h2.title { font-family: var(--display); font-size: clamp(22px, 3vw, 30
 .scene.zt-on .link:not([data-link='internet-laptop']) { display: none; }
 .scene .packet { stroke: var(--surface); stroke-width: 3; }
 .scene .packet.bad { fill: var(--bad); }
+.scene .packet.mail { fill: #4aa3df; }
+.scene .link.scan { stroke: var(--bad); stroke-width: 4; opacity: 0.8; }
+.phish-mail { border: 1.5px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: 14px 16px; box-shadow: 0 6px 20px rgba(0,0,0,0.08); font-size: 15px; max-width: 560px; }
+.pm-meta { font-size: 13px; color: var(--muted); border-bottom: 1px solid var(--line); padding-bottom: 8px; margin-bottom: 8px; line-height: 1.6; }
+.pm-meta strong { color: var(--ink); }
+.pm-link { margin: 10px 0 4px; border: 0; background: none; padding: 0; color: #1f56c4; font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }
+body[data-theme='dark'] .pm-link { color: #8fb2ff; }
+.pm-tip { font-size: 13px; color: var(--orange-text); font-weight: 700; margin-top: 6px; }
 .scene .packet.req { fill: var(--orange); }
 .scene .packet.denied { fill: var(--bad); transition: opacity 0.4s; opacity: 0.2; }
 .req-line { font-size: 13.5px; margin-bottom: 6px; }

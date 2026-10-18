@@ -192,7 +192,7 @@ export function renderCastle({ chapter, nextChapter }) {
     blocked = new Set();
     clicks = 0;
     svg.querySelectorAll('.node').forEach((g) => g.classList.remove('owned', 'safe', 'target'));
-    svg.querySelectorAll('.link, .spoke').forEach((l) => l.classList.remove('hot', 'blocked', 'live'));
+    svg.querySelectorAll('.link, .spoke').forEach((l) => l.classList.remove('hot', 'blocked', 'live', 'scan'));
     svg.querySelector('.packets').innerHTML = '';
     svg.querySelector('.engine').classList.remove('deny');
   }
@@ -203,6 +203,59 @@ export function renderCastle({ chapter, nextChapter }) {
     node('laptop').classList.add('owned');
   }
 
+  // The phishing email arrives, the learner clicks the link as Alex, and the malware lands and looks around.
+  const ATTACKER = { x: 56, y: 160 };
+  const FIREWALL = { x: 150, y: 111 };
+  async function phishFlow(zt, then) {
+    busy = true;
+    actions.replaceChildren();
+    story.innerHTML = '<div class="feedback info"><div class="req-line">📧 An email is on its way to Alex…</div></div>';
+    let dot = await fly([ATTACKER, FIREWALL, centre('email'), centre('laptop')], 'mail', 520);
+    dot.remove();
+    busy = false;
+    story.innerHTML = `
+      <div class="phish-mail">
+        <p class="pm-meta"><strong>From:</strong> Accounts Team &lt;accounts@fabrikam-invoices.co&gt;<br><strong>To:</strong> Alex<br><strong>Subject:</strong> Unpaid invoice INV-2291: action needed today</p>
+        <p>Hi Alex, our records show invoice INV-2291 is overdue. Please review it today to avoid a late fee.</p>
+        <button type="button" class="pm-link">View invoice</button>
+        <p class="pm-tip">You're Alex now. It looks real enough. Click the link.</p>
+      </div>`;
+    ninja.say(zt ? 'Same email as before. Click the link again as Alex.' : "The email got through the firewall, because email is allowed in. You're Alex now: click the link.", 'crouch');
+    story.querySelector('.pm-link').addEventListener('click', async () => {
+      busy = true;
+      if (zt) {
+        story.innerHTML = '<div class="feedback info"><div class="req-line">🔗 Link clicked: checking…</div><ul class="req-checks"><li class="ok"><span>🔗 Safe Links</span><strong>✓ brand-new site, not known as bad yet</strong></li></ul></div>';
+        await wait(150);
+        story.querySelector('.req-checks li').classList.add('shown');
+        await wait(1100);
+      }
+      story.innerHTML = '<div class="feedback bad"><div class="req-line">🔗 Link clicked: the page downloads a fake "invoice viewer"…</div></div>';
+      dot = await fly([centre('laptop'), FIREWALL, ATTACKER], 'req', 380);
+      dot.remove();
+      dot = await fly([ATTACKER, FIREWALL, centre('laptop')], 'bad', 420);
+      dot.remove();
+      phish();
+      await wait(250);
+      if (zt) {
+        story.innerHTML = '<div class="feedback bad">The laptop is infected, and the attacker is controlling it over the internet. No filter catches everything, which is why zero trust assumes this will happen.<div class="req-line" style="margin-top:6px">The malware looks for other systems to reach…</div></div>';
+        await wait(400);
+        for (const n of NODES) { if (n.id !== 'laptop') svg.querySelector(`[data-spoke="${n.id}"]`).classList.add('live'); }
+        await wait(900);
+        svg.querySelectorAll('.spoke.live').forEach((l) => l.classList.remove('live'));
+        story.innerHTML = '<div class="feedback info">The malware looked around and found <strong>no trusted connections</strong>. Every system only answers requests that pass the checks in the middle.</div>';
+      } else {
+        story.innerHTML = '<div class="feedback bad">The firewall let the download in: it was ordinary web traffic started from inside the wall. The laptop is infected, and the attacker is controlling it over the internet.<div class="req-line" style="margin-top:6px">The malware scans the network…</div></div>';
+        await wait(400);
+        for (const [a, b] of LINKS) { linkBetween(a, b)?.classList.add('scan'); await wait(140); }
+        await wait(500);
+        svg.querySelectorAll('.link.scan').forEach((l) => l.classList.remove('scan'));
+        story.innerHTML = '<div class="feedback bad">The scan found <strong>every system answering</strong>. Inside the wall, nothing asks who you are or whether your laptop is healthy.</div>';
+      }
+      busy = false;
+      then();
+    }, { once: true });
+  }
+
   function intro() {
     mode = 'castle';
     reset();
@@ -211,15 +264,13 @@ export function renderCastle({ chapter, nextChapter }) {
     svg.querySelector('.wall-label').textContent = 'COMPANY NETWORK: EVERYTHING INSIDE IS TRUSTED';
     ninja.say("For years, companies protected themselves like a castle: a strong [[firewall]] round the edge, the moat, and everyone inside trusted.\nLet's see how that holds up against one [[phishing]] email.", 'stance');
     story.innerHTML = '';
-    actions.replaceChildren(button('Send the phishing email', castlePlay));
+    actions.replaceChildren(button('Send the phishing email', () => phishFlow(false, castlePlay)));
   }
 
   function castlePlay() {
     mode = 'castle-play';
-    phish();
     setStep(1);
-    ninja.say("Alex clicked the link. Email is allowed through the firewall, so the attachment walked straight in. The attacker now controls a laptop inside the wall.\nYour turn: you're the attacker. Click any glowing system to move to it.", 'surprised');
-    story.innerHTML = '';
+    ninja.say("One click, and the attacker controls a laptop inside the wall.\nYour turn: you're the attacker now. Click any glowing system to move to it.", 'surprised');
     actions.replaceChildren();
     refreshTargets();
     if (!matchMedia('(pointer: coarse)').matches) svg.querySelector('.node.target')?.focus({ preventScroll: true });
@@ -242,14 +293,13 @@ export function renderCastle({ chapter, nextChapter }) {
     svg.querySelector('.wall-label').textContent = 'ZERO TRUST: EVERY REQUEST IS CHECKED';
     ninja.say("Same company, same attacker, same email. Notice the trusted links between systems have gone. Every request now goes through the checks in the middle: who you are, which device, what you're allowed, what's happening to the data.\nZero trust doesn't promise nobody will ever click a bad link. It makes sure one click can't take everything.", 'laptop');
     story.innerHTML = '';
-    actions.replaceChildren(button('Send the phishing email again', () => {
+    actions.replaceChildren(button('Send the phishing email again', () => phishFlow(true, () => {
       mode = 'zt-play';
-      phish();
       ninja.say("Alex clicked again, and the laptop is compromised again. That's [[assume breach]]: plan for it.\nNow try to move. Click any system you like.", 'crouch');
       actions.replaceChildren();
       refreshTargets();
       if (!matchMedia('(pointer: coarse)').matches) svg.querySelector('.node.target')?.focus({ preventScroll: true });
-    }));
+    })));
   }
 
   function ztDone() {
