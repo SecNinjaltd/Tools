@@ -81,6 +81,7 @@ function renderHome() {
             <a class="btn" href="#/${next.id}">${done.size ? 'Continue' : 'Start'} with chapter ${next.n}</a>
             <a class="btn secondary" href="#/map">Explore the zero trust map</a>
           </div>
+          <p class="credit">Created by <strong>James Agombar</strong>, Microsoft MVP, at <a href="https://www.security-ninja.com" target="_blank" rel="noopener">Security Ninja</a>.</p>
         </div>
         <img src="assets/mascots/ninja-stance.webp" alt="The Security Ninja cat in a fighting stance" width="300" height="320">
       </section>
